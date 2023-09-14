@@ -1,0 +1,165 @@
+!------------------------------------------------------
+        subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,vol)
+
+        implicit none
+        integer :: nv,nf,v1,v2,v3,i
+        integer, dimension (3,nf) :: vert_of_face
+        real, dimension (3,nv) ::xyz
+        real, dimension (nf) :: vol
+        real :: Volume
+
+        Volume=0.0
+        do i=1,nf
+           v1=vert_of_face(1,i)
+           v2=vert_of_face(2,i)
+           v3=vert_of_face(3,i)
+
+        vol(i) =           xyz(1,v1) * (xyz(2,v2)*xyz(3,v3) - xyz(3,v2)*xyz(2,v3)) &
+                        +  xyz(1,v2) * (xyz(2,v3)*xyz(3,v1) - xyz(3,v3)*xyz(2,v1)) &
+                        +  xyz(1,v3) * (xyz(2,v1)*xyz(3,v2) - xyz(3,v1)*xyz(2,v2))
+        Volume=Volume+vol(i)
+        enddo
+ 
+        Volume=Volume/6.
+
+        return
+        end subroutine calculate_volume
+!------------------------------------------------------
+        subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur)
+
+        implicit none
+        integer :: nv,nf,v1,v2,v3,i
+        integer, dimension (3,nf) :: vert_of_face
+        real, dimension (3,nv) ::xyz
+        real, dimension (nf) :: sur
+        real :: Surface,d12,d23,d31,sp
+
+        Surface=0.0
+        do i=1,nf
+           v1=vert_of_face(1,i)
+           v2=vert_of_face(2,i)
+           v3=vert_of_face(3,i)
+
+           d12=sqrt( (xyz(1,v1)-xyz(1,v2))**2. &
+                    +(xyz(2,v1)-xyz(2,v2))**2. &
+                    +(xyz(3,v1)-xyz(3,v2))**2. )
+           d23=sqrt( (xyz(1,v2)-xyz(1,v3))**2. &
+                    +(xyz(2,v2)-xyz(2,v3))**2. &
+                    +(xyz(3,v2)-xyz(3,v3))**2. )
+           d31=sqrt( (xyz(1,v3)-xyz(1,v1))**2. &
+                    +(xyz(2,v3)-xyz(2,v1))**2. &
+                    +(xyz(3,v3)-xyz(3,v1))**2. )
+           sp=(d12+d23+d31)/2.
+           sur(i)=sqrt(sp*(sp-d12)*(sp-d23)*(sp-d31))
+           Surface=Surface+sur(i)
+        enddo
+
+        return
+        end subroutine calculate_area
+!------------------------------------------------------
+        subroutine calculate_distance(dist,nv,ne,xyz,vert_of_edge)
+
+        implicit none
+        integer :: nv,ne,v1,v2,i
+        integer, dimension (2,ne) :: vert_of_edge
+        real, dimension (3,nv) ::xyz
+        real, dimension (ne) :: dist
+
+        do i=1,ne
+           v1=vert_of_edge(1,i)
+           v2=vert_of_edge(2,i)
+        dist(i)=sqrt( (xyz(1,v1)-xyz(1,v2))**2 + (xyz(2,v1)-xyz(2,v2))**2 + (xyz(3,v1)-xyz(3,v2))**2 ) 
+        enddo
+
+        return
+        end subroutine calculate_distance
+!     ----------------------------------------------------------------
+          subroutine dot(xy,x,y)
+
+          implicit none
+          real x(3),y(3),xy
+
+          xy = x(1)*y(1)+x(2)*y(2)+x(3)*y(3)
+          return
+          end subroutine dot
+!     ----------------------------------------------------------------
+          subroutine  sub(xmy,x,y)
+
+          implicit none
+          real x(3),y(3),xmy(3)
+
+          xmy = x-y
+          return
+          end subroutine sub
+!     ----------------------------------------------------------------
+          subroutine  cross(xcy,x,y)
+          implicit none
+          real x(3),y(3),xcy(3)
+
+          xcy(1) = x(2)*y(3)-y(2)*x(3)
+          xcy(2) = x(3)*y(1)-y(3)*x(1)
+          xcy(3) = x(1)*y(2)-y(1)*x(2)
+          return
+          end subroutine cross
+!     ----------------------------------------------------------------
+
+subroutine inverseLU(a,c)
+implicit none
+real :: a(4,4), c(4,4)
+real :: L(4,4), U(4,4)
+real :: b(4), d(4), x(4)
+real :: coeff
+integer i,j,k
+
+!L = 0.0 ; U = 0.0 ; b = 0.0
+
+!forward elimination
+do k=1,3
+ do i=k+1,4
+  coeff=a(i,k)/a(k,k)
+  L(i,k) = coeff
+  do j=k+1,4
+   a(i,j)=a(i,j)-coeff*a(k,j)
+  end do
+ end do
+end do
+
+!prepare L U
+do i=1,4
+ L(i,i) = 1.0
+end do
+do j=1,4
+ do i=1,j
+  U(i,j) = a(i,j)
+ end do
+end do
+
+!compute columns of c
+do k=1,4
+ b(k)=1.0
+ d(1)=b(1)
+ do i=2,4
+  d(i)=b(i)
+  do j=1,i-1
+   d(i) = d(i)-L(i,j)*d(j)
+  end do
+ end do
+ !solve ux=d with back subs.
+ x(4)=d(4)/U(4,4)
+ do i=3,1,-1
+  x(i) = d(i)
+   do j=4,i+1,-1
+    x(i)=x(i)-U(i,j)*x(j)
+   end do
+   x(i) = x(i)/u(i,i)
+  end do
+ !fill solns of x(n) to k of C
+  do i=1,4
+   c(i,k)=x(i)
+  end do
+  b(k) = 0.0
+end do
+
+return
+end
+
