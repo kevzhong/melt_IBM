@@ -54,7 +54,7 @@ subroutine convex_hull_q1(AA,inp)
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
              alpha_q = alpha*celvol*vx(ii,jj,k)
-             if(ax(ii,jj,k).lt.1)then
+             if(ax(ii,jj,k).lt.1.0)then
              ax(ii,jj,k) = ax(ii,jj,k)
              else
              ax(ii,jj,k) = 1.0 - alpha
@@ -192,7 +192,7 @@ subroutine convex_hull_q2(AA,inp)
              alpha_q = alpha*celvol*vy(ii,jj,k)
              
 
-             if(ay(ii,jj,k).lt.1)then
+             if(ay(ii,jj,k).lt.1.0)then
              ay(ii,jj,k) = ay(ii,jj,k)
              else
              ay(ii,jj,k) = 1.0 - alpha
@@ -330,7 +330,7 @@ subroutine convex_hull_q3(AA,inp)
              jj = modulo(j-1,n2m) + 1
              alpha_q = alpha*celvol*vz(ii,jj,k)
 
-             if(az(ii,jj,k).lt.1)then
+             if(az(ii,jj,k).lt.1.0)then
              az(ii,jj,k) = az(ii,jj,k)
              else
              az(ii,jj,k) = 1.0 - alpha

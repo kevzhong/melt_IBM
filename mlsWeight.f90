@@ -74,7 +74,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
             norp(1) = abs(xc(i)-pos(1))*dx1
 
            ptxab(inw) =   delta(norp(1))*delta(norp(2))*delta(norp(3))
-
+ !          ptxab(inw) =   ptxab(inw)*dx1*dx2*dx3
            inw = inw + 1
     enddo
    enddo
@@ -120,7 +120,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
             norp(1) = abs(xm(i)-pos(1))*dx1
 
            ptxab(inw) =   delta(norp(1))*delta(norp(2))*delta(norp(3))
-
+!           ptxab(inw) =  ptxab(inw)*dx1*dx2*dx3
            inw = inw + 1
     enddo
    enddo
@@ -168,7 +168,7 @@ if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
             norp(1) = abs(xm(i)-pos(1))*dx1
 
            ptxab(inw) =   delta(norp(1))*delta(norp(2))*delta(norp(3))
-
+!           ptxab(inw) =  ptxab(inw)*dx1*dx2*dx3
            inw = inw + 1
     enddo
    enddo

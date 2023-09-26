@@ -127,14 +127,7 @@
            ycirc=ycirc+vor2(ic,kc)
            end do
            end do
-      else
-           do ii=1,boxdim+1
-           ic=n1m/2-boxdim/2+(ii-1)
-           kc=n3m/2-boxdim/2+(ii-1)
-
-           ycirc=ycirc+vor2(ic,kc)
-           enddo
-      endif
+      end if
       call mpi_globalsum_double_var(ycirc)
       ycirc=((boxdim-1)**2*udx1*udx3*ycirc)/(boxdim**2)
 
@@ -205,19 +198,13 @@
            jc=pind1(2,inp)-boxdim/2+(ii-1)
 
            ic=modulo(ic-1,n1m) + 1
-           jc=modulo(jc-1,n1m) + 1
+           kc=modulo(jc-1,n1m) + 1
         
            zcirc=zcirc+vor3(ic,jc)
            end do
            end do
-      else
-           do ii=1,boxdim+1
-           ic=n1m/2-boxdim/2+(ii-1)
-           jc=n2m/2-boxdim/2+(ii-1)
+      end if
 
-           zcirc=zcirc+vor3(ic,jc)
-           enddo
-      endif
       call mpi_globalsum_double_var(zcirc)
       zcirc=((boxdim-1)**2*udx1*udx2*zcirc)/(boxdim**2)
 

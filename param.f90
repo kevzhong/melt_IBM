@@ -95,7 +95,7 @@
         include 'mpif.h'
         integer :: myid, numtasks, ierr
         integer, parameter :: master=0
-        integer, parameter :: lvlhalo=1
+        integer, parameter :: lvlhalo=2
         integer :: MDP = MPI_DOUBLE_PRECISION
         integer :: MCP = MPI_DOUBLE_COMPLEX
         integer :: STATUS(MPI_STATUS_SIZE,4)
@@ -132,7 +132,7 @@
       implicit none
       
       integer :: Nparticle
-      parameter( Nparticle=20)
+      parameter( Nparticle=1)
 
       !=================================================
       !       read from input file part.in
@@ -141,6 +141,7 @@
       real      :: wcon, wscl, dens_ratio
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
+      real      :: rad_p
       !=================================================
       !       end of input file
       !=================================================
@@ -202,6 +203,7 @@
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
+      real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 
       end module mls_param
 

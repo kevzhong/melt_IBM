@@ -18,7 +18,7 @@ coll_check = .false.
 call update_regular
 call update_substepping
 
-do inp=1,Nparticle
+do inp=1,nParticle
   call calc_rot_matrix(quat(:,inp),AA)
   AAT = transpose(AA)
   tail_head(:,inp) = AAT(:,3) 
@@ -46,7 +46,7 @@ implicit none
 integer :: i,inp
 real,dimension(3,3)     :: AA, AAT
 real,dimension(Nparticle) :: error
-real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
+real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1,acm_m1
 
 do inp=1,Nparticle
 
@@ -55,7 +55,7 @@ do inp=1,Nparticle
     pos_m1(:,inp)       = pos_cm(:,inp)
     om_m1(:,inp)        = omega_b(:,inp)
     om_b_sqr_m1(:,inp)  = om_b_sqr(:,inp)
-
+    acm_m1(:,inp)       = a_cm(:,inp)
        ! cutvol
     u_tot_m1(:,inp)     = u_tot(:,inp)
     r_x_u_tot_m1(:,inp) = r_x_u_tot(:,inp)
@@ -80,8 +80,8 @@ do inp=1,Nparticle
                       quat_dot(:,inp),    AA(:,:),                       &
                       u_tot(:,inp),       u_tot_m1(:,inp),               &
                       r_x_u_tot(:,inp),   r_x_u_tot_m1(:,inp),           &
-                      inp,                a_CM(:,inp),                   &
-                      alpha_b(:,inp))
+                      inp,                 a_CM(:,inp),                  &
+                      alpha_b(:,inp),      acm_m1(:,inp))
 
 enddo
 
@@ -99,7 +99,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
                         u_tot,    u_tot_m1,    &
                         r_x_u,    r_x_u_m1,    &
                         inp,      a_CM,        &
-                        alpha_b)
+                        alpha_b,  acm_m1)
 
 ! Given total force and total torque acting on the body, it evolves
 ! the newton equation for center of mass and
@@ -130,6 +130,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(3)   :: torq_surf, r_x_u, r_x_u_m1
   real ,dimension(3)  :: e_z
 ! local variables
+  real,dimension(3) :: acm_m1            ! velocity of the center of mass
   real,dimension(3) :: vel_CMm1            ! velocity of the center of mass
   real,dimension(3) :: pos_CMm1            ! position of the center of mass
   real,dimension(3) :: omega_b_m1          ! angular vel body frame
@@ -163,11 +164,22 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   pre_fac = ( 6. / pi ) / dens_ratio
 
 ! translation
+  !a_CM = - pre_fac * for_tot &
+   !      + e_z / dens_ratio &
+   !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
+
+
   vel_CM = vel_CMm1 - dt * pre_fac * for_tot           &
                     + dt * al / dens_ratio * e_z       &
                     + (u_tot - u_tot_m1) / dens_ratio
+!vel_CM = vel_CMm1 - dt * pre_fac * for_tot           &
+!                  + dt / dens_ratio * e_z       &
+!                  + (u_tot - u_tot_m1) / dens_ratio
 
-  pos_CM = pos_CMm1 + 0.5*dt*al*( vel_CM + vel_CMm1 )
+vel_CM=0.0d0
+pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
+
+
   
   ! ------------------------------------- 
   !               Rotation
@@ -186,13 +198,22 @@ subroutine newton_euler(For_tot,  torq_surf,   &
 
   pre_fac = pi / 6.0 ! cutvol already divided by tot_vol
 
+  alpha_b = matmul(I_inv, torq_b + pre_fac * dr_x_u_b/dt)  &
+          + matmul(I_inv2, omega_b_m1_squared)
+
   omega_b = omega_b_m1 + matmul(I_inv, -dt*torq_b + pre_fac * dr_x_u_b)  &
                        +    dt*al*matmul(I_inv2, omega_b_m1_squared)
 
+!omega_b = omega_b_m1 + matmul(I_inv, -dt*torq_b + pre_fac * dr_x_u_b)  &
+!                     +    dt*matmul(I_inv2, omega_b_m1_squared)
+
+
+omega_b=0.0d0
 
   call quatMul(quat,omega_b,quat_dot)
 
   quat = quat_m1 + 0.25*dt*al*( quat_dot + quat_dot_m1 )
+!  quat = quat_m1 + 0.25 * dt *( quat_dot + quat_dot_m1 )
 
 end subroutine newton_euler
 
@@ -209,7 +230,7 @@ integer :: i,inp
 real,dimension(3,3)          :: AA, AAT
 real,dimension(Nparticle)    :: error
 integer,dimension(Nparticle) :: step
-real,dimension(3,Nparticle)  :: vel_m1,pos_m1,pos_k,om_m1,a_m1,alpha_b_m1
+real,dimension(3,Nparticle)  :: vel_m1,pos_m1,pos_k,om_m1
 real :: pos_new(3)
 integer :: iter,nIter
 
@@ -222,10 +243,8 @@ do iter=1,nIter
 
   do inp=1,Nparticle
       quat_m1(:,inp) = quat(:,inp)
-      a_m1(:,inp)    = a_CM(:,inp)
       vel_m1(:,inp)  = vel_cm(:,inp)
       pos_m1(:,inp)  = pos_cm(:,inp)
-      alpha_b_m1(:,inp) = alpha_b(:,inp)
       om_m1(:,inp)   = omega_b(:,inp)
       !-- force & torque
       fp_m1(:,inp)   = fp(:,inp)
@@ -266,9 +285,7 @@ do iter=1,nIter
 
            ! update vel, pos, omega and quat
            call newton_coll(  vel_CM(:,inp), vel_m1(:,inp),                          &
-                              a_CM(:,inp),   a_m1(:,inp),                            &
                               pos_CM(:,inp), pos_m1(:,inp),                          &
-                              alpha_b(:,inp), alpha_b_m1(:,inp),                     &
                               omega_b(:,inp), om_m1(:,inp),                          &
                               quat(:,inp), quat_m1(:,inp),                           & 
                               AA(:,:),                                               &    
@@ -300,9 +317,7 @@ end subroutine
 
 
 subroutine newton_coll ( vel_CM, vel_m1,                    &
-                         a_CM, a_m1,                        &
                          pos_CM, pos_m1,                    &
-                         alpha_b, alpha_b_m1,               &
                          omega_b, omega_b_m1,               &
                          quat, quat_m1,                     &
                          AA,                                &
@@ -319,10 +334,9 @@ subroutine newton_coll ( vel_CM, vel_m1,                    &
   use param, only: al
   use mls_param,only: dens_ratio, i_inv
   implicit none
-  real,dimension(3)   :: a_CM              ! acc of the center of mass
+
   real,dimension(3)   :: vel_CM            ! velocity of the center of mass 
-  real,dimension(3)   :: pos_CM            ! position of the center of mass
-  real,dimension(3)   :: alpha_b           ! angular acc body frame
+  real,dimension(3)   :: pos_CM            ! position of the center of mass 
   real,dimension(3)   :: omega_b           ! angular vel body frame
   real,dimension(4)   :: quat              ! quaternions
   real,dimension(3,3) :: AA                ! rotation matrix "body  = AA  space "
@@ -330,16 +344,12 @@ subroutine newton_coll ( vel_CM, vel_m1,                    &
   real,dimension(3)   :: tp,tp_m1
   real                :: dt
   real,dimension(3)   :: coll_vel
-  real,dimension(3)   :: coll_acc
   real,dimension(3)   :: coll_om_b
-  real,dimension(3)   :: coll_al_b
   real,dimension(4)   :: coll_quat_dot
   ! local variables 
-  real,dimension(3) :: vel_m1              ! velocity of the center of mass
-  real,dimension(3) :: a_m1                ! acceleration of the center of mass
+  real,dimension(3) :: vel_m1              ! velocity of the center of mass 
   real,dimension(3) :: pos_m1              ! position of the center of mass 
   real,dimension(3) :: omega_b_m1          ! angular vel body frame
-  real,dimension(3) :: alpha_b_m1          ! angular acc body frame
   real,dimension(4) :: quat_m1             ! quaternions previous time step
   real,dimension(3) :: tp_b                ! collision torque in body frame
   real,dimension(3) :: coll_vel_m1
@@ -350,8 +360,6 @@ subroutine newton_coll ( vel_CM, vel_m1,                    &
   !              Translation
   ! ---------------------------------------------------- 
 
-  coll_acc = fp + fp_m1
- 
   coll_vel = 0.5*dt*al*(fp + fp_m1) 
 
   pos_cm = pos_m1  +  0.5*dt*al*(coll_vel + coll_vel_m1)
@@ -363,8 +371,6 @@ subroutine newton_coll ( vel_CM, vel_m1,                    &
 
   tp_b = tp + tp_m1
 
-  coll_al_b = matmul(I_inv, tp_b)
-
   coll_om_b = 0.5*dt*al*matmul(I_inv, tp_b)
 
 
@@ -374,10 +380,8 @@ subroutine newton_coll ( vel_CM, vel_m1,                    &
 
   ! ---------------------------------------------------- 
   !               Adding back to main vars
-  ! ----------------------------------------------------
-  a_CM     = a_m1        + coll_acc
+  ! ---------------------------------------------------- 
   vel_cm   = vel_m1      + coll_vel
-  alpha_b  = alpha_b_m1  + coll_al_b
   omega_b  = omega_b_m1  + coll_om_b 
 
 end subroutine newton_coll

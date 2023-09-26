@@ -13,7 +13,7 @@ integer :: inp,ntr,inw,i,j,k
 real Um, Vel
 integer, dimension(3) :: pind_i, pind_o
 real force,for
-integer :: ii,jj
+integer :: ii,jj,kk
 integer kstartp
 
 if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
@@ -27,6 +27,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
   ! spline weights for all three components
   do k=pind_i(3), pind_o(3)
+!kk = modulo(k-1,n3m) + 1 !
    do j=pind_i(2), pind_o(2)
 
      jj = modulo(j-1,n2m) + 1
@@ -48,6 +49,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
   inw = 1
 
   do k=pind_i(3), pind_o(3)
+!kk = modulo(k-1,n3m) + 1 !
    do j=pind_i(2), pind_o(2)
 
      jj = modulo(j-1,n2m) + 1
@@ -56,7 +58,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
          ii = modulo(i-1,n1m) + 1
 
-         for_xc(ii,jj,k) = for_xc(ii,jj,k) +  cfac(ntr) * (Vel-Um) * ptxAB(inw)
+         for_xc(ii,jj,k) = for_xc(ii,jj,k) + cfac(ntr) * (Vel-Um) * ptxAB(inw)
 
          inw = inw +1
          enddo
@@ -75,3 +77,4 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
 endif
 end
+

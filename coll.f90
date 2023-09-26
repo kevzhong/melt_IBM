@@ -30,11 +30,12 @@ contains
 
 subroutine collision 
 implicit none
-integer :: i,j,coll_num
+integer :: i,j
 real    :: p1(3),p2(3),dij(3),dist,dc,x1(3),x2(3)
 real    :: f1(3), f2(3), t1(3), t2(3)
 real    :: AA1(3,3)
 real    :: AA2(3,3)
+
 
 if (coll_check.eq. .false.) then
   fp = 0.d0
@@ -42,24 +43,20 @@ if (coll_check.eq. .false.) then
 endif
 
 
+dc = 1./16.
 
-
-
-dc = 4*xlen/n1m !1./16.
 do i = 1,Nparticle
    do j = i+1,Nparticle
 
       call closest_distance(i,j,p1,p2,x1,x2,dist,AA1,AA2)
 
       if (dist .lt. dc) then
+
         is_coll(i) = .true.
         is_coll(j) = .true.
-         dij = p2 - p1
-         if(norm2(dij).lt.2.)then
-          f1 = -5e4 * ( ((dist-dc)/dc)**2 ) * dij/norm2(dij)
-          else
-          f1 = 5e4 * ( ((dist-dc)/dc)**2 ) * dij/norm2(dij)
-          end if
+
+        dij = p2 - p1
+        f1 = -1e4 * ( ((dist-dc)/dc)**2 ) * dij/norm2(dij)
         f2 = -f1
 
         call cross(t1, p1-x1, f1)
@@ -81,6 +78,7 @@ do i = 1,Nparticle
 
 enddo
 enddo
+
 end subroutine
 
 
@@ -95,7 +93,7 @@ real :: part_2_p1(3,3), part_2_p2(3,3)
 real :: P1(3), P2(3), Q1(3),Q2(3),u(3),v(3),w0(3)
 real :: d1(3),d2(3),pos1(3),pos2(3)
 real :: l1_short(3), l2_short(3)
-real :: uu,uv,vv,w0_u,w0_v,den,s,t,eps,s1,t1
+real :: a,b,c,d,e,den,s,t
 real :: mydist, dist
 
 
@@ -111,16 +109,15 @@ pos1 = pos_cm(1:3, i)
 pos2 = closest_particle(pos_cm(1:3, i), pos_cm(1:3, j))
 
 do np = 1,3
-  !points determining particle i
   part_1_p1(:,np) = pos_cm(1:3, i) + matmul(AAT1, y1(:,np))
   part_1_p2(:,np) = pos_cm(1:3, i) + matmul(AAT1, y2(:,np))
-  !points determining particle j
+
   part_2_p1(:,np) = pos2 + matmul(AAT2, y1(:,np))
   part_2_p2(:,np) = pos2 + matmul(AAT2, y2(:,np))
 enddo
 
 dist = 1.e6
-eps = 1e-6
+
 ! short dist calc
 do inp1=1,3
   do inp2=1,3
@@ -132,39 +129,25 @@ do inp1=1,3
 
     u = Q1-P1
     v = Q2-P2
-    w0 = P2-P1
+    w0 = P1-P2
 
-    uu = dot_product(u, u)
-    uv = dot_product(u, v)
-    vv = dot_product(v, v)
-    w0_u = dot_product(w0, u)
-    w0_v = dot_product(w0, v)
+    a = dot_product(u, u)
+    b = dot_product(u, v)
+    c = dot_product(v, v)
+    d = dot_product(w0, u)
+    e = dot_product(w0, v)
 
-    den = uu*vv - uv*uv !+ 1e-10
-
-    if(den.lt.(eps*uu*vv)) then
-    s=w0_u/uu
-    t=0.0d0
-    else
-    s = (w0_u*vv-w0_v*uv) / den!(b*e - c*d) / den
-    t = (w0_u*uv-w0_v*uu) / den!(a*e - b*d) / den
-    end if
+    den = a*c - b**2 + 1e-10
+    s = (b*e - c*d) / den
+    t = (a*e - b*d) / den 
 
     s = min(s,1.);
     s = max(s,0.);
     t = min(t,1.);
     t = max(t,0.);
 
-    s1 = (t*uv + w0_u) / uu
-    t1 = (s*uv - w0_v) / vv
-
-    s1 = min(s,1.);
-    s1 = max(s,0.);
-    t1 = min(t,1.);
-    t1 = max(t,0.);
-
-    d1 = P1 + s1*u;
-    d2 = P2 + t1*v;
+    d1 = P1 + s*u;
+    d2 = P2 + t*v;
 
     mydist = norm2(d1 - d2)
     if (mydist.lt.dist) then
@@ -176,7 +159,7 @@ do inp1=1,3
   enddo
 enddo
 
-dist = dist - 2* 0.25!0.2125855
+dist = dist - 2* 0.2125855
 
 !if(myid.eq.0) print *, dist 
 
@@ -200,7 +183,7 @@ implicit none
 real    :: y1(3,3), y2(3,3)
 real    :: r
 
-r = 0.544279548
+r = .544279548
 
 y1 = 0.
 y2 = 0.

@@ -7,11 +7,12 @@
       use local_aux
       use stat_arrays, only: vxvyvz_rms_vol
       implicit none
-      integer :: ns, inp, ntr, nsub
-      integer :: i,j,k
       real,dimension(3,3)     :: AA, AAT
       real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
 
+      integer :: ns, inp, ntr, nsub
+      integer :: i,j,k
+      
 
       beta=dt/ren*0.5d0
 
@@ -44,9 +45,9 @@
 
         call invtr1 
         call invtr2      
-        call invtr3     
+        call invtr3
 
-       do i=1,n1
+        do i=1,n1
            do j = 1,n2
              do k = kstart-1,kend+1
               ax(i,j,k) = 1.
@@ -54,8 +55,7 @@
               az(i,j,k) = 1.
         enddo
         enddo
-        enddo 
-
+        enddo
         call particle
 
         call divg

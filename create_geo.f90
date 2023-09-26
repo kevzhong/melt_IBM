@@ -13,76 +13,76 @@ subroutine setup_particles
   Npx = 1; Npy = 1; Npz = 1
 
   angle = 0.0
-  
-  pos_CM(:,:)=0.5*xlen
-
-!  pos_CM(1,1)=0.4*xlen
-!  pos_CM(1,2)=0.6*xlen
-
-  if(Nparticle.gt.1)then
-  do inp=1,Nparticle
-     if(inp.eq.1)then
+  pos_CM(:,1)=0.5*xlen
+!  pos_CM(3,1)=0.8*zlen
+!  pos_CM(1,2)=0.7*xlen
+!  pos_CM(2:3,:)=0.5*xlen
+!  pos_CM(1,1)=0.3*xlen
+!  if(Nparticle.gt.1)then
+!  do inp=1,Nparticle
+!     if(inp.eq.1)then
    
-     call random_number(x1)
-     call random_number(x2)
-     call random_number(x3)
+!     call random_number(x1)
+!     call random_number(x2)
+!     call random_number(x3)
 
-     pos_CM(1,inp) = x1*xlen
-     pos_CM(2,inp) = x2*ylen
-     pos_CM(3,inp) = x3*zlen
-     else
-     count=inp
+!     pos_CM(1,inp) = x1*xlen
+!     pos_CM(2,inp) = x2*ylen
+!     pos_CM(3,inp) = x3*zlen
+!     else
+!     count=inp
      
-     call random_number(x1)
-     call random_number(x2)
-     call random_number(x3)
+!     call random_number(x1)
+!     call random_number(x2)
+!     call random_number(x3)
 
-     pos_CM(1,count) = x1*xlen
-     pos_CM(2,count) = x2*ylen
-     pos_CM(3,count) = x3*zlen
+!     pos_CM(1,count) = x1*xlen
+!     pos_CM(2,count) = x2*ylen
+!     pos_CM(3,count) = x3*zlen
 !     end if
 
-40 continue
-     do j=1,count
-     if((count.ne.j).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
-                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
-                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2.5))then
+!40 continue
+!     do j=1,count
+!     if((count.ne.j).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
+!                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
+!                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2.5))then
 
-     call random_number(x1)
-     call random_number(x2)
-     call random_number(x3)
+!     call random_number(x1)
+!     call random_number(x2)
+!     call random_number(x3)
 
-     pos_CM(1,count) = x1*xlen
-     pos_CM(2,count) = x2*ylen
-     pos_CM(3,count) = x3*zlen
-     endif
-     enddo
+!     pos_CM(1,count) = x1*xlen
+!     pos_CM(2,count) = x2*ylen
+!     pos_CM(3,count) = x3*zlen
+!     endif
+!     enddo
 
-     do j=1,count
-     if((j.ne.count).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
-                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
-                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2))then
-     go to 40
-     end if
-     enddo
+!     do j=1,count
+!     if((j.ne.count).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
+!                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
+!                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2))then
+!     go to 40
+!     end if
+!     enddo
 
-     end if !inp.ne.1
-     enddo  !
-     end if !Nparticle
+!     end if !inp.ne.1
+!     enddo  !!
+!     end if !Nparticle
 
      do inp=1,Nparticle
      ! Initialise rigid body variables
       call random_number(a)
-      b=a ; c=a
+       b=a ; c=a
       
-!      a=0.0  ; b=0.0 ; c=0.0
+!      a=pi/4  ; b=0.0 ; c=0.0
       quat(1,inp) = cos(0.5*(a))*cos(0.5*(b+c))
       quat(2,inp) = sin(0.5*(a))*cos(0.5*(b-c))
       quat(3,inp) = sin(0.5*(a))*sin(0.5*(b-c))
       quat(4,inp) = cos(0.5*(a))*sin(0.5*(b+c))
 
+
+      omega_b(:,inp) = 0.0
       alpha_b(:,inp) = 0.0
-      omega_b(:,inp) = 0.0 
       omega_dot_b = 0.0
 
       quat_dot = 0.0
@@ -90,9 +90,9 @@ subroutine setup_particles
 
       u_tot_m1 = 0.
       r_x_u_tot_m1 = 0.
-     
-      a_CM      = 0.
+
       vel_CM    = 0.
+      a_CM      = 0.
       u_tot     = 0.
       r_x_u_tot = 0.
 
@@ -138,7 +138,6 @@ end subroutine
 
 subroutine set_xyz
   use param
-  use geom
   use mls_param
   implicit none
   real,dimension(3)  :: om_dCM, pos, vel
@@ -147,9 +146,6 @@ subroutine set_xyz
   real, dimension(2,2) :: Rot
   real :: radius,angle, om,tp
   real ::zmin,zmax
-  real    :: AAT_P(3,3)
-
-  AAT_P = princ_axis_rotm()
 
    do inp = 1,Nparticle
 
@@ -194,11 +190,7 @@ subroutine set_xyz
          omega_s(:,inp) = matmul(AAT,omega_b(:,inp))
          call cross(om_dCM(:), omega_s(:,inp), dxyz_CM_s(:,i,inp))
          vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:) 
-     end do
-     do i=1,maxnv
-         xyzv(:,i,inp)=matmul(AAT_P,xyz0(:,i))
-         xyzv(:,i,inp)= pos_cm(:,inp)+matmul(AAT,xyzv(:,i,inp))
-     end do
+      end do
    end do
 end subroutine
 

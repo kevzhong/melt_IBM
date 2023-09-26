@@ -57,6 +57,38 @@
         return
         end subroutine calculate_area
 !------------------------------------------------------
+        subroutine calculate_normal (tri_nor,nv,nf,xyz,vert_of_face)
+
+        implicit none
+        integer :: nv,nf,v1,v2,v3,i
+        integer, dimension (3,nf) :: vert_of_face
+        real, dimension (3,nf) :: face_normal
+        real,dimension (3,nf) :: tri_nor
+        real, dimension (3,nv) ::xyz
+        real, dimension(3) :: ve1,ve2
+
+        do i=1,nf
+           v1=vert_of_face(1,i)
+           v2=vert_of_face(2,i)
+           v3=vert_of_face(3,i)
+
+           ve1(1:3)=xyz(1:3,v2)-xyz(1:3,v1)
+           ve2(1:3)=xyz(1:3,v3)-xyz(1:3,v1)
+
+           face_normal(1,i)=ve1(2)*ve2(3) - ve1(3)*ve2(2)
+           face_normal(2,i)=ve1(3)*ve2(1) - ve1(1)*ve2(3)
+           face_normal(3,i)=ve1(1)*ve2(2) - ve1(2)*ve2(1)
+
+           tri_nor(1:3,i)=face_normal(1:3,i)/sqrt(sum(face_normal(1:3,i)**2))
+
+        enddo
+
+        return
+        end subroutine calculate_normal
+
+
+!------------------------------------------------------
+
         subroutine calculate_distance(dist,nv,ne,xyz,vert_of_edge)
 
         implicit none

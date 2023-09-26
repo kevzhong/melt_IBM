@@ -32,7 +32,7 @@
         read(15,301) dummy
         read(15,*) n1m,n2m,n3m
         read(15,301) dummy
-        read(15,*) ntst,tframe,tpin,ireset
+        read(15,*) ntst,nsst,tframe,tpin,ireset
         read(15,301) dummy
         read(15,*) nwrit, nread, pread 
         read(15,301) dummy
@@ -55,7 +55,7 @@
         read(15,301) dummy       
         read(15,*) wcon,wscl,dens_ratio
         read(15,301) dummy       
-        read(15,*) gtsfx
+        read(15,*) gtsfx, rad_p
       close(15)
 
 301     format(a4)                
@@ -69,16 +69,24 @@
       n1mh = n1m/2 + 1
       n2mh = n2m/2 + 1
 
-
+      nsst=3
+      if(nsst.eq.3)then
       gam(1)=8.d0/15.d0
       gam(2)=5.d0/12.d0
       gam(3)=3.d0/4.d0
       rom(1)=0.d0
       rom(2)=-17.d0/60.d0
       rom(3)=-5.d0/12.d0
+      endif
+      if(nsst.eq.1)then
+      gam(1)=3./2.
+      gam(2)=0.d0
+      gam(3)=0.d0
+      rom(1)=-1./2.
+      rom(2)=0.d0
+      rom(3)=0.d0
+      endif
 
-
-      nsst = 3
 
       do ns=1,nsst
         alm(ns)=(gam(ns)+rom(ns))
@@ -94,6 +102,9 @@
       write(6,112)xlen/zlen,ylen/zlen
   112 format(//,20x,'H I T',//,10x, &
        '3D Cube with aspect-ratio:  L1/L3 = ',f5.2,'   L2/L3 = ',f5.2)
+      write(6,120)nsst
+  120 format(/,5x, &
+       'nsst', i7,/)    
       write(6,202) ren
   202 format(/,5x,'Parameters: ',' Re=',e10.3)
       if(idtv.eq.1) then

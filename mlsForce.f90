@@ -5,11 +5,11 @@ USE mpih
 use mpi_param
 USE mls_local
 implicit none
-real,dimension(4) :: ptx
+real,dimension(4,4) :: ptx
 real,dimension(3) :: tsur_xyz,fsur_xyz,pos_vec, pos
 real              :: angle
 integer :: inp,ntr
-real :: force(3,Nparticle), torque(3,Nparticle)
+real :: force(3,Nparticle), torque(3,Nparticle),force_tau(3,Nparticle)
 
 force = 0.
 torque = 0.
@@ -25,6 +25,7 @@ do inp = 1, Nparticle
          call forc2(ntr,inp,ptxAB_q2(1:nel,ntr,inp),vel_tri(2,ntr,inp),pos_vec,torque(1:3,inp),force(2,inp))
          call forc3(ntr,inp,ptxAB_q3(1:nel,ntr,inp),vel_tri(3,ntr,inp),pos_vec,torque(1:3,inp),force(3,inp))
 
+
       endif
 
  enddo
@@ -35,9 +36,6 @@ do inp=1,Nparticle
    call mpi_globalsum_double_arr(torque(1:3,inp),3)
    fpxyz(:,inp) = fpxyz(:,inp) + force(:,inp)
    ftxyz(:,inp) = ftxyz(:,inp) + torque(:,inp)
-   enddo
-!   if(ismaster)then
-!   write(*,*)fpxyz(:,1)
-!   endif
-  
+enddo
+
 end subroutine mlsForce

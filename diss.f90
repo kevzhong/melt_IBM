@@ -14,15 +14,11 @@
       use local_arrays,only: vx,vy,vz
       use stat_arrays
       use mls_param
-      use mpi_param
+      use mpi_param, only: kstart,kend
 
       implicit none
       integer :: ic,jc,kc
       integer :: im,ip,jm,jp,kp,km
-      real    :: ti(2), tin(3)
-      real    :: dmax,tpc,texit
-      integer :: errorcode
-
       real :: eta,re_lam
       real :: h11,h12,h13,h21,h22,h23,h31,h32,h33
       real :: nute, nu
@@ -34,7 +30,11 @@
       udx1=dx1
       udx2=dx2
       udx3=dx3
-      
+
+      call update_both_ghosts(n1,n2,vx,kstart,kend)
+      call update_both_ghosts(n1,n2,vy,kstart,kend)
+      call update_both_ghosts(n1,n2,vz,kstart,kend)
+
 !================================================================
 !      Dissipation rates
 !================================================================
@@ -56,7 +56,7 @@
        im= imv(ic)
        ip= ipv(ic)
 
-       if(imlsfor.eq.1) then
+!       if(imlsfor.eq.1) then
        if((ax(ip,jc,kc).eq.1).and.(ax(ic,jc,kc).eq.1).and. &
           (ax(ic,jp,kc).eq.1).and.(ax(ip,jp,kc).eq.1).and. &
           (ax(ic,jm,kc).eq.1).and.(ax(ip,jm,kc).eq.1).and. &
@@ -84,40 +84,21 @@
        !---
        h21=( (vy(ip,jc,kc)+vy(ip,jp,kc))- &
              (vy(im,jc,kc)+vy(im,jp,kc)) )*0.25d0*udx1
+
        h22=( vy(ic,jp,kc)-vy(ic,jc,kc) )*udx2
+
        h23=( (vy(ic,jc,kp)+vy(ic,jp,kp))- &
              (vy(ic,jc,km)+vy(ic,jp,km)) )*0.25d0*udx3
 
        !---
        h31=( (vz(ip,jc,kc)+vz(ip,jc,kp))- &
              (vz(im,jc,kc)+vz(im,jc,kp)) )*0.25d0*udx1
+
        h32=( (vz(ic,jp,kc)+vz(ic,jp,kp))- &
              (vz(ic,jm,kc)+vz(ic,jm,kp)) )*0.25d0*udx2
+
        h33=( vz(ic,jc,kp)-vz(ic,jc,kc) )*udx3
-       end if
-       else
-       h11=( vx(ip,jc,kc)-vx(ic,jc,kc) )*udx1
-
-       h12=( (vx(ic,jp,kc)+vx(ip,jp,kc))- &
-             (vx(ic,jm,kc)+vx(ip,jm,kc)) )*0.25d0*udx2
-
-       h13=( (vx(ic,jc,kp)+vx(ip,jc,kp))- &
-               (vx(ic,jc,km)+vx(ip,jc,km)) )*0.25d0*udx3
-
-       !---
-       h21=( (vy(ip,jc,kc)+vy(ip,jp,kc))- &
-             (vy(im,jc,kc)+vy(im,jp,kc)) )*0.25d0*udx1
-       h22=( vy(ic,jp,kc)-vy(ic,jc,kc) )*udx2
-       h23=( (vy(ic,jc,kp)+vy(ic,jp,kp))- &
-             (vy(ic,jc,km)+vy(ic,jp,km)) )*0.25d0*udx3
-
-       !---
-       h31=( (vz(ip,jc,kc)+vz(ip,jc,kp))- &
-             (vz(im,jc,kc)+vz(im,jc,kp)) )*0.25d0*udx1
-       h32=( (vz(ic,jp,kc)+vz(ic,jp,kp))- &
-             (vz(ic,jm,kc)+vz(ic,jm,kp)) )*0.25d0*udx2
-       h33=( vz(ic,jc,kp)-vz(ic,jc,kc) )*udx3
-       end if
+      end if
 
        dissipte = 2.0*(h11**2+h22**2+h33**2)+ &
                (h21+h12)**2+ (h31+h13)**2+ (h32+h23)**2
@@ -127,11 +108,12 @@
        end do
        end do
        end do
-
-
+     
+    !  dx1=1/dx1
+      
       call MpiAllSumRealScalar(nute)
       nu=1/ren
-      nute = nute/ren/float(n1m*n2m*n3m)
+      nute =nu*nute/((dx1*dx2*dx3)*(xlen*ylen*zlen))
       eta = (nu**3/nute)**(0.25)
       keta = float(n1m/2)*eta*2*pi
       re_lam = sqrt(15.d0*(vxvyvz_rms_vol/sqrt(3.d0))**4/(nute*nu))
@@ -142,11 +124,6 @@
       write(92,'(100E15.7)') time,dt,nute,keta,eta,re_lam!,nu,ren
       close(92)
       end if
-
-      !if(nute.ge.9)then
-      !errorcode = 1
-      !call QuitRoutine(tin,.true.,errorcode)
-      !end if 
    
       return
       end

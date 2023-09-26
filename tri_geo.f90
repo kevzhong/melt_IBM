@@ -37,6 +37,7 @@ subroutine tri_geo
         call calculate_distance(dist(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:))
         call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp))
         call calculate_volume(Volume(inp),maxnv,maxnf,xyz0(:,:),vert_of_face(:,:),vol(:,inp))
+  !      call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:))
 
   end do
 

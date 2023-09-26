@@ -61,10 +61,10 @@
           -((vz(ic,jc,kc)+vz(ic,jc,km)) &
            *(vz(ic,jc,kc)+vz(ic,jc,km))))*udx3
  
-
-      qcap(ic,jc,kc)=-(h31+h32+h33)+az(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
-                      (1-az(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
-
+      if(az(ic,jc,kc).eq.1.0)then
+      qcap(ic,jc,kc)=-(h31+h32+h33)+az(ic,jc,kc)*forcz(ic,jc,kc)/zlen!+   &
+                     ! (1-az(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/zlen
+      endif
       enddo
       enddo
       enddo

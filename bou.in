@@ -1,18 +1,18 @@
- N1M           N2M           N3M
- 256           256           256
- NTST        TFRAME         TPIN      IRESET 
- 2e6          0.01           5e-3        0
+ N1M           N2M           N3M 
+ 256           256           256          
+NTST   NSST    TFRAME    TPIN      IRESET 
+ 2e6     3       0.1      5e-3       0
 NWRIT         NREAD         PREAD 
-  1             0           0
+  1             0             0
  XLEN         YLEN          ZLEN
- 10.0          10.0          10.0
+ 10.0          10.0           10.0
  REN           DT           RESID
- 100.         1e-3          1.e-2
+ 100          1e-2          1.e-2
  TSTA        STAREAD        CFLMAX
- 0             0             1.2
+ 0            0              1.7
  TL          EPSSTAR         KFMAX
- 4.24e-2      0.290625         2.3
+ 8.48e1      5.8125e-2        2.3
  IDTV         DTMAX          CFLLIM
-   1           5e-2           1.3
- FORCING
-  1
+   1           5e-2           1.0
+FORCING
+   1 

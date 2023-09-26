@@ -33,14 +33,11 @@ implicit none
   allocate(dxyz_CM_s(3,maxnf,Nparticle))
 
   allocate(ptxAB_q1(nel,maxnf,Nparticle),ptxAB_q2(nel,maxnf,Nparticle),ptxAB_q3(nel,maxnf,Nparticle))
-  allocate(ptxAB_pr(1,nel,maxnf,Nparticle))
-
-! allocate(ptxAB_q1_2(4,nel,maxnf,Nparticle),ptxAB_q2_2(4,nel,maxnf,Nparticle),ptxAB_q3_2(4,nel,maxnf,Nparticle))
 
   !-- particle
   allocate( fpxyz(3, Nparticle),     ftxyz(3, Nparticle) )
-  allocate( pos_CM(3, Nparticle),    vel_CM(3, Nparticle),  a_CM(3, Nparticle) )
-  allocate( omega_b(3, Nparticle),   omega_dot_b(3, Nparticle), alpha_b(3, Nparticle))
+  allocate( pos_CM(3, Nparticle),    vel_CM(3, Nparticle) )
+  allocate( omega_b(3, Nparticle),   omega_dot_b(3, Nparticle) )
   allocate( u_tot(3, Nparticle),     u_tot_m1(3, Nparticle) )
   allocate( r_x_u_tot(3, Nparticle), r_x_u_tot_m1(3, Nparticle) )
   allocate( omega_s(3, Nparticle) )

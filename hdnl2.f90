@@ -61,11 +61,10 @@
           )*udx3
 
 !      dph(ic,jc,kc)=-(h21+h22+h23)
-
-
-      dph(ic,jc,kc)=-(h21+h22+h23)+ay(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
-                   (1-ay(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
-
+      if(ay(ic,jc,kc).eq.1.0)then
+      dph(ic,jc,kc)=-(h21+h22+h23)+ay(ic,jc,kc)*forcy(ic,jc,kc)/ylen!+   &
+                 !  (1-ay(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/ylen
+      endif
       enddo
       enddo
       enddo

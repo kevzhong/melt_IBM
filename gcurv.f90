@@ -2,18 +2,15 @@ subroutine gcurv
 use mpih
 use mpi_param
 use param
-use local_arrays, only: vy,vz,pr,vx
-use local_aux, only: vorx,vory,vorz
+use local_arrays
+use local_aux
 use mls_param
+use mls_local
+
 use coll_mod
 implicit none
 real    :: ti(2), tin(3)
-real    :: dmax,tpc,texit
-integer :: i,j,coll_num,p_old1,p_old2
-real    :: p1(3),p2(3),dij(3),dista,dc,x1(3),x2(3)
-real    :: AA1(3,3)
-real    :: AA2(3,3)
-integer :: errorcode
+real    :: dmax,tpc
 character(70) namfile
   call mpi_workdistribution
   call InitArrays
@@ -133,121 +130,27 @@ character(70) namfile
 
                              
 
- !       call spec
+ 
           if(mod(time,tframe).lt.dt) then
            call findCMindices
-!           call vorticity
-!           call mkmov_hdf_ycut
-!           call mkmov_hdf_xcut
-!           call circulation_y
-!           call circulation_z
- !             if (imlsfor.eq.1) then
-!              call writePind
- !             call writePPpartpos
+           call mkmov_hdf_ycut
+!              call writePind            
+!              call writePPpartpos
 !              call writePPquat
- !             call write_tail_head
+!              call write_tail_head
 !              call write_shortdist
-!              endif
-          end if
-
-       if((time.gt.tsta).and.(mod(ntime,5).eq.0)) then   !make it run every 4/5 time steps
-         call vorticity
-         call UpdateStats
-         if(forcing.eq.1)then
+!              call mpi_write_field
+         endif
            call CalcInjection
            call CalcDissipation
-           call balance
-         endif
-        endif
-              call write_shortdist
-              call write_partvel
-              call write_partrot
-              call calc_helicity
-!              call collision_stat
-              call writePPpartpos
-              call writePPquat
-              call write_partacm
-              call write_partalp
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~collision_stat~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if(ntime.eq.1)then
-      coll_num=0
-      else
-      coll_num=coll_num
-      p_old1=p_old1
-      p_old2=p_old2
-      endif
-      !dc = 1./16.
-      dc=6*xlen/n1m
 
-      do i = 1,Nparticle
-        do j = i+1,Nparticle
-
-         call closest_distance(i,j,p1,p2,x1,x2,dista,AA1,AA2)
-         
-         if((dista.lt.dc).and.(p_old1 .ne. i).and.(p_old1 .ne. j))then
-            coll_num=coll_num+1
-            if(ismaster)then
-            namfile='flowmov/coll_stat.txt'
-            open(unit=92,file=namfile, Access='append', Status='unknown')
-            write(92,'(1E15.7, 3I10.1, 200E15.7)') time, coll_num, i, j, x1(1), x1(2), x1(3), x2(1), x2(2), x2(3), quat(:,i), quat(:,j)
-            close(92)
-            endif
-            p_old1=i
-            p_old2=j
-         endif
-        end do
-      end do
-      coll_num=coll_num
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~collision_stat~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-      time=time+dt
-
-!     if((ntime.eq.1).or.(mod(time,tpin).lt.dt)) then 
-
-!      call vmaxv !Make sure velocities are not exceeding maximum
-
-     !  call cfl !Recalculate CFL 
-     !  if(idtv.ne.1) cflm=cflm*dt 
-
-     !  call divgck(dmax) !Make sure velocity is solenoidal
-
-!     end if
-!      tpc=0.001
-!      if(mod(time,tpc).lt.dt) then
-!      if(imlsfor.eq.1) then
-!      call mpi_write_field
-!      call mkmov_hdf_ycut
-!      call writePPpartpos
-!      call writePPquat
-!      else
-!      call mpi_write_field_noParts
-!      end if
-!      end if
-       tpc=10
-       if((ntime.eq.ntst).or.(mod(time,tpc).lt.dt)) then          !to perform when needed not only at the end
-!      call WriteStats
-      call mpi_write_field
-      call write_tecplot_geom
-      call mpi_write_continua
-      call WriteRandForcCoef
-      call continua_particle
-      call continua_collision
-      end if
-!     enddo
-
-!      texit=108
-      if(mod(time,texit).lt.dt)then
-!       if(mod(time,tframe).lt.dt)then
+       time=time+dt
+      if((ntime.eq.ntst).or.(mod(ntime,10).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field
       call WriteRandForcCoef
       call continua_particle
       call continua_collision
-
-!      errorcode = 1
-!      call QuitRoutine(tin,.true.,errorcode)
-
-      end if
-enddo
+     end if
+      enddo
 end

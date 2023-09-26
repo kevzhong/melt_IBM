@@ -26,15 +26,15 @@ end
 function loopoverbeams(x0,x_cm,AA,inp) result(phi)
 implicit none
 integer :: i,inp
-real    :: mindist,t,d,r
-real    :: y1(3,3), y2(3,3), AA(3,3), AAT(3,3), AAT_P(3,3)
+real    :: mindist,t,d,r,d1
+real    :: y1(3), y2(3,3), AA(3,3), AAT(3,3), AAT_P(3,3)
 real, dimension(3) :: x0,x1,x2,x_cm
 real    :: phi
 
 r = .544279548
 
 y1 = 0.
-y2 = 0.
+!y2 = 0.
 !chiral
 ! particle 1
 !y1(1,1) = -r
@@ -42,27 +42,11 @@ y2 = 0.
 ! particle 2
 !y1(1,2) = -r
 !y2(1,2) = -r
-!y2(2,2) = r
-!y2(3,2) = 0.942719830656624
+!y2(2,2) = 2.*r
 ! particle 3
 !y1(1,3) = r
 !y2(1,3) = r
-!y2(2,3) = r
-!y2(3,3) = -0.942719830656624
-
-!chiral
-! particle 1
-y1(1,1) = -r
-y2(1,1) =  r
-! particle 2
-y1(1,2) = -r
-y2(1,2) = -r
-y2(2,2) = 2.*r
-! particle 3
-y1(1,3) = r
-y2(1,3) = r
-y2(3,3) = -2.*r
-
+!y2(3,3) = -2.*r
 
 !achiral
 ! particle 1
@@ -78,40 +62,30 @@ y2(3,3) = -2.*r
 !y2(2,3) = 2.*r
 
 ! moviing centroid such that volumetric centre is at (0,0,0)
-y1(2,:) = y1(2,:) - 0.2125855
-y2(2,:) = y2(2,:) - 0.2125855
+!y1(1) = y1(1) -
+!y1(2) = y1(2) -
+!y1(3) = y1(3) -
 
-y1(3,:) = y1(3,:) + 0.2125855
-y2(3,:) = y2(3,:) + 0.2125855
+!y2(2,:) = y2(2,:) - 0.2125855
 
+!y1(3,:) = y1(3,:) + 0.2125855
+!y2(3,:) = y2(3,:) + 0.2125855
 
+!x1=0.
 
 mindist = 1.e6
 
 AAT   = transpose(AA)
 AAT_P = princ_axis_rotm()
 
-do i = 1,3  
-  x1 = matmul(AAT_P, y1(:,i))
-  x2 = matmul(AAT_P, y2(:,i))
-  x1 = matmul(AAT,x1) + x_cm 
-  x2 = matmul(AAT,x2) + x_cm 
+   x1 = matmul(AAT_P, y1)
+   x1 =  matmul(AAT,x1) + x_cm
 
-  t = step(x0,x1,x2)
-
-  if (t.ge.0 .and. t.le.1) then
-   d = shortdist(x0,x1,x2)
-   mindist = min(d, mindist)
-  endif
   ! spherical cap
     d = norm2(x1-x0)
     mindist = min(d, mindist)
-    d = norm2(x2-x0)
-    mindist = min(d, mindist)
 
-enddo
-
-  phi = 1 - mindist/(0.4*r) 
+  phi = 1 - mindist/(rad_p)
 
 
 end
@@ -140,30 +114,17 @@ function princ_axis_rotm() result(AAT)
  implicit none
  real :: a,b,c,q(4),AAT(3,3)
 !chiral
-!  AAT(1,1)=  -0.719319343
-!  AAT(1,2)=  -0.0476315399
-!  AAT(1,3)=  -0.693044673
+  AAT(1,1)=  0.714878366
+  AAT(1,2)=  0.699231582 
+  AAT(1,3)= -0.00491090121
 
-!  AAT(2,1)=  -0.0324121773
-!  AAT(2,2)=   0.998861272
-!  AAT(2,3)=  -0.0350087021
+  AAT(2,1)= -0.699235701
+  AAT(2,2)=  0.714890348
+  AAT(2,3)=  0.00110640384
 
-!  AAT(3,1)=   0.693923002
-!  AAT(3,2)=  -0.00271934974
-!  AAT(3,3)=  -0.720044076
-
-!chiral
-AAT(1,1)= -0.773471492617178
-AAT(1,2)=  0.448186260089139
-AAT(1,3)=  0.448186263037887
-
-AAT(2,1)=  0.000000012288949
-AAT(2,2)= -0.707106772908658
-AAT(2,3)=  0.707106789464437
-
-AAT(3,1)= -0.633831089572415
-AAT(3,2)= -0.546926949394537
-AAT(3,3)= -0.546926925573637
+  AAT(3,1)= -0.00428438838
+  AAT(3,2)= -0.00264293329
+  AAT(3,3)= -0.999987329
        
 !achiral
 !AAT(1,1)= -0.773471492617178

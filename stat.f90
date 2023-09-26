@@ -6,7 +6,7 @@
       use stat_arrays
       use mpih
       implicit none
-      real :: vz_rms_vol,vy_rms_vol,vx_rms_vol
+      real :: vz_rms_vol,vy_rms_vol,vx_rms_vol,vx_m,vy_m,vz_m
       real :: vorx_me,vory_me,vorz_me,vorx_rms_vol,vory_rms_vol,vorz_rms_vol
       real :: vorx_mes,vory_mes,vorz_mes,vorx_rms_svol,vory_rms_svol,vorz_rms_svol
 
@@ -26,18 +26,18 @@
       vory_me = 0.0d0
       vorz_me = 0.0d0
 
-      vx_me = 0.0d0
-      vy_me = 0.0d0
-      vz_me = 0.0d0
+      vx_m = 0.0d0
+      vy_m = 0.0d0
+      vz_m = 0.0d0
       vorx_rms_vol = 0.0d0
       vory_rms_vol = 0.0d0
       vorz_rms_vol = 0.0d0
       do k=kstart,kend
          do j=1,n2m
             do i=1,n1m
-               vx_me(i,j,k) = vx_me(i,j,k) + vx(i,j,k)
-               vy_me(i,j,k) = vy_me(i,j,k) + vy(i,j,k)
-               vz_me(i,j,k) = vz_me(i,j,k) + vz(i,j,k)
+               vx_m = vx_m + vx(i,j,k)*ax(i,j,k)
+               vy_m = vy_m + vy(i,j,k)*ay(i,j,k)
+               vz_m = vz_m + vz(i,j,k)*az(i,j,k)
                pr_me(i,j,k) = pr_me(i,j,k) + pr(i,j,k)
                vorx_me = vorx_me + vorx(i,j,k)*ax(i,j,k)
                vory_me = vory_me + vory(i,j,k)*ay(i,j,k)
@@ -67,9 +67,9 @@
       call MpiAllSumRealScalar(vy_rms_vol)
       call MpiAllSumRealScalar(vz_rms_vol)
       call MpiAllSumRealScalar(vxvyvz_rms_vol)
-      call MpiAllSumRealScalar(vx_me)
-      call MpiAllSumRealScalar(vy_me)
-      call MpiAllSumRealScalar(vz_me)
+      call MpiAllSumRealScalar(vx_m)
+      call MpiAllSumRealScalar(vy_m)
+      call MpiAllSumRealScalar(vz_m)
       call MpiAllSumRealScalar(vorx_me)
       call MpiAllSumRealScalar(vory_me)
       call MpiAllSumRealScalar(vorz_me)
@@ -78,9 +78,9 @@
       call MpiAllSumRealScalar(vorz_rms_vol)
 
 
-      vx_me=vx_me/float(n1m*n2m*n3m)
-      vy_me=vy_me/float(n1m*n2m*n3m)
-      vz_me=vz_me/float(n1m*n2m*n3m)
+      vx_m=vx_m/float(n1m*n2m*n3m)
+      vy_m=vy_m/float(n1m*n2m*n3m)
+      vz_m=vz_m/float(n1m*n2m*n3m)
 
       vorx_me=vorx_me/float(n1m*n2m*n3m)
       vory_me=vory_me/float(n1m*n2m*n3m)
@@ -97,7 +97,7 @@
         
        if(ismaster) then
        open(unit=43,file='flowmov/rms.txt',Access = 'append', Status='unknown')
-       write(43,768) time,vx_rms_vol,vy_rms_vol,vz_rms_vol, vxvyvz_rms_vol
+       write(43,768) time,vx_m,vy_m,vz_m,vx_rms_vol,vy_rms_vol,vz_rms_vol, vxvyvz_rms_vol
        close(43)
        open(unit=43,file='flowmov/vor_rms.txt',Access = 'append', Status='unknown')
        write(43,768) time,vorx_me,vory_me,vorz_me,vorx_rms_vol,vory_rms_vol,vorz_rms_vol
@@ -129,15 +129,6 @@
          end do
       end if
       end do
-
-
-      call MpiAllSumRealScalar(vorx_mes)
-      call MpiAllSumRealScalar(vory_mes)
-      call MpiAllSumRealScalar(vorz_mes)
-      call MpiAllSumRealScalar(vorx_rms_svol)
-      call MpiAllSumRealScalar(vory_rms_svol)
-      call MpiAllSumRealScalar(vorz_rms_svol)
-
       vorx_mes=vorx_mes/float(n1m/2*n2m/2*n3m/2)
       vory_mes=vory_mes/float(n1m/2*n2m/2*n3m/2)
       vorz_mes=vorz_mes/float(n1m/2*n2m/2*n3m/2)
