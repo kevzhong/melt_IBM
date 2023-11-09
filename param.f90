@@ -49,7 +49,7 @@
         integer  :: iaxsy
         real :: cflm 
         real :: keta
-        real :: ren, pec
+        real :: ren, prandtl, pec
         real :: pi
         real :: al,ga,ro
         real :: beta
@@ -120,12 +120,12 @@
       module local_aux
        use param
        implicit none
-       real, allocatable, dimension(:,:,:) :: vxc, vyc, vzc
-       real, allocatable, dimension(:,:,:) :: matderxc, matderx
-       real, allocatable, dimension(:,:,:) :: matderyc, matdery
-       real, allocatable, dimension(:,:,:) :: matderzc, matderz
+       real, allocatable, dimension(:,:,:) :: vxc, vyc, vzc !KZ unused
+       real, allocatable, dimension(:,:,:) :: matderxc, matderx !KZ unused
+       real, allocatable, dimension(:,:,:) :: matderyc, matdery !KZ unused
+       real, allocatable, dimension(:,:,:) :: matderzc, matderz !KZ unused
        real,allocatable,dimension(:,:,:) :: vorx, vory, vorz
-       real,allocatable,dimension(:,:,:) :: vxo, vyo, vzo
+       real,allocatable,dimension(:,:,:) :: vxo, vyo, vzo !KZ unused
       end module local_aux
 
       module mls_param

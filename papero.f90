@@ -38,7 +38,7 @@
         read(15,301) dummy
         read(15,*) xlen,ylen,zlen
         read(15,301) dummy
-        read(15,*) ren,dt,resid
+        read(15,*) ren,prandtl,dt,resid
         read(15,301) dummy
         read(15,*) tsta,starea,cflmax
         read(15,301) dummy
@@ -105,8 +105,8 @@
       write(6,120)nsst
   120 format(/,5x, &
        'nsst', i7,/)    
-      write(6,202) ren
-  202 format(/,5x,'Parameters: ',' Re=',e10.3)
+      write(6,202) ren, prandtl
+  202 format(/,5x,'Parameters: ',' Re=',e10.3,'       Prandtl = ',f5.2)
       if(idtv.eq.1) then
          write(6,204) cflmax
   204 format(/,5x,'Variable dt and fixed cfl= ', &

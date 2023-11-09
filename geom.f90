@@ -15,7 +15,7 @@ real :: r, phi
    elseif (r.le. 0.5 .and. r.ge.0.0) then
      phi = 1.0 + sqrt(-3.0*r**2 + 1.0)
      phi = phi / 3.0
-   else
+   else 
      phi = 0.0
    endif
 

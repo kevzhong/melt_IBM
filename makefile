@@ -4,12 +4,12 @@ FC = h5pfc -r8 -O3 -fpp -module $(OBJDIR)# -traceback  -check bounds -fpe0
 #uncomment the following 2 lines for discoverer
 #FC+=${FFTW3_FFLAGS}
 #LINKS = -lz -lhdf5_fortran -lhdf5 -qmkl=sequential#-mkl=sequential
-#Uncomment the following lines for Snellius
-LINKS = -lfftw3  -lz -lhdf5_fortran -lhdf5 -mkl=sequential
+#Uncomment the following lines for Snellius and personal machine
+LINKS = -lfftw3 -lz -lhdf5_fortran -lhdf5 -qmkl=sequential
+#export HDF5_FC=mpiifort #KZ: specify which Fortran compiler to use (for personal machine)
 
 
-
-PROGRAM = boutnp
+PROGRAM = a.out
 
 FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           hdnl1.f90 hdnl2.f90 hdnl3.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
