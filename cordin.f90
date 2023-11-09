@@ -60,6 +60,7 @@
       call AllocateReal1DArray(ym,-n2m,2*n2-1)
       call AllocateReal1DArray(zm,-n3m,2*n3-1)
 
+      ! Inverse of grid spacings
       dx1=real(n1m)/xlen
       dx2=real(n2m)/ylen
       dx3=real(n3m)/zlen
