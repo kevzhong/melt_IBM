@@ -14,6 +14,7 @@
       call AllocateReal3DArray(vx,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vy,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vz,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      call AllocateReal3DArray(temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(pr,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &

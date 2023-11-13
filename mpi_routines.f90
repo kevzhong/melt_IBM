@@ -321,7 +321,8 @@ end subroutine mpi_globalsum_double_var
       if(allocated(vx)) deallocate(vx)
       if(allocated(vy)) deallocate(vy)
       if(allocated(vz)) deallocate(vz)
-      
+      if(allocated(temp)) deallocate(temp)
+
       if(allocated(qcap)) deallocate(qcap)
       
       if(allocated(pr)) deallocate(pr)

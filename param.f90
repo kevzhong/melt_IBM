@@ -74,6 +74,7 @@
       use param
         implicit none
         real,allocatable,dimension(:,:,:) :: vx,vy,vz
+        real,allocatable,dimension(:,:,:) :: temp
         real,allocatable,dimension(:,:,:) :: qbuf,forcx,forcy,forcz
         real,allocatable,dimension(:,:,:) :: pr,rhs
         real,allocatable,dimension(:,:,:) :: ru1,ru2,ru3
