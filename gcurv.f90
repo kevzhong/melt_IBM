@@ -62,6 +62,7 @@ character(70) namfile
        call update_both_ghosts(n1,n2,vx,kstart,kend)
        call update_both_ghosts(n1,n2,vy,kstart,kend)
        call update_both_ghosts(n1,n2,vz,kstart,kend)
+       call update_both_ghosts(n1,n2,temp,kstart,kend)
 
        call cfl 
 
@@ -131,7 +132,7 @@ character(70) namfile
                              
 
  
-          if(mod(time,tframe).lt.dt) then
+          if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            call findCMindices
            call mkmov_hdf_ycut
 !              call writePind            

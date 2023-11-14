@@ -39,13 +39,14 @@
         call convex_hull_q32(AA,inp)
         enddo
 
-        call hdnl1
-        call hdnl2
-        call hdnl3
+        !call hdnl1
+        !call hdnl2
+        !call hdnl3
 
-        call invtr1 
-        call invtr2      
-        call invtr3
+        !call invtr1 
+        !call invtr2      
+        !call invtr3
+        call invtrte
 
         do i=1,n1
            do j = 1,n2
@@ -58,18 +59,19 @@
         enddo
         call particle
 
-        call divg
-        call phcalc 
+        !call divg
+        !call phcalc 
 
-        call update_both_ghosts(n1,n2+1,dph,kstart,kend)
+        !call update_both_ghosts(n1,n2+1,dph,kstart,kend)
         
-        call updvp  ! SOLENOIDAL VEL FIELD
-        call prcalc  ! PRESSURE FIELD
+        !call updvp  ! SOLENOIDAL VEL FIELD
+        !call prcalc  ! PRESSURE FIELD
 
-        call update_both_ghosts(n1,n2,vx,kstart,kend)
-        call update_both_ghosts(n1,n2,vy,kstart,kend)
-        call update_both_ghosts(n1,n2,vz,kstart,kend)
-        call update_both_ghosts(n1,n2,pr,kstart,kend)
+        !call update_both_ghosts(n1,n2,vx,kstart,kend)
+        !call update_both_ghosts(n1,n2,vy,kstart,kend)
+        !call update_both_ghosts(n1,n2,vz,kstart,kend)
+        !call update_both_ghosts(n1,n2,pr,kstart,kend)
+        call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 !     ======================================================
 !     End pressure correction

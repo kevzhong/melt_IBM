@@ -52,7 +52,7 @@
         real :: ren, prandtl, pec
         real :: pi
         real :: al,ga,ro
-        real :: beta
+        real :: beta, betatemp
         real :: qqmax,qqtot
         real :: re
         integer :: ntime
