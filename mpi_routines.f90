@@ -358,6 +358,7 @@ end subroutine mpi_globalsum_double_var
       if(allocated(vz_rms)) deallocate(vz_rms)
       if(allocated(pr_rms)) deallocate(pr_rms)
       if(allocated(pr_me)) deallocate(pr_me)
+
     
       end subroutine mem_dealloc
 !================================================

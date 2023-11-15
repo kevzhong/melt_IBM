@@ -22,7 +22,7 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
 
 FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findindices.f90      \
          	forc1.f90 forc2.f90 forc3.f90 forctemp.f90 mlsForce.f90 mlsWeight.f90 partaux.f90 \
-          initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 cutvol.f90
+          initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 cutvol.f90
 
 MFILES = param.f90 geom.f90 coll.f90
 OBJDIR = obj

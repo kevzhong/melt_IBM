@@ -11,15 +11,18 @@
       implicit none
       integer :: j,k,kc,i
 
+      !Solution arrays, u,v,w, temperature, pressure
       call AllocateReal3DArray(vx,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vy,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vz,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(pr,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
+      ! Auxilary fractional-step pseudo-pressure
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &
           kstart-lvlhalo,kend+lvlhalo)
 
+     ! Vorticity
       call AllocateReal3DArray(vorx,1,n1,1,n2,  &
            kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vory,1,n1,1,n2, &
@@ -27,6 +30,7 @@
       call AllocateReal3DArray(vorz,1,n1,1,n2,  &
            kstart-lvlhalo,kend+lvlhalo)
 
+     !HIT forcing
       call AllocateReal3DArray(forcx,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(forcy,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(forcz,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
@@ -58,4 +62,6 @@
       call AllocateReal3DArray(for_xc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_yc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_zc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      call AllocateReal3DArray(for_temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+
       end   
