@@ -266,3 +266,87 @@ if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
   call DGEMM('N','N',1,nel,4,1.0d0,ptxA,1,B   ,4,0.0d0,ptxAB,1) 
 endif
 end
+
+subroutine wghttemp(ntr,inp,pos,ptx,ptxAB)
+  USE param
+  USE mls_param
+  USE mpi_param, only: kstart, kend
+  implicit none
+  real,dimension(4) :: pxk,ptx,ptxA
+  real,dimension(3) :: pos,norp,Wt
+  real,dimension(4,4) :: pinvA,invA
+  real,dimension(4,nel) :: B
+  real,dimension(nel) :: ptxAB(nel)
+  real :: Wtx, Wt23
+  integer :: inp,ntr,inw,i,j,k,k1
+  integer, dimension(3) :: pind_i, pind_o
+
+  !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
+
+  
+  if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
+  
+    !-------------FORCING FUNCTION------------------------
+    ! volume of a face with a specific marker - thickness taken as average of grid spacing
+  
+    !WGHT1
+    pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1
+    pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1
+  ! pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+  
+    k1  = floor(pos(3)*dx3) + 1
+    pind_i(3)=k1-1
+    pind_o(3)=k1+1
+  
+    pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
+    inw = 1
+  
+  
+    ! spline weights for all three components
+    do k=pind_i(3), pind_o(3)
+  
+       norp(3)=abs(zm(k)-pos(3))*alph_dx_invwcon
+       Wt(3)=exp(-(norp(3))**2)
+  
+     do j=pind_i(2), pind_o(2)
+  
+        norp(2)=abs(ym(j)-pos(2))*alph_dx_invwcon
+        Wt(2)=exp(-(norp(2))**2)
+  
+        Wt23 = Wt(2)*Wt(3)
+  
+      do i=pind_i(1), pind_o(1)
+  
+          norp(1)=abs(xm(i)-pos(1))*alph_dx_invwcon
+          Wt(1)=exp(-(norp(1))**2)
+  
+          Wtx = Wt(1)*Wt23
+  
+          pxk(1)=1.0d0
+          pxk(2)=xm(i)
+          pxk(3)=ym(j)
+          pxk(4)=zm(k)
+  
+          call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
+          B(1:4,inw)=Wtx*pxk(1:4)
+  
+          inw = inw + 1
+      enddo
+     enddo
+    enddo
+  
+    ! calling routine to compute inverse
+    call inverseLU(pinvA,invA)
+          
+    !------------------------------------------------------
+    ! matrix multiplications for final interpolation
+    ! DGEMM(transA,transB,m,n,k,alpha,A,LDA,b,LDB,beta,c,LDC)
+    ! C = alpha * A * B + beta * C
+    !---------------Shape function calculation---------------
+    call DGEMM('N','N',1,4  ,4,1.0d0,ptx ,1,invA,4,0.0d0,ptxA ,1) 
+    call DGEMM('N','N',1,nel,4,1.0d0,ptxA,1,B   ,4,0.0d0,ptxAB,1) 
+  
+  
+  
+  endif
+  end

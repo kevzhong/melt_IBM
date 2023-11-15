@@ -33,7 +33,9 @@ implicit none
   allocate(dxyz_CM_s(3,maxnf,Nparticle))
 
   allocate(ptxAB_q1(nel,maxnf,Nparticle),ptxAB_q2(nel,maxnf,Nparticle),ptxAB_q3(nel,maxnf,Nparticle))
-  allocate(ptxAB_pr(1,nel,maxnf,Nparticle))
+  allocate(  ptxAB_temp(nel,maxnf,Nparticle)  )
+
+  !allocate(ptxAB_pr(1,nel,maxnf,Nparticle))
 
 ! allocate(ptxAB_q1_2(4,nel,maxnf,Nparticle),ptxAB_q2_2(4,nel,maxnf,Nparticle),ptxAB_q3_2(4,nel,maxnf,Nparticle))
 

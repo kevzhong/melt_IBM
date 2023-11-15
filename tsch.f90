@@ -27,16 +27,16 @@
               ax(i,j,k) = 1.
               ay(i,j,k) = 1.
               az(i,j,k) = 1.
-        enddo
-        enddo
+            enddo
+          enddo
         enddo
 
         do inp=1,Nparticle
-        call calc_rot_matrix(quat(:,inp),AA)
+          call calc_rot_matrix(quat(:,inp),AA)
 
-        call convex_hull_q12(AA,inp)
-        call convex_hull_q22(AA,inp)
-        call convex_hull_q32(AA,inp)
+          call convex_hull_q12(AA,inp)
+          call convex_hull_q22(AA,inp)
+          call convex_hull_q32(AA,inp)
         enddo
 
         !call hdnl1

@@ -121,12 +121,12 @@
       module local_aux
        use param
        implicit none
-       real, allocatable, dimension(:,:,:) :: vxc, vyc, vzc !KZ unused
-       real, allocatable, dimension(:,:,:) :: matderxc, matderx !KZ unused
-       real, allocatable, dimension(:,:,:) :: matderyc, matdery !KZ unused
-       real, allocatable, dimension(:,:,:) :: matderzc, matderz !KZ unused
+       !real, allocatable, dimension(:,:,:) :: vxc, vyc, vzc !KZ unused
+       !real, allocatable, dimension(:,:,:) :: matderxc, matderx !KZ unused
+       !real, allocatable, dimension(:,:,:) :: matderyc, matdery !KZ unused
+       !real, allocatable, dimension(:,:,:) :: matderzc, matderz !KZ unused
        real,allocatable,dimension(:,:,:) :: vorx, vory, vorz
-       real,allocatable,dimension(:,:,:) :: vxo, vyo, vzo !KZ unused
+       !real,allocatable,dimension(:,:,:) :: vxo, vyo, vzo !KZ unused
       end module local_aux
 
       module mls_param
@@ -204,7 +204,8 @@
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
-      real,dimension(:,:,:,:), allocatable :: ptxAB_pr
+      real, dimension(:,:,:), allocatable :: ptxAB_temp
+      !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 
       end module mls_param
 
@@ -212,6 +213,6 @@
       module mls_local
         use param
         implicit none
-        real, dimension(:,:,:), allocatable :: for_xc, for_yc, for_zc
+        real, dimension(:,:,:), allocatable :: for_xc, for_yc, for_zc, for_temp
       end module mls_local
 

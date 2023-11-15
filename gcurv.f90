@@ -121,13 +121,13 @@ character(70) namfile
 
        call tschem
 
-        if(mod(time,tpin).lt.dt) then
+        !if(mod(time,tpin).lt.dt) then !KZ: commented to dump at every timestep
           if(ismaster) then
           write(6,*) "---------------"
           write(6,'(A,I10,A,E10.3)')"nt  ", ntime," time  ",time
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
           endif
-        endif
+        !endif
 
                              
 

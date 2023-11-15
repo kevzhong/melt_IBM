@@ -26,14 +26,17 @@ SUbroutine particle
       call update_both_ghosts(n1,n2,vx,kstart,kend)
       call update_both_ghosts(n1,n2,vy,kstart,kend)
       call update_both_ghosts(n1,n2,vz,kstart,kend)
-    
+      call update_both_ghosts(n1,n2,temp,kstart,kend)
+
 
       for_xc = 0.
       for_yc = 0.
       for_zc = 0.
+      for_temp = 0.
 
       call mlsForce
       call velforce
+      call tempforce
       end do
 
 
@@ -42,6 +45,7 @@ SUbroutine particle
     call update_both_ghosts(n1,n2,vx,kstart,kend)
     call update_both_ghosts(n1,n2,vy,kstart,kend)
     call update_both_ghosts(n1,n2,vz,kstart,kend)
+    call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
 
