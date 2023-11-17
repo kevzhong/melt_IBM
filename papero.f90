@@ -47,6 +47,8 @@
         read(15,*) idtv,dtmax,cfllim 
         read(15,301) dummy       
         read(15,*) forcing 
+        read(15,301) dummy       
+        read(15,*) Tmelt 
       close(15)
 
       open(unit=15,file='part.in',status='old')

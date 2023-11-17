@@ -1,4 +1,50 @@
 !------------------------------------------------------
+        subroutine calculate_volume2 (Volume,nf,tri_nor,sur,tri_bar)
+                ! Evaluate the triangulated surface volume using the divergence theorem
+                ! using the (pre-)computed triangle areas and (outward-facing) normal vectors
+                !
+                ! ---     _           ---  _   _
+                ! /// div F dV    =    //  F . n  dA
+                ! ---                 ---
+                !  V                   S
+                !                _                            _
+                ! Here we choose F = [x, 0, 0]' such that div F = 1, yielding the desired volume integral on the LHS and the RHS becomes
+                !
+                !       ---  _   _                ---                                    ---
+                !        //  F . n  dA    =       //  [x, 0, 0]' .  [nx, ny, nz]' dA =   //  x * nx  dA
+                !       ---                      ---                                    ---
+                !        S                        S                                      S
+                !
+                ! RHS surface integral is then evaluated numerically as
+                !
+                ! Nfaces
+                ! ____
+                ! \
+                !      |   nx_i  * x_i * A_i   |
+                ! /
+                ! ----  
+                ! i=1
+
+                ! Where x_i is taken to be the centroid of triangle i
+                !       A_i is the area of triangle i
+                !       nx_i is the x-component of the outward-facing normal vector for triangle FACE i
+                ! Note the absolute value for the summation argument, this seems necessary
+                ! Probably related to how the definition of outward-facing changes when we go from positive x-axis to negative x-axis
+
+                implicit none
+                integer :: nf,i
+                real,dimension (3,nf) :: tri_nor
+                real, dimension (3,nf) :: tri_bar
+                real, dimension (nf) :: sur
+                real :: Volume
+        
+                Volume=0.0
+                do i=1,nf       
+                        Volume = Volume +   abs ( tri_nor(1,i) * tri_bar(1,i) * sur(i) )
+                enddo        
+                return
+        end subroutine calculate_volume2
+!------------------------------------------------------
         subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,vol)
 
         implicit none

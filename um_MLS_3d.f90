@@ -50,7 +50,7 @@
              wx=exp(-(rx/alpha)**2)
              dwxdx=(-1./(alpha**2)*2.*rx*exp(-(rx/alpha)**2))*drdx
           endif
-
+ 
           if (ry.gt.1.0) then
              wy=0.0
              dwydy=0.0

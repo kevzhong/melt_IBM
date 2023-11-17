@@ -306,21 +306,37 @@ subroutine wghttemp(ntr,inp,pos,ptx,ptxAB)
     ! spline weights for all three components
     do k=pind_i(3), pind_o(3)
   
-       norp(3)=abs(zm(k)-pos(3))*alph_dx_invwcon
-       Wt(3)=exp(-(norp(3))**2)
+       norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
+
+       if(norp(3).le. 1.0d0 ) then
+          Wt(3)=exp( -( norp(3)/wcon ) **2 )
+       else
+        Wt(3) = 0.0d0
+       endif
   
      do j=pind_i(2), pind_o(2)
   
-        norp(2)=abs(ym(j)-pos(2))*alph_dx_invwcon
-        Wt(2)=exp(-(norp(2))**2)
-  
+        norp(2)=abs(ym(j)-pos(2)) / (wscl / dx2)
+
+        if(norp(2).le. 1.0d0 ) then
+          Wt(2)=exp( -( norp(2)/wcon ) **2 )
+        else
+          Wt(2) = 0.0d0
+       endif
+
         Wt23 = Wt(2)*Wt(3)
   
       do i=pind_i(1), pind_o(1)
   
-          norp(1)=abs(xm(i)-pos(1))*alph_dx_invwcon
-          Wt(1)=exp(-(norp(1))**2)
-  
+        norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
+        
+        if(norp(1).le. 1.0d0 ) then
+          Wt(1)=exp( -( norp(1)/wcon ) **2 )
+        else
+          Wt(1) = 0.0d0
+        endif
+       
+       
           Wtx = Wt(1)*Wt23
   
           pxk(1)=1.0d0

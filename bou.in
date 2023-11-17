@@ -15,4 +15,6 @@ NWRIT         NREAD         PREAD
  IDTV         DTMAX          CFLLIM
    0           5e-3           1.0
 FORCING
-   1 
+   0 
+TMELT
+  0.5d0

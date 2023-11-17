@@ -15,6 +15,7 @@
         real      :: dtmax,cfllim
         real      :: tl,epsstar,kfmax
         integer   :: nson,idtv,forcing
+        real      :: Tmelt
 !=================================================
 !       end of input file
 !=================================================
