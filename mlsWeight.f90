@@ -348,11 +348,12 @@ subroutine wghttemp(ntr,inp,pos,ptx,ptxAB)
           B(1:4,inw)=Wtx*pxk(1:4)
   
           inw = inw + 1
-      enddo
-     enddo
-    enddo
+      enddo !end i
+     enddo !end j
+    enddo !end k
   
     ! calling routine to compute inverse
+    ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
     call inverseLU(pinvA,invA)
           
     !------------------------------------------------------

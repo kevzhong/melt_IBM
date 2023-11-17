@@ -13,7 +13,7 @@ subroutine tempforce
  call update_add_upper_ghost(for_temp)
  call update_add_lower_ghost(for_temp)
  
- for_temp_mean=0.
+ for_temp_mean=0.0d0
 
  do kc=kstart, kend
   do jc=1,n2m
@@ -30,7 +30,9 @@ for_temp_mean = for_temp_mean / dble(n1m*n2m*n3m)
  do kc=kstart,kend
   do jc=1,n2m
    do ic=1,n1m
-      temp(ic,jc,kc) = temp(ic,jc,kc) +  for_temp(ic,jc,kc) - for_temp_mean
+      !temp(ic,jc,kc) = temp(ic,jc,kc) +  for_temp(ic,jc,kc) - for_temp_mean
+      temp(ic,jc,kc) = temp(ic,jc,kc) +  for_temp(ic,jc,kc) 
+
    end do
   end do
  end do

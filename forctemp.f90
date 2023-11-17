@@ -1,4 +1,4 @@
-subroutine forctemp(ntr,inp,ptxAB,Tmelt)
+subroutine forctemp(ntr,inp,ptxAB)
 USE param
 USE mls_param
 USE local_arrays, only: temp
@@ -9,7 +9,7 @@ implicit none
 real,dimension(nel) :: ui
 real,dimension(nel) :: ptxAB(nel)
 integer :: inp,ntr,inw,i,j,k
-real Tm, Tmelt
+real Tm
 integer, dimension(3) :: pind_i, pind_o
 integer :: ii,jj,kk
 integer kstartp
@@ -22,7 +22,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
   pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1 !k1 k2 k3
 
   inw = 1
-  Tm  = 0. !MLS-interpolated value at triangle centroid
+  Tm  = 0.0d0 !MLS-interpolated value at triangle centroid
 
   ! spline weights for all three components
   do k=pind_i(3), pind_o(3)

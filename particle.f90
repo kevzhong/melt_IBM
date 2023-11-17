@@ -29,10 +29,10 @@ SUbroutine particle
       call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
-      for_xc = 0.
-      for_yc = 0.
-      for_zc = 0.
-      for_temp = 0.
+      for_xc = 0.0d0
+      for_yc = 0.0d0
+      for_zc = 0.0d0
+      for_temp = 0.0d0
 
       call mlsForce
       call velforce
