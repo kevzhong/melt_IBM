@@ -144,6 +144,7 @@
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
       real      :: rad_p
+      integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
       !=================================================
       !       end of input file
       !=================================================
@@ -160,6 +161,7 @@
       integer, dimension(:,:), allocatable :: vert_of_vert
       integer, dimension(:,:), allocatable :: edge_of_vert
       integer, dimension(:,:), allocatable :: face_of_edge
+      integer, dimension(:,:), allocatable :: faces_of_vert !KZ: added to store face-vertex connectivity
 
       integer, dimension(:,:,:), allocatable :: pind
       integer, dimension(:,:), allocatable :: pind1
@@ -167,7 +169,8 @@
 
       real, dimension(:,:,:), allocatable :: tri_ver, vel_tri
       real, dimension(:,:,:), allocatable :: tri_bar, tri_nor
- 
+      real, dimension(:,:,:), allocatable :: vert_nor !KZ: normal vectors of vertices
+
       
       real, dimension(:,:), allocatable :: dist
       real, dimension(:,:), allocatable :: sur, vol

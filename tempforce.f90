@@ -12,7 +12,9 @@ subroutine tempforce
 
  call update_add_upper_ghost(for_temp)
  call update_add_lower_ghost(for_temp)
- 
+
+ ! KZ: Mean is evaluated for subtraction from field to ensure homogeneous isotropy
+ ! cf. equation (B2) in Chouippe & Uhlmann (2015), Phys. Fluids
  for_temp_mean=0.0d0
 
  do kc=kstart, kend

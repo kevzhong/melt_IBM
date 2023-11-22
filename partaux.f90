@@ -289,6 +289,42 @@ subroutine set_connectivity
        endif
     enddo
 
+
+    ! KZ: Compute the face-of-vertices connectivity
+    faces_of_vert = 0
+
+    do i=1,maxnf
+
+      ! Scan for vertex to assign for vertex 1
+      do j = 1,VERTBUFFER
+          if ( faces_of_vert( j, vert_of_face(1,i)  ) .eq. 0 ) then
+              dummyInd = j !Next-in-line index of face to store
+              exit
+          endif
+      enddo
+      faces_of_vert(dummyInd, vert_of_face(1,i)  ) = i
+
+      ! Scan for vertex to assign for vertex 2
+      do j = 1,VERTBUFFER
+          if ( faces_of_vert( j, vert_of_face(2,i)  ) .eq. 0 ) then
+              dummyInd = j !Next-in-line index of face to store
+              exit
+          endif
+      enddo
+      faces_of_vert(dummyInd, vert_of_face(2,i)  ) = i
+
+
+      ! Scan for vertex to assign for vertex 3
+      do j = 1,VERTBUFFER
+          if ( faces_of_vert( j, vert_of_face(3,i)  ) .eq. 0 ) then
+              dummyInd = j !Next-in-line index of face to store
+              exit
+          endif
+      enddo
+      faces_of_vert(dummyInd, vert_of_face(3,i)  ) = i
+      
+    enddo
+
 end subroutine
 
 

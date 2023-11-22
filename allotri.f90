@@ -11,6 +11,7 @@ implicit none
   allocate(edge_of_face(3,maxnf))
   allocate(vert_of_vert(max_n_edge_of_vert,maxnv))
   allocate(edge_of_vert(max_n_edge_of_vert,maxnv))
+  allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 
   allocate(pind(6,maxnf,Nparticle))
   allocate(pind1(3,Nparticle))
@@ -20,6 +21,7 @@ implicit none
   allocate(vel_tri(3,maxnf,Nparticle))
   allocate(tri_bar(3,maxnf,Nparticle))
   allocate(tri_nor(3,maxnf,Nparticle))
+  allocate(vert_nor(3,maxnv,Nparticle)) !KZ: vertex normal vectors
 
   allocate(dist(maxne,Nparticle))
   allocate(sur(maxnf,Nparticle))
