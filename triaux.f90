@@ -1,210 +1,218 @@
 !------------------------------------------------------
 subroutine calculate_volume2 (Volume,nf,tri_nor,sur,tri_bar)
-	! Evaluate the triangulated surface volume using the divergence theorem
-	! using the (pre-)computed triangle areas and (outward-facing) normal vectors
-	!
-	! ---     _           ---  _   _
-	! /// div F dV    =    //  F . n  dA
-	! ---                 ---
-	!  V                   S
-	!                _                            _
-	! Here we choose F = [x, 0, 0]' such that div F = 1, yielding the desired volume integral on the LHS and the RHS becomes
-	!
-	!       ---  _   _                ---                                    ---
-	!        //  F . n  dA    =       //  [x, 0, 0]' .  [nx, ny, nz]' dA =   //  x * nx  dA
-	!       ---                      ---                                    ---
-	!        S                        S                                      S
-	!
-	! RHS surface integral is then evaluated numerically as
-	!
-	! Nfaces
-	! ____
-	! \
-	!      |   nx_i  * x_i * A_i   |
-	! /
-	! ----  
-	! i=1
-	!
-	! Where x_i is taken to be the centroid of triangle i
-	!       A_i is the area of triangle i
-	!       nx_i is the x-component of the outward-facing normal vector for triangle FACE i
-	! Note the absolute value for the summation argument, this seems necessary
-	! Probably related to how the definition of outward-facing changes when we go from positive x-axis to negative x-axis
+! Evaluate the triangulated surface volume using the divergence theorem
+! using the (pre-)computed triangle areas and (outward-facing) normal vectors
+!
+! ---     _           ---  _   _
+! /// div F dV    =    //  F . n  dA
+! ---                 ---
+!  V                   S
+!                _                            _
+! Here we choose F = [x, 0, 0]' such that div F = 1, yielding the desired volume integral on the LHS and the RHS becomes
+!
+!       ---  _   _                ---                                    ---
+!        //  F . n  dA    =       //  [x, 0, 0]' .  [nx, ny, nz]' dA =   //  x * nx  dA
+!       ---                      ---                                    ---
+!        S                        S                                      S
+!
+! RHS surface integral is then evaluated numerically as
+!
+! Nfaces
+! ____
+! \
+!      |   nx_i  * x_i * A_i   |
+! /
+! ----  
+! i=1
+!
+! Where x_i is taken to be the centroid of triangle i
+!       A_i is the area of triangle i
+!       nx_i is the x-component of the outward-facing normal vector for triangle FACE i
+! Note the absolute value for the summation argument, this seems necessary
+! Probably related to how the definition of outward-facing changes when we go from positive x-axis to negative x-axis
 
-	implicit none
-	integer :: nf,i
-	real,dimension (3,nf) :: tri_nor
-	real, dimension (3,nf) :: tri_bar
-	real, dimension (nf) :: sur
-	real :: Volume
+implicit none
+integer :: nf,i
+real,dimension (3,nf) :: tri_nor
+real, dimension (3,nf) :: tri_bar
+real, dimension (nf) :: sur
+real :: Volume
         
-	Volume=0.0
-	do i=1,nf       
-		Volume = Volume +   abs ( tri_nor(1,i) * tri_bar(1,i) * sur(i) )
-	enddo        
-	return
+Volume=0.0
+do i=1,nf       
+        Volume = Volume +   abs ( tri_nor(1,i) * tri_bar(1,i) * sur(i) )
+enddo        
+return
+
 end subroutine calculate_volume2
 !------------------------------------------------------
 
-        subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,vol)
+subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,vol)
 
-        implicit none
-        integer :: nv,nf,v1,v2,v3,i
-        integer, dimension (3,nf) :: vert_of_face
-        real, dimension (3,nv) ::xyz
-        real, dimension (nf) :: vol
-        real :: Volume
+implicit none
+integer :: nv,nf,v1,v2,v3,i
+integer, dimension (3,nf) :: vert_of_face
+real, dimension (3,nv) ::xyz
+real, dimension (nf) :: vol
+real :: Volume
 
-        Volume=0.0
-        do i=1,nf
-           v1=vert_of_face(1,i)
-           v2=vert_of_face(2,i)
-           v3=vert_of_face(3,i)
+Volume=0.0
+do i=1,nf
+        v1=vert_of_face(1,i)
+        v2=vert_of_face(2,i)
+        v3=vert_of_face(3,i)
 
         vol(i) =           xyz(1,v1) * (xyz(2,v2)*xyz(3,v3) - xyz(3,v2)*xyz(2,v3)) &
                         +  xyz(1,v2) * (xyz(2,v3)*xyz(3,v1) - xyz(3,v3)*xyz(2,v1)) &
                         +  xyz(1,v3) * (xyz(2,v1)*xyz(3,v2) - xyz(3,v1)*xyz(2,v2))
         Volume=Volume+vol(i)
-        enddo
+enddo
  
-        Volume=Volume/6.
+Volume=Volume/6.
 
-        return
-        end subroutine calculate_volume
+return
+end subroutine calculate_volume
 !------------------------------------------------------
-        subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur)
+subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur)
 
-        implicit none
-        integer :: nv,nf,v1,v2,v3,i
-        integer, dimension (3,nf) :: vert_of_face
-        real, dimension (3,nv) ::xyz
-        real, dimension (nf) :: sur
-        real :: Surface,d12,d23,d31,sp
+implicit none
+integer :: nv,nf,v1,v2,v3,i
+integer, dimension (3,nf) :: vert_of_face
+real, dimension (3,nv) ::xyz
+real, dimension (nf) :: sur
+real :: Surface,d12,d23,d31,sp
 
-        Surface=0.0
-        do i=1,nf
-           v1=vert_of_face(1,i)
-           v2=vert_of_face(2,i)
-           v3=vert_of_face(3,i)
+Surface=0.0
+do i=1,nf
+        v1=vert_of_face(1,i)
+        v2=vert_of_face(2,i)
+        v3=vert_of_face(3,i)
 
-           d12=sqrt( (xyz(1,v1)-xyz(1,v2))**2. &
-                    +(xyz(2,v1)-xyz(2,v2))**2. &
-                    +(xyz(3,v1)-xyz(3,v2))**2. )
-           d23=sqrt( (xyz(1,v2)-xyz(1,v3))**2. &
-                    +(xyz(2,v2)-xyz(2,v3))**2. &
-                    +(xyz(3,v2)-xyz(3,v3))**2. )
-           d31=sqrt( (xyz(1,v3)-xyz(1,v1))**2. &
-                    +(xyz(2,v3)-xyz(2,v1))**2. &
-                    +(xyz(3,v3)-xyz(3,v1))**2. )
-           sp=(d12+d23+d31)/2.
-           sur(i)=sqrt(sp*(sp-d12)*(sp-d23)*(sp-d31))
-           Surface=Surface+sur(i)
-        enddo
+        d12=sqrt( (xyz(1,v1)-xyz(1,v2))**2. &
+                 +(xyz(2,v1)-xyz(2,v2))**2. &
+                 +(xyz(3,v1)-xyz(3,v2))**2. )
+        d23=sqrt( (xyz(1,v2)-xyz(1,v3))**2. &
+                 +(xyz(2,v2)-xyz(2,v3))**2. &
+                 +(xyz(3,v2)-xyz(3,v3))**2. )
+        d31=sqrt( (xyz(1,v3)-xyz(1,v1))**2. &
+                 +(xyz(2,v3)-xyz(2,v1))**2. &
+                 +(xyz(3,v3)-xyz(3,v1))**2. )
+        sp=(d12+d23+d31)/2.
+        sur(i)=sqrt(sp*(sp-d12)*(sp-d23)*(sp-d31))
+        Surface=Surface+sur(i)
+enddo
 
-        return
-        end subroutine calculate_area
+return
+end subroutine calculate_area
 !------------------------------------------------------
-        subroutine calculate_normal (tri_nor,nv,nf,xyz,vert_of_face)
+subroutine calculate_normal (tri_nor,nv,nf,xyz,vert_of_face)
 
-        implicit none
-        integer :: nv,nf,v1,v2,v3,i
-        integer, dimension (3,nf) :: vert_of_face
-        real,dimension (3,nf) :: tri_nor
-        real, dimension (3,nv) ::xyz
-        real, dimension(3) :: ve1,ve2
+implicit none
+integer :: nv,nf,v1,v2,v3,i
+integer, dimension (3,nf) :: vert_of_face
+real,dimension (3,nf) :: tri_nor
+real, dimension (3,nv) ::xyz
+real, dimension(3) :: ve1,ve2
 
-        do i=1,nf
-            v1=vert_of_face(1,i)
-            v2=vert_of_face(2,i)
-            v3=vert_of_face(3,i)
+do i=1,nf
+        v1=vert_of_face(1,i)
+        v2=vert_of_face(2,i)
+        v3=vert_of_face(3,i)
 
-        	! Vectors ve1 = P2 - P1   ve2 = P3 - P1
-        	ve1(1:3) = xyz(1:3,v2) - xyz(1:3,v1)
-        	ve2(1:3) = xyz(1:3,v3) - xyz(1:3,v1)
+        ! Vectors ve1 = P2 - P1   ve2 = P3 - P1
+        ve1(1:3) = xyz(1:3,v2) - xyz(1:3,v1)
+        ve2(1:3) = xyz(1:3,v3) - xyz(1:3,v1)
 
-        	! Compute cross-product cross(ve1, ve2)
-        	tri_nor(1,i) = ve1(2)*ve2(3) - ve1(3)*ve2(2)
-        	tri_nor(2,i) = ve1(3)*ve2(1) - ve1(1)*ve2(3)
-        	tri_nor(3,i) = ve1(1)*ve2(2) - ve1(2)*ve2(1)
-        	tri_nor(1:3,i) = tri_nor(1:3,i) / sqrt ( sum ( tri_nor(1:3,i)**2  )  )
+        ! Compute cross-product cross(ve1, ve2)
+        tri_nor(1,i) = ve1(2)*ve2(3) - ve1(3)*ve2(2)
+        tri_nor(2,i) = ve1(3)*ve2(1) - ve1(1)*ve2(3)
+        tri_nor(3,i) = ve1(1)*ve2(2) - ve1(2)*ve2(1)
+        tri_nor(1:3,i) = tri_nor(1:3,i) / sqrt ( sum ( tri_nor(1:3,i)**2  )  )
+enddo
 
-        enddo
+return
 
-        return
-        end subroutine calculate_normal
+end subroutine calculate_normal
 
 
-!------------------------------------------------------
-
-		subroutine calculate_vert_normal (tri_nor,vert_nor,nv,buffersize,nf,faces_of_vert)
-
-		! This routine computes the (normalised) normal vectors at each of the geometric vertices
-		! The normal vector is computed as the arithmetic average of each adjoining face
-
-		implicit none
-		integer :: i,nfsum,nv,nf,buffersize
-		real,dimension (3,nf) :: tri_nor
-		real,dimension (3,nv) :: vert_nor
-		real :: magN
-		integer, dimension(buffersize,nv) :: faces_of_vert
-		vert_nor = 0.
-			
-		do i=1,nv
-		   nfsum =   count( ( faces_of_vert(:,i) .ne. 0 ) ) 
-		   vert_nor(1:3,i) =   sum ( tri_nor(1:3, faces_of_vert(1:nfsum,i) ) , DIM=2 ) / float(nfsum)
-		   magN = norm2 ( vert_nor(:,i) )
-		   vert_nor(1:3,i) = vert_nor(1:3,i) / magN
-		enddo
-
-		return
-
-		end subroutine calculate_vert_normal
 !------------------------------------------------------
 
-        subroutine calculate_distance(dist,nv,ne,xyz,vert_of_edge)
+subroutine calculate_vert_normal (tri_nor,vert_nor,nv,buffersize,nf,faces_of_vert)
 
-        implicit none
-        integer :: nv,ne,v1,v2,i
-        integer, dimension (2,ne) :: vert_of_edge
-        real, dimension (3,nv) ::xyz
-        real, dimension (ne) :: dist
+! This routine computes the (normalised) normal vectors at each of the geometric vertices
+! The normal vector is computed as the arithmetic average of each adjoining face
 
-        do i=1,ne
-           v1=vert_of_edge(1,i)
-           v2=vert_of_edge(2,i)
+implicit none
+integer :: i,nfsum,nv,nf,buffersize
+real,dimension (3,nf) :: tri_nor
+real,dimension (3,nv) :: vert_nor
+real :: magN
+integer, dimension(buffersize,nv) :: faces_of_vert
+vert_nor = 0.
+
+do i=1,nv
+        nfsum =   count( ( faces_of_vert(:,i) .ne. 0 ) ) 
+        vert_nor(1:3,i) =   sum ( tri_nor(1:3, faces_of_vert(1:nfsum,i) ) , DIM=2 ) / float(nfsum)
+        magN = norm2 ( vert_nor(:,i) )
+        vert_nor(1:3,i) = vert_nor(1:3,i) / magN
+enddo
+
+return
+
+end subroutine calculate_vert_normal
+!------------------------------------------------------
+
+subroutine calculate_distance(dist,nv,ne,xyz,vert_of_edge)
+
+implicit none
+integer :: nv,ne,v1,v2,i
+integer, dimension (2,ne) :: vert_of_edge
+real, dimension (3,nv) ::xyz
+real, dimension (ne) :: dist
+
+do i=1,ne
+        v1=vert_of_edge(1,i)
+        v2=vert_of_edge(2,i)
         dist(i)=sqrt( (xyz(1,v1)-xyz(1,v2))**2 + (xyz(2,v1)-xyz(2,v2))**2 + (xyz(3,v1)-xyz(3,v2))**2 ) 
-        enddo
+enddo
 
-        return
-        end subroutine calculate_distance
+return
+end subroutine calculate_distance
+
 !     ----------------------------------------------------------------
-          subroutine dot(xy,x,y)
 
-          implicit none
-          real x(3),y(3),xy
+subroutine dot(xy,x,y)
 
-          xy = x(1)*y(1)+x(2)*y(2)+x(3)*y(3)
-          return
-          end subroutine dot
+implicit none
+real x(3),y(3),xy
+
+xy = x(1)*y(1)+x(2)*y(2)+x(3)*y(3)
+return
+end subroutine dot
+
 !     ----------------------------------------------------------------
-          subroutine  sub(xmy,x,y)
 
-          implicit none
-          real x(3),y(3),xmy(3)
+subroutine  sub(xmy,x,y)
 
-          xmy = x-y
-          return
-          end subroutine sub
+implicit none
+real x(3),y(3),xmy(3)
+
+xmy = x-y
+return
+end subroutine sub
+
 !     ----------------------------------------------------------------
-          subroutine  cross(xcy,x,y)
-          implicit none
-          real x(3),y(3),xcy(3)
 
-          xcy(1) = x(2)*y(3)-y(2)*x(3)
-          xcy(2) = x(3)*y(1)-y(3)*x(1)
-          xcy(3) = x(1)*y(2)-y(1)*x(2)
-          return
-          end subroutine cross
+subroutine  cross(xcy,x,y)
+implicit none
+real x(3),y(3),xcy(3)
+
+xcy(1) = x(2)*y(3)-y(2)*x(3)
+xcy(2) = x(3)*y(1)-y(3)*x(1)
+xcy(3) = x(1)*y(2)-y(1)*x(2)
+return
+end subroutine cross
+
 !     ----------------------------------------------------------------
 
 subroutine inverseLU(a,c)

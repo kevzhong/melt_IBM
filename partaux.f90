@@ -190,6 +190,7 @@ subroutine set_connectivity
   implicit none
   integer :: i,j,v1,v2,v3,e1,e2,e3
   integer :: nv,ne,nf
+  integer :: dummyInd
 
     open(109,file=gtsfx)
 
