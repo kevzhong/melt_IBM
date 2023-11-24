@@ -139,7 +139,7 @@
       !=================================================
       !       read from input file part.in
       !==========================================================
-      integer   :: imlsfor,imlsstr
+      integer   :: imlsfor,imlsstr, imelt
       real      :: wcon, wscl, dens_ratio
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
@@ -164,6 +164,7 @@
       integer, dimension(:,:), allocatable :: faces_of_vert !KZ: added to store face-vertex connectivity
 
       integer, dimension(:,:,:), allocatable :: pind
+      integer, dimension(:,:,:), allocatable :: pindv
       integer, dimension(:,:), allocatable :: pind1
       real,dimension(:,:,:),     allocatable :: dismax
 
@@ -201,14 +202,17 @@
       real, dimension(:),allocatable :: Surface
       real, dimension(:),allocatable :: Volume
 
-      real   alph_dx, invdx1celvol, invdx1dt, invwcon, alph_dx_invwcon
+      real    invdx1dt
       real, dimension(:), allocatable :: cfac
-      real :: Hboxx
+      real :: h_eulerian
       real, dimension (3,3) :: i_inv, i_inv2
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
       real, dimension(:,:,:), allocatable :: ptxAB_temp
+      !real, dimension(:,:,:), allocatable :: ddx_ptxAB, ddy_ptxAB, ddz_ptxAB !Shape function derivatives at probes
+      real, dimension(:,:), allocatable :: dtdn_o, dtdn_i, ! Normal gradients at interface vertices (outward and inward dirn)
+
       !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 
       end module mls_param

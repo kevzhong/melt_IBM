@@ -53,14 +53,32 @@
 
       open(unit=15,file='part.in',status='old')
         read(15,301) dummy       
-        read(15,*) imlsfor, imlsstr
+        read(15,*) imlsfor, imlsstr, imelt
         read(15,301) dummy       
         read(15,*) wcon,wscl,dens_ratio
         read(15,301) dummy       
         read(15,*) gtsfx, rad_p, VERTBUFFER
       close(15)
 
-301     format(a4)                
+301     format(a4)          
+
+      ! KZ Verify correctness of bou.in,  part.in
+
+      ! Can only melt if MLS forcing is enabled
+      if (imelt.eq.1) then
+            if(imlsfor.ne.1) then
+            write(*,*) "Rank", myid, "Melting enabled but MLS forcing disabled, exiting"
+            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            endif
+      endif
+
+      ! Can only do FSI if MLS forcing is enabled
+      if (imlsstr.eq.1) then
+            if(imlsfor.ne.1) then
+            write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
+            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            endif
+      endif
 
       gtsfx = "gts/" // trim(gtsfx)
 

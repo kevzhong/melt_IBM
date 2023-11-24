@@ -45,8 +45,6 @@ subroutine tri_geo
        
         if(ismaster)then
         write(*,*)'Volume fraction: ',Volume(1)*Nparticle*1.0e2/(xlen*ylen*zlen)
-        write(*,*)'Geom. surface area: ',Surface(1)*Nparticle
-
         end if
 
   call print_particle_info

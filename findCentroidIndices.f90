@@ -3,14 +3,13 @@
 !     Only starting and ending indices of the support domain are 
 !     reqiured. Then loop over it.
 !------------------------------------------------------------------
-subroutine findindices
+subroutine findCentroidIndices
   USE mpih
   USE param
   USE mls_param, only : pind,Nparticle,maxnf,tri_bar
   IMPLICIT NONE
   real pos(3)
   integer i1,j1,k1,ist,jst,kst,inp,ntr
-  real :: xmin, xmax, ymin, ymax
 
   do inp=1,Nparticle
     do ntr=1,maxnf
@@ -40,4 +39,4 @@ subroutine findindices
     end do
   end do
 
-end subroutine findindices
+end subroutine findCentroidIndices

@@ -21,57 +21,45 @@ real :: r, phi
 
 end
 
+function mls_gaussian(r,rcoef) result(phi)
+  ! Gaussian weight function of MLS
+  ! E.g. eq. (3.150) in Liu & Gu (2005)
+  implicit none
+  real :: r, phi
+  real, intent(in) :: rcoef
+     if (r.gt.1.0) then
+       phi = 0.0d0
+     else 
+       phi = exp( - (r / rcoef )**2  )
+     endif
+  
+  end
+
+  function mls_gauss_deriv(r,rcoef) result(dphidr)
+    ! Gaussian weight function of MLS
+    ! Analytical derivative
+    ! Given the weight function W(r) , this computes dW/dr
+    ! For Cartesian coordinates, still need to convert from dW/dr to, e.g. , dW/dx with chain rule
+    ! for use in MLS
+    implicit none
+    real :: r, dphidr
+    real, intent(in) :: rcoef
+       if (r.gt.1.0) then
+        dphidr = 0.0d0
+       else 
+        dphidr = - 2.0d0 * r / rcoef**2 * exp( - (r / rcoef )**2  )
+       endif
+    
+    end
 
 
 function loopoverbeams(x0,x_cm,AA,inp) result(phi)
 implicit none
 integer :: i,inp
-real    :: mindist,t,d,r,d1
+real    :: mindist,t,d,d1
 real    :: y1(3), y2(3,3), AA(3,3), AAT(3,3), AAT_P(3,3)
 real, dimension(3) :: x0,x1,x2,x_cm
 real    :: phi
-
-r = .544279548
-
-y1 = 0.
-!y2 = 0.
-!chiral
-! particle 1
-!y1(1,1) = -r
-!y2(1,1) =  r
-! particle 2
-!y1(1,2) = -r
-!y2(1,2) = -r
-!y2(2,2) = 2.*r
-! particle 3
-!y1(1,3) = r
-!y2(1,3) = r
-!y2(3,3) = -2.*r
-
-!achiral
-! particle 1
-!y1(1,1) = -r
-!y2(1,1) =  r
-! particle 2
-!y1(1,2) = -r
-!y2(1,2) = -r
-!y2(3,2) = -2.*r
-! particle 3
-!y1(1,3) = r
-!y2(1,3) = r
-!y2(2,3) = 2.*r
-
-! moviing centroid such that volumetric centre is at (0,0,0)
-!y1(1) = y1(1) -
-!y1(2) = y1(2) -
-!y1(3) = y1(3) -
-
-!y2(2,:) = y2(2,:) - 0.2125855
-
-!y1(3,:) = y1(3,:) + 0.2125855
-!y2(3,:) = y2(3,:) + 0.2125855
-
-!x1=0.
 
 mindist = 1.e6
 
@@ -125,19 +113,6 @@ function princ_axis_rotm() result(AAT)
   AAT(3,1)= -0.00428438838
   AAT(3,2)= -0.00264293329
   AAT(3,3)= -0.999987329
-       
-!achiral
-!AAT(1,1)= -0.773471492617178
-!AAT(1,2)= -0.448186260089139
-!AAT(1,3)= -0.448186263037887
-
-!AAT(2,1)= -0.000000012288949
-!AAT(2,2)= -0.707106772908658
-!AAT(2,3)=  0.707106789464437
-
-!AAT(3,1)=  0.633831089572415
-!AAT(3,2)= -0.546926949394537
-!AAT(3,3)= -0.546926925573637
 end
 
 

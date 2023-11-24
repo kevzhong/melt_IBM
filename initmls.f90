@@ -9,20 +9,14 @@ real :: I1, I2, I3
 !
 !     Quantites for mls 
 !
-  Hboxx = (1.0d0/dx1+1.0d0/dx2+1.0d0/dx3)/3.0d0 !Average Eulerian grid spacing
+  h_eulerian = (1.0d0/dx1+1.0d0/dx2+1.0d0/dx3)/3.0d0 !Average Eulerian grid spacing
 
   celvol = 1.0d0 / (dx1*dx2*dx3) ! (uniform) Eulerian cell volume
-
-  alph_dx = dx1/wscl
-  !invdx1celvol = 1.0d0/dx1/celvol
-  invwcon      = 1.0d0/wcon
-
-  alph_dx_invwcon = alph_dx*invwcon
 
   do ntr = 1,maxnf
 
      !cfac(ntr) = sur(ntr,1)*invdx1celvol ! For isotropic grid only
-    cfac(ntr) = ( sur(ntr,1) * Hboxx ) / celvol
+    cfac(ntr) = ( sur(ntr,1) * h_eulerian ) / celvol
 
   enddo
 

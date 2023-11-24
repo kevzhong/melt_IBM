@@ -14,6 +14,7 @@ implicit none
   allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 
   allocate(pind(6,maxnf,Nparticle))
+  allocate(pindv(6,maxnv,Nparticle))
   allocate(pind1(3,Nparticle))
   allocate(dismax(3,maxnf,Nparticle))
 
@@ -36,6 +37,10 @@ implicit none
 
   allocate(ptxAB_q1(nel,maxnf,Nparticle),ptxAB_q2(nel,maxnf,Nparticle),ptxAB_q3(nel,maxnf,Nparticle))
   allocate(  ptxAB_temp(nel,maxnf,Nparticle)  )
+
+  !allocate(  ddx_ptxAB(nel,maxnv,Nparticle) , ddy_ptxAB(nel,maxnv,Nparticle), ddz_ptxAB(nel,maxnv,Nparticle) )
+
+  allocate(  dtdn_o(maxnv,Nparticle) , dtdn_i(maxnv,Nparticle)  ) !Normal gradients at vertices
 
   !allocate(ptxAB_pr(1,nel,maxnf,Nparticle))
 

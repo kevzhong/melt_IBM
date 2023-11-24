@@ -37,6 +37,7 @@ end subroutine mlsWeight
 
 subroutine wght1(ntr,inp,pos,ptx,ptxAB)
 USE param
+USE geom
 USE mls_param
 USE mpi_param, only: kstart, kend
 implicit none
@@ -68,38 +69,36 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
   inw = 1
 
 
-  ! spline weights for all three components
+! Accumulate A(4,4)   , B(4,27) linear system
   do k=pind_i(3), pind_o(3)
-
-     norp(3)=abs(zm(k)-pos(3))*alph_dx_invwcon
-     Wt(3)=exp(-(norp(3))**2)
-
-   do j=pind_i(2), pind_o(2)
-
-      norp(2)=abs(ym(j)-pos(2))*alph_dx_invwcon
-      Wt(2)=exp(-(norp(2))**2)
-
-      Wt23 = Wt(2)*Wt(3)
-
-    do i=pind_i(1), pind_o(1)
-
-        norp(1)=abs(xc(i)-pos(1))*alph_dx_invwcon
-        Wt(1)=exp(-(norp(1))**2)
-
-        Wtx = Wt(1)*Wt23
-
-        pxk(1)=1.0d0
-        pxk(2)=xc(i)
-        pxk(3)=ym(j)
-        pxk(4)=zm(k)
-
-        call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
-        B(1:4,inw)=Wtx*pxk(1:4)
-
-        inw = inw + 1
-    enddo
-   enddo
-  enddo
+  
+    norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
+    Wt(3) = mls_gaussian( norp(3) , wcon )
+  
+    do j=pind_i(2), pind_o(2)
+  
+        norp(2)=abs(ym(j)-pos(2)) / (wscl / dx2)
+        Wt(2) = mls_gaussian( norp(2) , wcon )
+        Wt23 = Wt(2)*Wt(3)
+  
+        do i=pind_i(1), pind_o(1)
+  
+            norp(1)=abs(xc(i)-pos(1)) / (wscl / dx1)
+            Wt(1) = mls_gaussian( norp(1) , wcon )
+            Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+  
+            pxk(1)=1.0d0
+            pxk(2)=xc(i)
+            pxk(3)=ym(j)
+            pxk(4)=zm(k)
+  
+            call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
+            B(1:4,inw)=Wtx*pxk(1:4)
+  
+            inw = inw + 1
+        enddo !end i
+    enddo !end j
+enddo !end k
 
   ! calling routine to compute inverse
   call inverseLU(pinvA,invA)
@@ -119,6 +118,7 @@ end
 
 subroutine wght2(ntr,inp,pos,ptx,ptxAB)
 USE param
+USE geom
 USE mls_param
 USE mpi_param, only: kstart, kend
 implicit none
@@ -146,38 +146,36 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
   pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
   inw = 1
 
-  ! spline weights for all three components
+! Accumulate A(4,4)   , B(4,27) linear system
   do k=pind_i(3), pind_o(3)
-
-     norp(3)=abs(zm(k)-pos(3))*alph_dx_invwcon
-     Wt(3)=exp(-(norp(3))**2)
-
-     do j=pind_i(2), pind_o(2)
-
-       norp(2)=abs(yc(j)-pos(2))*alph_dx_invwcon
-       Wt(2)=exp(-(norp(2))**2)
-
-       Wt23 = Wt(2)*Wt(3)
-
-       do i=pind_i(1), pind_o(1)
-
-          norp(1)=abs(xm(i)-pos(1))*alph_dx_invwcon
-          Wt(1)=exp(-(norp(1))**2)
-
-          Wtx = Wt(1)*Wt23
-
-          pxk(1)=1.0d0
-          pxk(2)=xm(i)
-          pxk(3)=yc(j)
-          pxk(4)=zm(k)
-
-          call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
-          B(1:4,inw)=Wtx*pxk(1:4)
-
-          inw = inw + 1
-    enddo
-   enddo
-  enddo
+  
+    norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
+    Wt(3) = mls_gaussian( norp(3) , wcon )
+  
+    do j=pind_i(2), pind_o(2)
+  
+        norp(2)=abs(yc(j)-pos(2)) / (wscl / dx2)
+        Wt(2) = mls_gaussian( norp(2) , wcon )
+        Wt23 = Wt(2)*Wt(3)
+  
+        do i=pind_i(1), pind_o(1)
+  
+            norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
+            Wt(1) = mls_gaussian( norp(1) , wcon )
+            Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+  
+            pxk(1)=1.0d0
+            pxk(2)=xm(i)
+            pxk(3)=yc(j)
+            pxk(4)=zm(k)
+  
+            call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
+            B(1:4,inw)=Wtx*pxk(1:4)
+  
+            inw = inw + 1
+        enddo !end i
+    enddo !end j
+enddo !end k
 
   ! calling routine to compute inverse
   call inverseLU(pinvA,invA)
@@ -195,6 +193,7 @@ end
 
 subroutine wght3(ntr,inp,pos,ptx,ptxAB)
 USE param
+USE geom
 USE mls_param
 USE mpi_param, only: kstart, kend
 implicit none
@@ -222,38 +221,36 @@ if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
   inw = 1
 
 
-  ! spline weights for all three components
+! Accumulate A(4,4)   , B(4,27) linear system
   do k=pind_i(3), pind_o(3)
-
-    norp(3)=abs(zc(k)-pos(3))*alph_dx_invwcon
-    Wt(3)=exp(-(norp(3))**2)
-
+  
+    norp(3)=abs(zc(k)-pos(3)) / (wscl / dx3)
+    Wt(3) = mls_gaussian( norp(3) , wcon )
+  
     do j=pind_i(2), pind_o(2)
-
-       norp(2)=abs(ym(j)-pos(2))*alph_dx_invwcon
-       Wt(2)=exp(-(norp(2))**2)
-
-       Wt23 = Wt(2)*Wt(3)
-
-       do i=pind_i(1), pind_o(1)
-
-          norp(1)=abs(xm(i)-pos(1))*alph_dx_invwcon
-          Wt(1)=exp(-(norp(1))**2)
- 
-          Wtx = Wt(1)*Wt23
-
-          pxk(1)=1.0d0
-          pxk(2)=xm(i)
-          pxk(3)=ym(j)
-          pxk(4)=zc(k)
-
-          call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
-          B(1:4,inw)=Wtx*pxk(1:4)
-
-          inw = inw + 1
-    enddo
-   enddo
-  enddo
+  
+        norp(2)=abs(ym(j)-pos(2)) / (wscl / dx2)
+        Wt(2) = mls_gaussian( norp(2) , wcon )
+        Wt23 = Wt(2)*Wt(3)
+  
+        do i=pind_i(1), pind_o(1)
+  
+            norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
+            Wt(1) = mls_gaussian( norp(1) , wcon )
+            Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+  
+            pxk(1)=1.0d0
+            pxk(2)=xm(i)
+            pxk(3)=ym(j)
+            pxk(4)=zc(k)
+  
+            call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
+            B(1:4,inw)=Wtx*pxk(1:4)
+  
+            inw = inw + 1
+        enddo !end i
+    enddo !end j
+enddo !end k
 
   ! calling routine to compute inverse
   call inverseLU(pinvA,invA)
@@ -269,88 +266,72 @@ endif
 end
 
 subroutine wghttemp(ntr,inp,pos,ptx,ptxAB)
-  USE param
-  USE mls_param
-  USE mpi_param, only: kstart, kend
-  implicit none
-  real,dimension(4) :: pxk,ptx,ptxA
-  real,dimension(3) :: pos,norp,Wt
-  real,dimension(4,4) :: pinvA,invA
-  real,dimension(4,nel) :: B
-  real,dimension(nel) :: ptxAB(nel)
-  real :: Wtx, Wt23
-  integer :: inp,ntr,inw,i,j,k,k1
-  integer, dimension(3) :: pind_i, pind_o
 
-  !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
+USE param
+USE geom
+USE mls_param
+USE mpi_param, only: kstart, kend
+implicit none
+real,dimension(4) :: pxk,ptx,ptxA
+real,dimension(3) :: pos,norp,Wt
+real,dimension(4,4) :: pinvA,invA
+real,dimension(4,nel) :: B
+real,dimension(nel) :: ptxAB(nel)
+real :: Wtx, Wt23
+integer :: inp,ntr,inw,i,j,k,k1
+integer, dimension(3) :: pind_i, pind_o
+
+!-------------Shape function for cell centres (temp. or pressure cells) -------------------------
 
   
-  if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
+if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
   
-    !-------------FORCING FUNCTION------------------------
-    ! volume of a face with a specific marker - thickness taken as average of grid spacing
+!-------------FORCING FUNCTION------------------------
+! volume of a face with a specific marker - thickness taken as average of grid spacing
   
-    !WGHT1
-    pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1
-    pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1
-  ! pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+!WGHT1
+pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1
+pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1
+! pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
   
-    k1  = floor(pos(3)*dx3) + 1
-    pind_i(3)=k1-1
-    pind_o(3)=k1+1
+k1  = floor(pos(3)*dx3) + 1
+pind_i(3)=k1-1
+pind_o(3)=k1+1
   
-    pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
-    inw = 1
+pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
+inw = 1
   
   
-    ! spline weights for all three components
-    do k=pind_i(3), pind_o(3)
+! Accumulate A(4,4)   , B(4,27) linear system
+do k=pind_i(3), pind_o(3)
   
-       norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
-
-       if(norp(3).le. 1.0d0 ) then
-          Wt(3)=exp( -( norp(3)/wcon ) **2 )
-       else
-        Wt(3) = 0.0d0
-       endif
+    norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
+    Wt(3) = mls_gaussian( norp(3) , wcon )
   
-     do j=pind_i(2), pind_o(2)
+    do j=pind_i(2), pind_o(2)
   
         norp(2)=abs(ym(j)-pos(2)) / (wscl / dx2)
-
-        if(norp(2).le. 1.0d0 ) then
-          Wt(2)=exp( -( norp(2)/wcon ) **2 )
-        else
-          Wt(2) = 0.0d0
-       endif
-
+        Wt(2) = mls_gaussian( norp(2) , wcon )
         Wt23 = Wt(2)*Wt(3)
   
-      do i=pind_i(1), pind_o(1)
+        do i=pind_i(1), pind_o(1)
   
-        norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
-        
-        if(norp(1).le. 1.0d0 ) then
-          Wt(1)=exp( -( norp(1)/wcon ) **2 )
-        else
-          Wt(1) = 0.0d0
-        endif
-       
-       
-          Wtx = Wt(1)*Wt23
+            norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
+            Wt(1) = mls_gaussian( norp(1) , wcon )
+            Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
   
-          pxk(1)=1.0d0
-          pxk(2)=xm(i)
-          pxk(3)=ym(j)
-          pxk(4)=zm(k)
+            pxk(1)=1.0d0
+            pxk(2)=xm(i)
+            pxk(3)=ym(j)
+            pxk(4)=zm(k)
   
-          call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
-          B(1:4,inw)=Wtx*pxk(1:4)
+            call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4)
+            B(1:4,inw)=Wtx*pxk(1:4)
   
-          inw = inw + 1
-      enddo !end i
-     enddo !end j
-    enddo !end k
+            inw = inw + 1
+        enddo !end i
+    enddo !end j
+enddo !end k
   
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf

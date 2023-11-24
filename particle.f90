@@ -13,7 +13,7 @@ integer :: my_up,my_down
 
 if(imlsfor.eq.1)then
 
-	call findindices
+	call findCentroidIndices
 	call mlsWeight
 
 	fpxyz=0.0d0
@@ -22,7 +22,7 @@ if(imlsfor.eq.1)then
 	my_down=myid-1
 	my_up=myid+1
 
-	do mstep=1,1 !KZ: iteration over enforcing immersed-boundary condition
+	do mstep=1,1 !KZ: iteration(?) over enforcing immersed-boundary condition
 		call update_both_ghosts(n1,n2,vx,kstart,kend)
 		call update_both_ghosts(n1,n2,vy,kstart,kend)
 		call update_both_ghosts(n1,n2,vz,kstart,kend)
@@ -36,10 +36,12 @@ if(imlsfor.eq.1)then
 
 		call mlsForce
 
-		!if IMELT
+		if (imelt .eq. 1) then 
+			call findProbeIndices
 		! mlsMelt
 		! call mlsVertWeight
 		! call mlsdtdn
+		endif
 
 		call velforce
 		call tempforce
