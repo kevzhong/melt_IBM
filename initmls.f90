@@ -13,6 +13,7 @@ real :: I1, I2, I3
 
   celvol = 1.0d0 / (dx1*dx2*dx3) ! (uniform) Eulerian cell volume
 
+  !KZ: For future multi-body melting, should cfac should be size cfac(maxnf,Nparticle)
   do ntr = 1,maxnf
 
      !cfac(ntr) = sur(ntr,1)*invdx1celvol ! For isotropic grid only

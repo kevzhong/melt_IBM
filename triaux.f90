@@ -180,6 +180,21 @@ return
 end subroutine calculate_distance
 
 !     ----------------------------------------------------------------
+subroutine calc_centroids_from_vert(tri_cent,xyz,vert_of_face,nf,nv)
+        implicit none
+        integer :: i, nf, nv
+        real, dimension(3,nf) :: tri_cent
+        real, dimension(3,nv) :: xyz
+        integer, dimension(3, nf) :: vert_of_face 
+
+        do i = 1,nf
+                tri_cent(1,i) =  sum ( xyz( 1, vert_of_face(1:3,i)  )  )  / 3.0d0
+                tri_cent(2,i) =  sum ( xyz( 2, vert_of_face(1:3,i)  )  )  / 3.0d0
+                tri_cent(3,i) =  sum ( xyz( 3, vert_of_face(1:3,i)  )  )  / 3.0d0
+        enddo
+end subroutine
+!------------------------------------------------------
+
 
 subroutine dot(xy,x,y)
 
