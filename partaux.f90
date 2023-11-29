@@ -326,6 +326,13 @@ subroutine set_connectivity
       
     enddo
 
+    ! KZ store vertex coordinates
+    ! Eventually should be superceded by a COM-relative formulation
+       xyzv(1:3,:,1)= xyz0(1:3,:)
+       xyzv(1,:,1) = xyzv(1,:,1) + 0.5d0*xlen
+       xyzv(2,:,1) = xyzv(2,:,1) + 0.5d0*ylen
+       xyzv(3,:,1) = xyzv(3,:,1) + 0.5d0*zlen
+
 end subroutine
 
 

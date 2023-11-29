@@ -211,7 +211,7 @@
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
       real, dimension(:,:,:), allocatable :: ptxAB_temp
       !real, dimension(:,:,:), allocatable :: ddx_ptxAB, ddy_ptxAB, ddz_ptxAB !Shape function derivatives at probes
-      real, dimension(:,:), allocatable :: dtdn_o, dtdn_i, ! Normal gradients at interface vertices (outward and inward dirn)
+      real, dimension(:,:), allocatable :: dtdn_o, dtdn_i ! Normal gradients at interface vertices (outward and inward dirn)
 
       !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 

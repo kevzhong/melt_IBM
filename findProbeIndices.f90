@@ -12,7 +12,7 @@ subroutine findProbeIndices
   USE mls_param, only : pindv,Nparticle,maxnv,xyzv, vert_nor, h_eulerian
   IMPLICIT NONE
   real pos(3)
-  integer i1,j1,k1,,inp,nv
+  integer i1,j1,k1,inp,nv
   real :: s
 
   do inp=1,Nparticle
@@ -60,7 +60,7 @@ subroutine findProbeIndices
        k1  = modulo(k1-1,n3m)  + 1
        !kst = modulo(kst-1,n3m) + 1
 
-       pind(4,nv,inp)=i1; pind(5,nv,inp)=j1; pind(6,nv,inp)=k1  ! indices for negative probe
+       pindv(4,nv,inp)=i1; pindv(5,nv,inp)=j1; pindv(6,nv,inp)=k1  ! indices for negative probe
        !------------------END NEGATIVE PROBE-------------------------
     end do
   end do

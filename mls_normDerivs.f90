@@ -5,8 +5,10 @@ USE mpi_param, only: kstart, kend
 implicit none
 real,dimension(4) :: ptx
 real,dimension(3) :: pos
+integer, dimension(3) :: probe_inds
 real, dimension(3) :: gradT
 integer :: inp,nv
+real :: s
 
 dtdn_o(:,:) = 0.0d0
 gradT = 0.0d0
@@ -19,19 +21,36 @@ do inp=1,Nparticle
         !------------------ POSITIVE PROBE-------------------------
         pos(1:3) = xyzv(1:3,nv,inp) + h_eulerian * vert_nor(1:3,nv,inp) / s !Positive probe location
 
-        !pos(1:3) = xyzv(1:3,nv,inp)
+         ! initialise pre-factor matrix
+         ptx(1)   = 1.d0; 
+         ptx(2:4) = pos(1:3)
+
+         probe_inds(1:3) = pindv(1:3,nv,inp) ! Positive probe cage-indices
+
+         call wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
+         dtdn_o(nv,inp) = vert_nor(1,nv,inp) * gradT(1) & ! nx dTdx
+                        + vert_nor(2,nv,inp) * gradT(2) & ! ny dTdy
+                        + vert_nor(3,nv,inp) * gradT(3)   ! nz dTdz
+
+      endif !end if pindv(3...)
+
+        !------------------ NEGATIVE PROBE-------------------------
+      if(pindv(6,nv,inp).ge.kstart-1 .and. pindv(6,nv,inp).le.kend+1) then
+        s = norm2( vert_nor(1:3,nv,inp) )
+        pos(1:3) = xyzv(1:3,nv,inp) - h_eulerian * vert_nor(1:3,nv,inp) / s !Negative probe location
 
          ! initialise pre-factor matrix
          ptx(1)   = 1.d0; 
          ptx(2:4) = pos(1:3)
 
-         call wght_gradT(nv,inp,pos,ptx,gradT)
-         dtdn_o(nv,inp) = vert_nor(1,nv,inp) * gradT(1) & ! nx dTdx
-                        + vert_nor(2,nv,inp) * gradT(2) & ! ny dTdy
-                        + vert_nor(3,nv,inp) * gradT(3)   ! nz dTdz
+         probe_inds(1:3) = pindv(4:6,nv,inp) ! Negative probe cage-indices
 
-        write(*,*) "myid = ", myid, "dtdn_o for vertex", nv,  "is: ", dtdn_o(nv,1)
-      endif
+         call wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
+         dtdn_i(nv,inp) = -vert_nor(1,nv,inp) * gradT(1) & ! -nx dTdx
+                        - vert_nor(2,nv,inp) * gradT(2) & ! -ny dTdy
+                        - vert_nor(3,nv,inp) * gradT(3)   ! -nz dTdz
+
+      endif !end if pindv(6...)
 
  enddo
 enddo
@@ -39,10 +58,10 @@ enddo
 end subroutine mls_normDerivs
 
 
-subroutine wght_gradT(nv,inp,pos,ptx,gradT)
+subroutine wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
 USE param
 USE geom
-use local_arrays, only temp
+use local_arrays, only: temp
 USE mls_param
 USE mpi_param, only: kstart, kend
 implicit none
@@ -59,20 +78,25 @@ real :: Wtx, Wt23
 real :: dWx_dx, dWy_dy, dWz_dz
 real :: dWdx, dWdy, dWdz
 integer :: inp,nv,inw,i,j,k,k1
-integer, dimension(3) :: pind_i, pind_o
+integer, dimension(3) :: pind_i, pind_o, probe_inds
 
 !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
 
-  
-if(pindv(3,nv,inp).ge.kstart .and. pindv(3,nv,inp).le.kend) then
+if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
   
 !-------------FORCING FUNCTION------------------------
 ! volume of a face with a specific marker - thickness taken as average of grid spacing
   
 !WGHT1
-pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
-pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
-! pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+!pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
+!pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
+!pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+
+pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
+pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
+pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
+
+
   
 k1  = floor(pos(3)*dx3) + 1
 pind_i(3)=k1-1
@@ -90,32 +114,34 @@ inw = 1
 ! Likewise for derivatives of A, B
 do k=pind_i(3), pind_o(3)
   
-    norp(3)=abs(zm(k)-pos(3)) / (wscl / dx3)
+    norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
     Wt(3) = mls_gaussian( norp(3) , wcon )
-    dWz_dz = mls_gauss_deriv(norp(3),rcoef) ! dWz / dr_z
+    dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
     dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
     do j=pind_i(2), pind_o(2)
   
-        norp(2)=abs(ym(j)-pos(2)) / (wscl / dx2)
+        norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
         Wt(2) = mls_gaussian( norp(2) , wcon )
         Wt23 = Wt(2)*Wt(3)
   
-        dWy_dy = mls_gauss_deriv(norp(2),rcoef) ! dWy / dr_y
-        dWy_dy = dWy_dy * ( ( pos(2) - ym(k) ) / abs( pos(2) - ym(k)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+        dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
+        dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
         do i=pind_i(1), pind_o(1)
   
-            norp(1)=abs(xm(i)-pos(1)) / (wscl / dx1)
+            norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
             Wt(1) = mls_gaussian( norp(1) , wcon )
             Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
 
-            dWx_dx = mls_gauss_deriv(norp(1),rcoef) ! dWx / dr_x
-            dWx_dx = dWx_dx * ( ( pos(1) - xm(k) ) / abs( pos(1) - xm(k)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+            dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
+            dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
 
             pxk(1)=1.0d0
             pxk(2)=xm(i)
             pxk(3)=ym(j)
             pxk(4)=zm(k)
-  
+            ! C = alpha * A * B + beta * C
+            ! Note how the result of the computation is stored in C
+            !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
             call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
             B(1:4,inw)=Wtx*pxk(1:4)
 
@@ -148,10 +174,12 @@ enddo !end k
     !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
     ! C = alpha * A * B + beta * C
     ! Note how the result of the computation is stored in C
-    !
+    ! 
     !
     ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
     !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
+    !
+    ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
 
     !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
     ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
@@ -166,29 +194,30 @@ enddo !end k
     ! Now compute derivatives of gamma for use in (3.141)
 
     !---------------------- x derivative ddx_ptxAB-------------------------------------------
-    dgamdx = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially
-    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, dgamdx, 1 ) ! Get -dAdx*gamma + dpdx first, store in dgamdx
-    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in dgamdx
-    call DGEMV('N',    4, 4, 1.0d0, invA, 4, dgamdx, 1, 0.0d0, dgamdx, 1 ) 
+    pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
+    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
+    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
+
     ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
     call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
     call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
 
 
+
     !---------------------- y derivative ddy_ptxAB-------------------------------------------
-    dgamdy = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
-    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, dgamdy, 1 ) 
-    call DGEMV('N',    4, 4, 1.0d0, invA, 4, dgamdy, 1, 0.0d0, dgamdy, 1 ) 
-    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1) 
-    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1) 
+    pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
 
     !---------------------- z derivative ddz_ptxAB-------------------------------------------
-    dgamdz = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
-    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, dgamdz, 1 ) 
-    call DGEMV('N',    4, 4, 1.0d0, invA, 4, dgamdz, 1, 0.0d0, dgamdz, 1 ) 
-    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1) 
+    pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
     call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
-
     
     !-------------------- Now compute derivatives at the marker location---------------------
     ! e.g. Vanella & Balaras (2009) equation (27)

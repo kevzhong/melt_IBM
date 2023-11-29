@@ -38,6 +38,15 @@ if(imlsfor.eq.1)then
 
 		if (imelt .eq. 1) then 
 			call findProbeIndices
+
+			! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
+			call mls_normDerivs
+			call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_o,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
+			call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_i,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
+
+			! TODO: optional step: dTdn at triangle centroids
+
+			
 		! mlsMelt
 		! call mlsVertWeight
 		! call mlsdtdn
