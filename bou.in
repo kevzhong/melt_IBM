@@ -16,5 +16,5 @@ NWRIT         NREAD         PREAD
    0           5e-3           1.0
 FORCING
    0 
-TMELT
-  0.5d0
+TMELT       LATHEAT     CP_SOLID
+  0.5d0       1.0d0       1.0d0

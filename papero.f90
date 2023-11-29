@@ -48,7 +48,7 @@
         read(15,301) dummy       
         read(15,*) forcing 
         read(15,301) dummy       
-        read(15,*) Tmelt 
+        read(15,*) Tmelt , latHeat, cpsolid
       close(15)
 
       open(unit=15,file='part.in',status='old')

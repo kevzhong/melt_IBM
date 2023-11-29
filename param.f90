@@ -15,7 +15,7 @@
         real      :: dtmax,cfllim
         real      :: tl,epsstar,kfmax
         integer   :: nson,idtv,forcing
-        real      :: Tmelt
+        real      :: Tmelt, latHeat, cpsolid
 !=================================================
 !       end of input file
 !=================================================
@@ -181,6 +181,7 @@
 
       real, dimension(:,:),   allocatable :: xyz0
       real, dimension(:,:,:), allocatable :: xyzv
+      real, dimension(:,:,:), allocatable :: rhs_stefan
       real, dimension(:,:,:), allocatable :: dxyz_CM_b
       real, dimension(:,:,:), allocatable :: dxyz_CM_s
 
