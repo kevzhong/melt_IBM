@@ -11,6 +11,7 @@ integer :: inp,nv
 real :: s
 
 dtdn_o(:,:) = 0.0d0
+dtdn_i(:,:) = 0.0d0
 gradT = 0.0d0
 
 do inp=1,Nparticle
@@ -20,6 +21,7 @@ do inp=1,Nparticle
         s = norm2( vert_nor(1:3,nv,inp) )
         !------------------ POSITIVE PROBE-------------------------
         pos(1:3) = xyzv(1:3,nv,inp) + h_eulerian * vert_nor(1:3,nv,inp) / s !Positive probe location
+
 
          ! initialise pre-factor matrix
          ptx(1)   = 1.d0; 
@@ -46,9 +48,11 @@ do inp=1,Nparticle
          probe_inds(1:3) = pindv(4:6,nv,inp) ! Negative probe cage-indices
 
          call wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
-         dtdn_i(nv,inp) = -vert_nor(1,nv,inp) * gradT(1) & ! -nx dTdx
-                        - vert_nor(2,nv,inp) * gradT(2) & ! -ny dTdy
-                        - vert_nor(3,nv,inp) * gradT(3)   ! -nz dTdz
+         dtdn_i(nv,inp) = vert_nor(1,nv,inp) * gradT(1) & ! nx dTdx
+                        + vert_nor(2,nv,inp) * gradT(2) & ! ny dTdy
+                        + vert_nor(3,nv,inp) * gradT(3)   ! nz dTdz
+
+                        ! Note the same normal-sign convetion
 
       endif !end if pindv(6...)
 
@@ -225,7 +229,6 @@ enddo !end k
     gradT(1) = sum( ddx_PtxAB * Tnel) !dT dx
     gradT(2) = sum( ddy_PtxAB * Tnel) !dT dy
     gradT(3) = sum( ddz_PtxAB * Tnel) !dT dz
-
 
   endif
   end

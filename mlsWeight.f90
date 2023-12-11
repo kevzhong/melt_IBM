@@ -22,9 +22,9 @@ do inp=1,Nparticle
          ptx(2:4) = pos(1:3)
 
 
-         call wght1(ntr,inp,pos,ptx,ptxAB_q1(1:nel,ntr,inp))
-         call wght2(ntr,inp,pos,ptx,ptxAB_q2(1:nel,ntr,inp))
-         call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
+         !call wght1(ntr,inp,pos,ptx,ptxAB_q1(1:nel,ntr,inp))
+         !call wght2(ntr,inp,pos,ptx,ptxAB_q2(1:nel,ntr,inp))
+         !call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
          call wghttemp(ntr,inp,pos,ptx,ptxAB_temp(1:nel,ntr,inp))
 
       endif

@@ -181,7 +181,7 @@
 
       real, dimension(:,:),   allocatable :: xyz0
       real, dimension(:,:,:), allocatable :: xyzv
-      real, dimension(:,:,:), allocatable :: rhs_stefan
+      real, dimension(:,:,:), allocatable :: vmelt_n
       real, dimension(:,:,:), allocatable :: dxyz_CM_b
       real, dimension(:,:,:), allocatable :: dxyz_CM_s
 

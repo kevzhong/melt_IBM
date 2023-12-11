@@ -36,27 +36,27 @@ if(imlsfor.eq.1)then
 
         call mlsForce
 
-        ! if (imelt .eq. 1) then 
-        !     call findProbeIndices
-        !     ! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
-        !     call mls_normDerivs
-        !     ! TODO: optional step: dTdn at triangle centroids
-        ! endif
+        if (imelt .eq. 1) then 
+            call findProbeIndices
+            ! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
+            call mls_normDerivs
+            ! TODO: optional step: dTdn at triangle centroids
+        endif
 
         call velforce
         call tempforce
     end do
 endif
  
-call update_both_ghosts(n1,n2,vx,kstart,kend)
-call update_both_ghosts(n1,n2,vy,kstart,kend)
-call update_both_ghosts(n1,n2,vz,kstart,kend)
+!call update_both_ghosts(n1,n2,vx,kstart,kend)
+!call update_both_ghosts(n1,n2,vy,kstart,kend)
+!call update_both_ghosts(n1,n2,vz,kstart,kend)
 call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 if (imelt .eq. 1) then
     ! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
-    call findProbeIndices
-    call mls_normDerivs
+    !call findProbeIndices
+    !call mls_normDerivs
     ! TODO: optional step: dTdn at triangle centroids
     
     call apply_StefanCondition ! Update vertex locations xyzv
