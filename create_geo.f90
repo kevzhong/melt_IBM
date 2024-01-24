@@ -184,7 +184,9 @@ subroutine set_xyz
          dxyz_CM_s(:,i,inp) = matmul(AAT,dxyz_CM_b(:,i,inp))
 !         dxyz_CM_s(:,i,inp) = matmul(AAT,dxyz_CM_s(:,i,inp))
 
-         tri_bar(:,i,inp) = pos_cm(:,inp) + dxyz_CM_s(:,i,inp) 
+         !tri_bar(:,i,inp) = pos_cm(:,inp) + dxyz_CM_s(:,i,inp) 
+            ! KZ: above commented: don't store tri_centroids as COM-relative for now due to loss of sig figs.
+         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv) 
 
           !-- velocity
          omega_s(:,inp) = matmul(AAT,omega_b(:,inp))
@@ -192,6 +194,8 @@ subroutine set_xyz
          vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:) 
       end do
    end do
+
+
 end subroutine
 
 

@@ -27,7 +27,7 @@ function mls_gaussian(r,rcoef) result(phi)
   implicit none
   real :: r, phi
   real, intent(in) :: rcoef
-     if (r.gt.1.0) then
+     if (r.gt.1.0d0) then
        phi = 0.0d0
      else 
        phi = exp( - (r / rcoef )**2  )
@@ -44,7 +44,7 @@ function mls_gaussian(r,rcoef) result(phi)
     implicit none
     real :: r, dphidr
     real, intent(in) :: rcoef
-       if (r.gt.1.0) then
+       if (r.gt.1.0d0) then
         dphidr = 0.0d0
        else 
         dphidr = - 2.0d0 * r / rcoef**2 * exp( - (r / rcoef )**2  )
@@ -101,18 +101,18 @@ end
 function princ_axis_rotm() result(AAT)
  implicit none
  real :: a,b,c,q(4),AAT(3,3)
-!chiral
-  AAT(1,1)=  0.714878366
-  AAT(1,2)=  0.699231582 
-  AAT(1,3)= -0.00491090121
+ 
+ AAT(1,1) = 1.0d0
+ AAT(1,2) = 0.0d0
+ AAT(1,3) = 0.0d0
 
-  AAT(2,1)= -0.699235701
-  AAT(2,2)=  0.714890348
-  AAT(2,3)=  0.00110640384
+ AAT(2,1) = 0.0d0
+ AAT(2,2) = 1.0d0
+ AAT(2,3) = 0.0d0
 
-  AAT(3,1)= -0.00428438838
-  AAT(3,2)= -0.00264293329
-  AAT(3,3)= -0.999987329
+ AAT(3,1) = 0.0d0
+ AAT(3,2) = 0.0d0
+ AAT(3,3) = 1.0d0
 end
 
 

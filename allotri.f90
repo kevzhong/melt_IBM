@@ -11,10 +11,10 @@ implicit none
   allocate(edge_of_face(3,maxnf))
   allocate(vert_of_vert(max_n_edge_of_vert,maxnv))
   allocate(edge_of_vert(max_n_edge_of_vert,maxnv))
-  allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
+  !allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 
   allocate(pind(6,maxnf,Nparticle))
-  allocate(pindv(6,maxnv,Nparticle))
+  !allocate(pindv(6,maxnv,Nparticle))
   allocate(pind1(3,Nparticle))
   allocate(dismax(3,maxnf,Nparticle))
 
@@ -28,6 +28,8 @@ implicit none
   allocate(sur(maxnf,Nparticle))
   allocate(vol(maxnf,Nparticle))
 
+  allocate(Avert(maxnv,Nparticle))
+
 
   allocate(xyz0(3,maxnv))
   allocate(xyzv(3,maxnv,Nparticle))
@@ -40,8 +42,10 @@ implicit none
 
   !allocate(  ddx_ptxAB(nel,maxnv,Nparticle) , ddy_ptxAB(nel,maxnv,Nparticle), ddz_ptxAB(nel,maxnv,Nparticle) )
 
-  allocate(  dtdn_o(maxnv,Nparticle) , dtdn_i(maxnv,Nparticle)  ) !Normal gradients at vertices
-  allocate(vmelt_n(3,maxnv,Nparticle))
+  allocate(  dtdn_o(maxnf,Nparticle) , dtdn_i(maxnf,Nparticle)  ) !Normal gradients at vertices
+  allocate(  dtdn_oVert(maxnv,Nparticle) , dtdn_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
+
+  allocate(vmelt(maxnv,Nparticle))
 
   !allocate(ptxAB_pr(1,nel,maxnf,Nparticle))
 

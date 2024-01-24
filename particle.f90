@@ -37,10 +37,12 @@ if(imlsfor.eq.1)then
         call mlsForce
 
         if (imelt .eq. 1) then 
-            call findProbeIndices
-            ! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
-            call mls_normDerivs
-            ! TODO: optional step: dTdn at triangle centroids
+            call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
+            call mls_normDerivs ! Calculate dTdn at +/- faces, then interpolate to vertices
+            
+            call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_oVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
+            call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_iVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+
         endif
 
         call velforce
@@ -53,30 +55,35 @@ endif
 !call update_both_ghosts(n1,n2,vz,kstart,kend)
 call update_both_ghosts(n1,n2,temp,kstart,kend)
 
-if (imelt .eq. 1) then
-    ! Calculate dT/dn at immersed interface location (vertices), stored in dtdn_o, dtdn_i for outward/inward
-    !call findProbeIndices
-    !call mls_normDerivs
-    ! TODO: optional step: dTdn at triangle centroids
-    
+
+if (imelt .eq. 1) then    
     call apply_StefanCondition ! Update vertex locations xyzv
+    !if (ismaster) then
+    !    do i = 1,maxnv
+    !        write(*,*) "New interface location (x,yz) " , i, "is ", xyzv(1:3,i,1)
+    !        !write(*,*) "dtdn_iVert " , inp, "is ", dtdn_iVert(inp,1)
+    !    enddo
+   !endif
     
     ! Update triangulated geometry details
     ! KZ: Entirety of same computation done by each process since each process stores all the geo info, could be parallelised later if a bottleneck
     do inp = 1,Nparticle
-        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv)
-        call calculate_area(Surface,maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp))
+        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv) ! Update tri_bar
+        call calculate_area(Surface,maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp)) ! Update sur
+        call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp)) ! Update vertex areas
+        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp))
 
-        !if (ismaster) then
-        !    do i=1,maxnf
-        !    write(*,*) "Updated area of triangle ", i, "is ", sur(i,1)
-        !    enddo
-        !endif
         ! Update Eulerian < -- > Lagrangian forcing transfer coefficient
           cfac = ( sur(:,inp) * h_eulerian ) / celvol ! Note the hard-coded single-particle for cfac
           
           call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp), vert_of_face(:,:))
-          call calculate_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,VERTBUFFER,maxnf,faces_of_vert)
+          !call update_tri_normal(tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp), vert_of_face(:,:))
+          call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:))
+          !if (ismaster) then
+          !      do i=1,maxnf
+          !          write(*,*) "Centroid ", i, "is ", tri_bar(1:3,i,1)
+          !      enddo
+          ! endif
     enddo
 endif
 

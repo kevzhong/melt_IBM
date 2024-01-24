@@ -1161,108 +1161,107 @@ end subroutine mpi_globalsum_double_var
 
 
 
+! !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+! subroutine write_tecplot_geom
+! use mpih
+! use mpi_param
+! use param
+! use local_arrays, only: vy,vz,pr,vx
+! use local_aux, only: vorx,vory,vorz
+! use mls_param
+! use coll_mod
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subroutine write_tecplot_geom
-use mpih
-use mpi_param
-use param
-use local_arrays, only: vy,vz,pr,vx
-use local_aux, only: vorx,vory,vorz
-use mls_param
-use coll_mod
+! character(70) namfile,namfi2
+! character(7) ipfi
+! character*2 ibod
+! real tprfi
+! integer itime
+! tprfi = 1/tframe
+! itime=nint(time*tprfi)
+! write(ipfi,82)itime
+! 82 format(i7.7)
+! 98 format(i2.2)
 
-character(70) namfile,namfi2
-character(7) ipfi
-character*2 ibod
-real tprfi
-integer itime
-tprfi = 1/tframe
-itime=nint(time*tprfi)
-write(ipfi,82)itime
-82 format(i7.7)
-98 format(i2.2)
+! if(ismaster)then
+!     do inp=1,Nparticle
 
-if(ismaster)then
-    do inp=1,Nparticle
+!    write(ibod,98) inp
+!    write(ipfi,82) itime
 
-   write(ibod,98) inp
-   write(ipfi,82) itime
+! namfi2='continuation/G_'//ibod//'_'//ipfi
 
-namfi2='continuation/G_'//ibod//'_'//ipfi
+! call write_geom (maxnv,maxnf,xyzv(:,:,inp),tri_bar(:,:,inp),namfi2)
+! end do
+! end if
 
-call write_geom (maxnv,maxnf,xyzv(:,:,inp),vel_tri(:,:,inp),namfi2)
-end do
-end if
+! end subroutine write_tecplot_geom
 
-end subroutine write_tecplot_geom
-
-!---------------------------------------------------------------------------------------------
-      subroutine write_geom (nv,nf,xyz,tri_vel,filename)
-      use param
-      use mpih
-      use mls_param
-      use mpi_param, only: kstart,kend
-      use local_arrays, only: vy,vz,vx,pr
-      implicit none
-      character(70) filename,geotecfile
-      integer ic,jc,kc,i,nv,nf
-      integer :: v1,v2,v3
-      real, dimension (3,nv) :: xyz
-      real, dimension (3,nf) :: tri_vel,node
-      real tprfi
-      integer itime
-      character(7) ipfi
-      tprfi = 1/tframe
-      itime=nint(time*tprfi)
-      write(ipfi,82)itime
-   82 format(i7.7)
+! !---------------------------------------------------------------------------------------------
+!       subroutine write_geom (nv,nf,xyz,tri_vel,filename)
+!       use param
+!       use mpih
+!       use mls_param
+!       use mpi_param, only: kstart,kend
+!       use local_arrays, only: vy,vz,vx,pr
+!       implicit none
+!       character(70) filename,geotecfile
+!       integer ic,jc,kc,i,nv,nf
+!       integer :: v1,v2,v3
+!       real, dimension (3,nv) :: xyz
+!       real, dimension (3,nf) :: tri_vel,node
+!       real tprfi
+!       integer itime
+!       character(7) ipfi
+!       tprfi = 1/tframe
+!       itime=nint(time*tprfi)
+!       write(ipfi,82)itime
+!    82 format(i7.7)
 
      
 
-        geotecfile=trim(filename)//'.dat'
-!        write(*,*)' Write file ',trim(geotecfile)
+!         geotecfile=trim(filename)//'.dat'
+! !        write(*,*)' Write file ',trim(geotecfile)
 
-        open(11,file=geotecfile)
+!         open(11,file=geotecfile)
 
-        write(11,*)'TITLE = "Geo"'
-        write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
-    !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
-        write(11,*)'ZONE T="FETri" N=',nv,' E=',nf,' ZONETYPE=FETriangle'
-        ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
-        write(11,*)'DATAPACKING=BLOCK                                       '
-        write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)'
+!         write(11,*)'TITLE = "Geo"'
+!         write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
+!     !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
+!         write(11,*)'ZONE T="FETri" N=',nv,' E=',nf,' ZONETYPE=FETriangle'
+!         ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
+!         write(11,*)'DATAPACKING=BLOCK                                       '
+!         write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)'
 
-        do i=1,nv
-        write(11,*)xyz(1,i)
-        end do
+!         do i=1,nv
+!         write(11,*)xyz(1,i)
+!         end do
 
-        do i=1,nv
-        write(11,*)xyz(2,i)
-        end do
+!         do i=1,nv
+!         write(11,*)xyz(2,i)
+!         end do
 
-        do i=1,nv
-        write(11,*)xyz(3,i)
-        end do
+!         do i=1,nv
+!         write(11,*)xyz(3,i)
+!         end do
 
-        do i=1,nf
-        write(11,*)tri_vel(1,i)
-        end do
+!         do i=1,nf
+!         write(11,*)tri_vel(1,i)
+!         end do
 
-        do i=1,nf
-        write(11,*)tri_vel(2,i)
-        end do
+!         do i=1,nf
+!         write(11,*)tri_vel(2,i)
+!         end do
 
-        do i=1,nf
-        write(11,*)tri_vel(3,i)
-        end do
+!         do i=1,nf
+!         write(11,*)tri_vel(3,i)
+!         end do
 
-        do i=1,nf
-        write(11,*)vert_of_face(1:3,i)
-        end do
+!         do i=1,nf
+!         write(11,*)vert_of_face(1:3,i)
+!         end do
 
 
-        close(11)
-        return
-        end subroutine write_geom
-!---------------------------------------------------------------------------------------------
+!         close(11)
+!         return
+!         end subroutine write_geom
+! !---------------------------------------------------------------------------------------------

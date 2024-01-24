@@ -23,7 +23,7 @@
                   do jc = 1, n2m
                         rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
                         if (rr .ge. rad_p) then !Liquid exterior
-                              temp(ic,jc,kc) = 1.0d0
+                              temp(ic,jc,kc) = 1.0d0 
                         endif
                   enddo !end j
             enddo !end i

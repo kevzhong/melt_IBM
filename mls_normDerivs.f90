@@ -7,62 +7,73 @@ real,dimension(4) :: ptx
 real,dimension(3) :: pos
 integer, dimension(3) :: probe_inds
 real, dimension(3) :: gradT
-integer :: inp,nv
+integer :: inp,nf
 real :: s
+
+! Evaluate dTdn at probe locations extrapolated from triangle centroids
 
 dtdn_o(:,:) = 0.0d0
 dtdn_i(:,:) = 0.0d0
+
+dtdn_oVert(:,:) = 0.0d0
+dtdn_iVert(:,:) = 0.0d0
+
+
 gradT = 0.0d0
 
 do inp=1,Nparticle
- do nv = 1, maxnv
+ do nf = 1, maxnf
 
-      if(pindv(3,nv,inp).ge.kstart-1 .and. pindv(3,nv,inp).le.kend+1) then
-        s = norm2( vert_nor(1:3,nv,inp) )
+      if(pind(3,nf,inp).ge.kstart .and. pind(3,nf,inp).le.kend) then
+        s = norm2( tri_nor(1:3,nf,inp) )
         !------------------ POSITIVE PROBE-------------------------
-        pos(1:3) = xyzv(1:3,nv,inp) + h_eulerian * vert_nor(1:3,nv,inp) / s !Positive probe location
-
+        pos(1:3) = tri_bar(1:3,nf,inp) + h_eulerian * tri_nor(1:3,nf,inp) / s !Positive probe location
 
          ! initialise pre-factor matrix
-         ptx(1)   = 1.d0; 
+         ptx(1)   = 1.0d0 
          ptx(2:4) = pos(1:3)
 
-         probe_inds(1:3) = pindv(1:3,nv,inp) ! Positive probe cage-indices
+         probe_inds(1:3) = pind(1:3,nf,inp) ! Positive probe cage-indices
 
-         call wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
-         dtdn_o(nv,inp) = vert_nor(1,nv,inp) * gradT(1) & ! nx dTdx
-                        + vert_nor(2,nv,inp) * gradT(2) & ! ny dTdy
-                        + vert_nor(3,nv,inp) * gradT(3)   ! nz dTdz
+         call wght_gradT(pos,ptx,gradT,probe_inds)
+         dtdn_o(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
+                        + tri_nor(2,nf,inp) * gradT(2) & ! ny dTdy
+                        + tri_nor(3,nf,inp) * gradT(3)   ! nz dTdz
 
-      endif !end if pindv(3...)
+         ! Transfer the face A*dTdn to its vertices, to dtdn_oVert and area, Avert 
+         call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),dtdn_o(nf,inp),dtdn_oVert(:,inp),maxnv)
+
+         !write(*,*) "centroid loc", nf, " is ", tri_bar(1:3,nf,1)
+      endif !end if pind(3...)
 
         !------------------ NEGATIVE PROBE-------------------------
-      if(pindv(6,nv,inp).ge.kstart-1 .and. pindv(6,nv,inp).le.kend+1) then
-        s = norm2( vert_nor(1:3,nv,inp) )
-        pos(1:3) = xyzv(1:3,nv,inp) - h_eulerian * vert_nor(1:3,nv,inp) / s !Negative probe location
+      if(pind(6,nf,inp).ge.kstart .and. pind(6,nf,inp).le.kend) then
+        s = norm2( tri_nor(1:3,nf,inp) )
+        pos(1:3) = tri_bar(1:3,nf,inp) - h_eulerian * tri_nor(1:3,nf,inp) / s !Negative probe location
 
          ! initialise pre-factor matrix
-         ptx(1)   = 1.d0; 
+         ptx(1)   = 1.0d0 
          ptx(2:4) = pos(1:3)
 
-         probe_inds(1:3) = pindv(4:6,nv,inp) ! Negative probe cage-indices
+         probe_inds(1:3) = pind(4:6,nf,inp) ! Negative probe cage-indices
 
-         call wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
-         dtdn_i(nv,inp) = vert_nor(1,nv,inp) * gradT(1) & ! nx dTdx
-                        + vert_nor(2,nv,inp) * gradT(2) & ! ny dTdy
-                        + vert_nor(3,nv,inp) * gradT(3)   ! nz dTdz
+         call wght_gradT(pos,ptx,gradT,probe_inds)
+         dtdn_i(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
+                        + tri_nor(2,nf,inp) * gradT(2) & ! ny dTdy
+                        + tri_nor(3,nf,inp) * gradT(3)   ! nz dTdz
 
-                        ! Note the same normal-sign convetion
+        ! Note the same normal-sign convetion
+          
+        call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),dtdn_i(nf,inp),dtdn_iVert(:,inp),maxnv)
 
       endif !end if pindv(6...)
 
  enddo
 enddo
-
 end subroutine mls_normDerivs
 
 
-subroutine wght_gradT(nv,inp,pos,ptx,gradT,probe_inds)
+subroutine wght_gradT(pos,ptx,gradT,probe_inds)
 USE param
 USE geom
 use local_arrays, only: temp
@@ -81,7 +92,7 @@ real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vect
 real :: Wtx, Wt23
 real :: dWx_dx, dWy_dy, dWz_dz
 real :: dWdx, dWdy, dWdz
-integer :: inp,nv,inw,i,j,k,k1
+integer :: inp,inw,i,j,k,k1
 integer, dimension(3) :: pind_i, pind_o, probe_inds
 
 !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
@@ -231,4 +242,21 @@ enddo !end k
     gradT(3) = sum( ddz_PtxAB * Tnel) !dT dz
 
   endif
-  end
+  end subroutine wght_gradT
+
+  subroutine faceToVert_interp(vert_of_face,Atri,Avert,dtdn_F,dtdn_v,nv)
+
+    ! For a SINGLE triangle/face, spreads the area-weighted heat flux and area to its 3 vertices
+    implicit none
+
+    integer :: i, nv
+    integer, dimension(3) :: vert_of_face ! 3 vertices of the specified triangle
+    real, intent(in) :: Atri, dtdn_F
+    real, dimension(nv), intent(out)  :: dtdn_v ! Vertex heat flux
+    real, dimension(nv), intent(in)  :: Avert ! Area associated with vertices
+
+    do i = 1,3 !vertices v1, v2, v3
+      dtdn_v( vert_of_face(i) ) = dtdn_v( vert_of_face(i) ) + dtdn_F * ( Atri / Avert( vert_of_face(i) ) )
+    enddo
+
+  end subroutine faceToVert_interp

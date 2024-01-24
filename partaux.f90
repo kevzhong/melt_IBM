@@ -291,40 +291,40 @@ subroutine set_connectivity
     enddo
 
 
-    ! KZ: Compute the face-of-vertices connectivity
-    faces_of_vert = 0
+    ! ! KZ: Compute the face-of-vertices connectivity
+    ! faces_of_vert = 0
 
-    do i=1,maxnf
+    ! do i=1,maxnf
 
-      ! Scan for vertex to assign for vertex 1
-      do j = 1,VERTBUFFER
-          if ( faces_of_vert( j, vert_of_face(1,i)  ) .eq. 0 ) then
-              dummyInd = j !Next-in-line index of face to store
-              exit
-          endif
-      enddo
-      faces_of_vert(dummyInd, vert_of_face(1,i)  ) = i
+    !   ! Scan for vertex to assign for vertex 1
+    !   do j = 1,VERTBUFFER
+    !       if ( faces_of_vert( j, vert_of_face(1,i)  ) .eq. 0 ) then
+    !           dummyInd = j !Next-in-line index of face to store
+    !           exit
+    !       endif
+    !   enddo
+    !   faces_of_vert(dummyInd, vert_of_face(1,i)  ) = i
 
-      ! Scan for vertex to assign for vertex 2
-      do j = 1,VERTBUFFER
-          if ( faces_of_vert( j, vert_of_face(2,i)  ) .eq. 0 ) then
-              dummyInd = j !Next-in-line index of face to store
-              exit
-          endif
-      enddo
-      faces_of_vert(dummyInd, vert_of_face(2,i)  ) = i
+    !   ! Scan for vertex to assign for vertex 2
+    !   do j = 1,VERTBUFFER
+    !       if ( faces_of_vert( j, vert_of_face(2,i)  ) .eq. 0 ) then
+    !           dummyInd = j !Next-in-line index of face to store
+    !           exit
+    !       endif
+    !   enddo
+    !   faces_of_vert(dummyInd, vert_of_face(2,i)  ) = i
 
 
-      ! Scan for vertex to assign for vertex 3
-      do j = 1,VERTBUFFER
-          if ( faces_of_vert( j, vert_of_face(3,i)  ) .eq. 0 ) then
-              dummyInd = j !Next-in-line index of face to store
-              exit
-          endif
-      enddo
-      faces_of_vert(dummyInd, vert_of_face(3,i)  ) = i
+    !   ! Scan for vertex to assign for vertex 3
+    !   do j = 1,VERTBUFFER
+    !       if ( faces_of_vert( j, vert_of_face(3,i)  ) .eq. 0 ) then
+    !           dummyInd = j !Next-in-line index of face to store
+    !           exit
+    !       endif
+    !   enddo
+    !   faces_of_vert(dummyInd, vert_of_face(3,i)  ) = i
       
-    enddo
+    ! enddo
 
     ! KZ store vertex coordinates
     ! Eventually should be superceded by a COM-relative formulation
@@ -444,3 +444,113 @@ subroutine writePPquat
   end if
 
 end subroutine writePPquat
+
+subroutine writePPpartVol
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+
+  if (myid.eq.0) then
+
+  namfile='flowmov/partPPVol.txt'
+
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)')time, Volume(1) !KZ: note hard-coded single particle for now
+
+  close(43)
+  end if
+end subroutine writePPpartVol
+
+
+
+subroutine write_tecplot_geom
+  use mpih
+  use mpi_param
+  use param
+  use mls_param
+  
+  character(70) namfile,namfi2
+  character(7) ipfi
+  character*2 ibod
+  real tprfi
+  integer itime
+  tprfi = 1/tframe
+  itime=nint(time*tprfi)
+  write(ipfi,82)itime
+  82 format(i7.7)
+  98 format(i2.2)
+  
+  if(ismaster)then
+      do inp=1,Nparticle
+  
+        write(ibod,98) inp
+        write(ipfi,82) itime
+  
+        namfi2='flowmov/geom_'//ibod//'_'//ipfi
+  
+        !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
+        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),vert_nor(:,:,inp),namfi2)
+
+      end do
+  end if
+  
+  end subroutine write_tecplot_geom
+  
+  !---------------------------------------------------------------------------------------------
+        subroutine write_VertGeom (nv,nf,xyz,vmelt,dtdn_o,dtdn_i,vert_nor,filename)
+        use param
+        use mpih
+        use mls_param, only: vert_of_face
+        implicit none
+        character(70) filename,geotecfile
+        integer i,nv,nf
+        real, dimension (3,nv) :: xyz , vert_nor 
+        real, dimension (nv) :: vmelt, dtdn_o, dtdn_i
+        real tprfi
+        integer itime
+        character(7) ipfi
+
+
+        tprfi = 1/tframe
+        itime=nint(time*tprfi)
+        write(ipfi,82)itime
+     82 format(i7.7)
+  
+       
+  
+          geotecfile=trim(filename)//'.dat'
+  !        write(*,*)' Write file ',trim(geotecfile)
+  
+          open(11,file=geotecfile)
+  
+          write(11,*)'TITLE = "Geo"'
+          !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
+          write(11,*)'VARIABLES = X Y Z vmelt dtdn_o dtdn_i nhat_x nhat_y nhat_z'
+      !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
+          write(11,*)'ZONE T="FETri" N=',nv,' E=',nf,' ZONETYPE=FETriangle'
+          ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
+          write(11,*)'DATAPACKING=POINT                                       '
+          !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
+          !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
+
+          do i=1,nv
+          write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), dtdn_o(i), dtdn_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
+          end do
+
+          do i=1,nf
+          write(11,*)vert_of_face(1:3,i)
+          end do
+  
+  
+          close(11)
+          return
+          end subroutine write_VertGeom
+  !---------------------------------------------------------------------------------------------

@@ -40,7 +40,7 @@ real :: Volume
         
 Volume=0.0
 do i=1,nf       
-        Volume = Volume +   abs ( tri_nor(1,i) * tri_bar(1,i) * sur(i) )
+        Volume = Volume +    tri_nor(1,i) * tri_bar(1,i) * sur(i) 
 enddo        
 return
 
@@ -104,6 +104,32 @@ enddo
 
 return
 end subroutine calculate_area
+
+subroutine calculate_vert_area (Avert,nv,nf,vert_of_face,sur)
+        implicit none
+integer :: nv,nf,v1,v2,v3,i
+integer, dimension (3,nf) :: vert_of_face
+real, dimension (nv) ::Avert
+real, dimension (nf) :: sur
+        ! Vertex area defined as the total area of faces adjoining a vertex
+
+Avert = 0.
+
+do i = 1,nf
+        v1=vert_of_face(1,i)
+        v2=vert_of_face(2,i)
+        v3=vert_of_face(3,i)
+
+        Avert(v1) = Avert(v1) + sur(i)
+        Avert(v2) = Avert(v2) + sur(i)
+        Avert(v3) = Avert(v3) + sur(i)
+enddo
+
+return
+
+end subroutine calculate_vert_area
+
+
 !------------------------------------------------------
 subroutine calculate_normal (tri_nor,nv,nf,xyz,vert_of_face)
 
@@ -134,32 +160,84 @@ return
 
 end subroutine calculate_normal
 
+subroutine update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face)
+        ! "Safely" update the triangle normal vector using information from prev. iteration/timestep normal vector
+        ! Take sign of dot product with newly-computed normal vector and previous normal vector
+        ! Choose the one that is best-aligned with prev iteration 
+        ! i.e. choose nhat_new such that sign( dot(nhat_old, nhat_new) ) = 1
+
+        implicit none
+        integer :: nv,nf,v1,v2,v3,i
+        integer, dimension (3,nf) :: vert_of_face
+        real,dimension (3,nf) :: tri_nor
+        real, dimension (3,nv) ::xyz
+        real, dimension(3) :: ve1,ve2
+        real, dimension(3) :: nhat_old
+        real :: sgn
+
+        do i=1,nf
+                nhat_old(1:3) = tri_nor(1:3,i)
+
+                v1=vert_of_face(1,i)
+                v2=vert_of_face(2,i)
+                v3=vert_of_face(3,i)
+        
+                ! Vectors ve1 = P2 - P1   ve2 = P3 - P1
+                ve1(1:3) = xyz(1:3,v2) - xyz(1:3,v1)
+                ve2(1:3) = xyz(1:3,v3) - xyz(1:3,v1)
+        
+                ! Compute cross-product cross(ve1, ve2)
+                tri_nor(1,i) = ve1(2)*ve2(3) - ve1(3)*ve2(2)
+                tri_nor(2,i) = ve1(3)*ve2(1) - ve1(1)*ve2(3)
+                tri_nor(3,i) = ve1(1)*ve2(2) - ve1(2)*ve2(1)
+                tri_nor(1:3,i) = tri_nor(1:3,i) / sqrt ( sum ( tri_nor(1:3,i)**2  )  )
+
+                ! flip if needed
+                sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
+                sgn = sign(1.0, sgn)
+                
+                tri_nor(1:3,i) = tri_nor(1:3,i)*sgn
+        enddo
+        
+        return
+        
+end subroutine update_tri_normal
+
 
 !------------------------------------------------------
 
-subroutine calculate_vert_normal (tri_nor,vert_nor,nv,buffersize,nf,faces_of_vert)
+subroutine calculate_areaWeighted_vert_normal (tri_nor,vert_nor,nv,nf,Atri,vert_of_face)
 
 ! This routine computes the (normalised) normal vectors at each of the geometric vertices
-! The normal vector is computed as the arithmetic average of each adjoining face
+! Computed as area-weighted average (from triangle areas Atri)
 
 implicit none
-integer :: i,nfsum,nv,nf,buffersize
+integer :: i,nfsum,nv,nf,v
 real,dimension (3,nf) :: tri_nor
 real,dimension (3,nv) :: vert_nor
+real, dimension(nf) :: Atri
 real :: magN
-integer, dimension(buffersize,nv) :: faces_of_vert
-vert_nor = 0.
+integer, dimension(3,nf) :: vert_of_face
 
+vert_nor(:,:) = 0.
+
+do i=1,nf
+        do v=1,3 ! For each 3 vertices of each triangle
+                vert_nor( 1:3, vert_of_face(v,i) ) = vert_nor( 1:3, vert_of_face(v,i) ) + Atri(i)*tri_nor(1:3,i)
+        enddo
+enddo
+
+! No need to track area of vertices, since we normalise in the end
+! Normalise for all vertices
 do i=1,nv
-        nfsum =   count( ( faces_of_vert(:,i) .ne. 0 ) ) 
-        vert_nor(1:3,i) =   sum ( tri_nor(1:3, faces_of_vert(1:nfsum,i) ) , DIM=2 ) / float(nfsum)
         magN = norm2 ( vert_nor(:,i) )
         vert_nor(1:3,i) = vert_nor(1:3,i) / magN
 enddo
 
+
 return
 
-end subroutine calculate_vert_normal
+end subroutine calculate_areaWeighted_vert_normal
 !------------------------------------------------------
 
 subroutine calculate_distance(dist,nv,ne,xyz,vert_of_edge)

@@ -144,7 +144,7 @@
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
       real      :: rad_p
-      integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
+      !integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
       !=================================================
       !       end of input file
       !=================================================
@@ -161,10 +161,10 @@
       integer, dimension(:,:), allocatable :: vert_of_vert
       integer, dimension(:,:), allocatable :: edge_of_vert
       integer, dimension(:,:), allocatable :: face_of_edge
-      integer, dimension(:,:), allocatable :: faces_of_vert !KZ: added to store face-vertex connectivity
+      !integer, dimension(:,:), allocatable :: faces_of_vert !KZ: added to store face-vertex connectivity
 
       integer, dimension(:,:,:), allocatable :: pind
-      integer, dimension(:,:,:), allocatable :: pindv
+      !integer, dimension(:,:,:), allocatable :: pindv
       integer, dimension(:,:), allocatable :: pind1
       real,dimension(:,:,:),     allocatable :: dismax
 
@@ -181,7 +181,6 @@
 
       real, dimension(:,:),   allocatable :: xyz0
       real, dimension(:,:,:), allocatable :: xyzv
-      real, dimension(:,:,:), allocatable :: vmelt_n
       real, dimension(:,:,:), allocatable :: dxyz_CM_b
       real, dimension(:,:,:), allocatable :: dxyz_CM_s
 
@@ -212,7 +211,10 @@
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
       real, dimension(:,:,:), allocatable :: ptxAB_temp
       !real, dimension(:,:,:), allocatable :: ddx_ptxAB, ddy_ptxAB, ddz_ptxAB !Shape function derivatives at probes
-      real, dimension(:,:), allocatable :: dtdn_o, dtdn_i ! Normal gradients at interface vertices (outward and inward dirn)
+      real, dimension(:,:), allocatable :: dtdn_o, dtdn_i ! Normal gradients at interface faces (outward and inward dirn)
+      real, dimension(:,:), allocatable :: dtdn_oVert, dtdn_iVert ! Normal gradients at interface VERTICES (outward and inward dirn)
+      real, dimension(:,:), allocatable :: Avert ! Area of each vertex
+      real, dimension(:,:), allocatable :: vmelt ! local melting velocity at vertices
 
       !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 

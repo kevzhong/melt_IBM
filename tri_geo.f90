@@ -30,22 +30,27 @@ subroutine tri_geo
   end if
 
   call set_particle_rad !KZ: hard-coded AAT matrix influences tri_bar (centroid) calculations
-  call set_xyz
+  call set_xyz ! KZ: Setting COM-relative xyz
 
   do inp=1,Nparticle
 
         call calculate_distance(dist(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:))
         call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp))
+        call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp))
         call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:))
-        call calculate_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,VERTBUFFER,maxnf,faces_of_vert)
-        call calculate_volume(Volume(inp),maxnv,maxnf,xyz0(:,:),vert_of_face(:,:),vol(:,inp))
-        !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp))
+        call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:))
+        !call calculate_volume(Volume(inp),maxnv,maxnf,xyz0(:,:),vert_of_face(:,:),vol(:,inp))
+        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp))
   end do
 
        
         if(ismaster)then
         write(*,*)'Volume fraction: ',Volume(1)*Nparticle*1.0e2/(xlen*ylen*zlen)
+        write(*,*)'Volume of object: ',Volume(1)
+
         end if
+
+
 
   call print_particle_info
 
