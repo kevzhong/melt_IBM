@@ -37,7 +37,7 @@ real    :: AA1(3,3)
 real    :: AA2(3,3)
 
 
-if (coll_check.eq. .false.) then
+if (coll_check.eqv. .false.) then
   fp = 0.d0
   tp = 0.d0
 endif
@@ -65,7 +65,7 @@ do i = 1,Nparticle
         t1 = matmul(AA1, t1)
         t2 = matmul(AA2, t2)
 
-      if (coll_check.eq. .false.) then
+      if (coll_check.eqv. .false.) then
         fp(1:3,i) = fp(1:3,i) + f1
         fp(1:3,j) = fp(1:3,j) + f2
         tp(1:3,i) = tp(1:3,i) + t1

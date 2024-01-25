@@ -1,13 +1,14 @@
-#FC = h5pfc -O0 -r8 -fpp -module $(OBJDIR) -g -traceback -check bounds -debug all -warn all -fpe0 -ftrapuv
 
-FC = h5pfc -r8 -O3 -fpp -module $(OBJDIR)# -traceback  -check bounds -fpe0
+#FC = h5pfc -r8 -O3 -fpp -module $(OBJDIR) # FOR INTEL
+FC = h5pfc -cpp -fdefault-real-8 -fdefault-double-8 -fallow-argument-mismatch -J $(OBJDIR)# -KZ: FOR GNU (PERSONAL MACHINE)
+
 #uncomment the following 2 lines for discoverer
 #FC+=${FFTW3_FFLAGS}
 #LINKS = -lz -lhdf5_fortran -lhdf5 -qmkl=sequential#-mkl=sequential
 #Uncomment the following lines for Snellius and personal machine
-LINKS = -lfftw3 -lz -lhdf5_fortran -lhdf5 -qmkl=sequential
-#export HDF5_FC=mpiifort #KZ: specify which Fortran compiler to use (for personal machine)
-
+#LINKS = -lfftw3 -lz -lhdf5_fortran -lhdf5 -qmkl=sequential
+#LINKS = -lfftw3 -lz -lhdf5_fortran -lhdf5
+LINKS = -L/opt/homebrew/Cellar/fftw/3.3.10_1/lib -lfftw3 -lz -llapack -lblas -ldl -lhdf5_fortran -lhdf5 # for GNU personal machine, ABOVE FOR INTEL
 
 PROGRAM = a.out
 

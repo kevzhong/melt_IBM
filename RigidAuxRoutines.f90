@@ -254,7 +254,7 @@ do iter=1,nIter
       coll_om_b_m1(:,inp)     = coll_om_b(:,inp)
       coll_quat_dot_m1(:,inp) = coll_quat_dot(:,inp)
 
-    if (is_coll(inp).eq. .false.) then
+    if (is_coll(inp).eqv. .false.) then
       !-- reset vars
       coll_vel(:,inp)      = 0.d0
       coll_om_b(:,inp)     = 0.d0
@@ -271,7 +271,7 @@ do iter=1,nIter
   do while ( maxval(error) .gt. zlen/n3m .and. maxval(step) .lt. 10)
 
        do inp = 1,Nparticle
-           if (is_coll(inp).eq. .true. ) then
+           if (is_coll(inp).eqv. .true. ) then
 
            ! update fp and tp
            call collision

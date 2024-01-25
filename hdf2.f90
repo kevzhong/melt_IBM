@@ -263,7 +263,7 @@ subroutine init_quat_flowmov
 
   inquire(file=filename, exist=file_exists)
 
-  if (file_exists .eq. .false. .or. nread.eq.0) then
+  if (file_exists .eqv. .false. .or. nread.eq.0) then
 
   call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, hdferr)
   call h5fclose_f(file_id, hdferr)

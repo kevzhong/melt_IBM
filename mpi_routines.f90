@@ -962,7 +962,7 @@ end subroutine mpi_globalsum_double_var
       write(45,'("<Topology TopologyType=""3DRectMesh"" NumberOfElements=""",i4," ",i4," ",i4,"""/>")') n3m,n2,n1
       write(45,'("<Geometry GeometryType=""ORIGIN_DXDYDZ"">")')
       write(45,'("<DataItem Name=""Origin"" Dimensions=""3"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
-      write(45,'(2E15.7)') 0,0,0.0
+      write(45,'(2E15.7)') 0.0,0.0,0.0
       write(45,'("</DataItem>")')
       write(45,'("<DataItem Name=""Spacing"" Dimensions=""3"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
       write(45,'(2E15.7)') 1./dx3,1./dx2,1./dx1

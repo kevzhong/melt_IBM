@@ -483,7 +483,7 @@
       write(45,'("<Topology TopologyType=""2DCORECTMESH"" NumberOfElements=""",i4," ",i4,"""/>")') n3m,n1m
       write(45,'("<Geometry GeometryType=""ORIGIN_DXDY"">")')
       write(45,'("<DataItem Name=""Origin"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
-      write(45,'(2E15.7)') 0,0.0
+      write(45,'(2E15.7)') 0.0,0.0
       write(45,'("</DataItem>")')
       write(45,'("<DataItem Name=""Spacing"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
       write(45,'(2E15.7)') 1./dx3,1./dx1
