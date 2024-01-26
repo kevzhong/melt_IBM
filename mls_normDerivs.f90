@@ -23,7 +23,7 @@ gradT = 0.0d0
 
 do inp=1,Nparticle
  do nf = 1, maxnf
-
+  if (isGhostFace(nf,inp) .eqv. .false. ) then
       if(pind(3,nf,inp).ge.kstart .and. pind(3,nf,inp).le.kend) then
         s = norm2( tri_nor(1:3,nf,inp) )
         !------------------ POSITIVE PROBE-------------------------
@@ -67,7 +67,7 @@ do inp=1,Nparticle
         call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),dtdn_i(nf,inp),dtdn_iVert(:,inp),maxnv)
 
       endif !end if pindv(6...)
-
+    endif
  enddo
 enddo
 end subroutine mls_normDerivs

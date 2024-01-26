@@ -9,8 +9,19 @@ implicit none
   allocate(face_of_edge(2,maxne))
   allocate(vert_of_face(3,maxnf))
   allocate(edge_of_face(3,maxnf))
-  allocate(vert_of_vert(max_n_edge_of_vert,maxnv))
-  allocate(edge_of_vert(max_n_edge_of_vert,maxnv))
+  !allocate(vert_of_vert(max_n_edge_of_vert,maxnv))
+  !allocate(edge_of_vert(max_n_edge_of_vert,maxnv))
+
+  ! KZ: remeshing data structures
+  allocate(isGhostFace(maxnf,Nparticle))
+  allocate(isGhostEdge(maxne,Nparticle))
+  allocate(isGhostVert(maxnv,Nparticle))
+  allocate(eLengths(maxne,Nparticle))
+
+  isGhostFace(:,:) = .false.
+  isGhostEdge(:,:) = .false.
+  isGhostVert(:,:) = .false.
+
   !allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 
   allocate(pind(6,maxnf,Nparticle))
@@ -24,7 +35,6 @@ implicit none
   allocate(tri_nor(3,maxnf,Nparticle))
   allocate(vert_nor(3,maxnv,Nparticle)) !KZ: vertex normal vectors
 
-  allocate(dist(maxne,Nparticle))
   allocate(sur(maxnf,Nparticle))
   allocate(vol(maxnf,Nparticle))
 

@@ -139,7 +139,7 @@
       !=================================================
       !       read from input file part.in
       !==========================================================
-      integer   :: imlsfor,imlsstr, imelt
+      integer   :: imlsfor,imlsstr, imelt, iremesh
       real      :: wcon, wscl, dens_ratio
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
@@ -161,7 +161,12 @@
       integer, dimension(:,:), allocatable :: vert_of_vert
       integer, dimension(:,:), allocatable :: edge_of_vert
       integer, dimension(:,:), allocatable :: face_of_edge
-      !integer, dimension(:,:), allocatable :: faces_of_vert !KZ: added to store face-vertex connectivity
+
+      !Re-meshing data structures
+      logical, dimension(:,:), allocatable :: isGhostFace
+      logical, dimension(:,:), allocatable :: isGhostEdge
+      logical, dimension(:,:), allocatable :: isGhostVert
+      real, dimension(:,:), allocatable :: eLengths
 
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
@@ -173,7 +178,6 @@
       real, dimension(:,:,:), allocatable :: vert_nor !KZ: normal vectors of vertices
 
       
-      real, dimension(:,:), allocatable :: dist
       real, dimension(:,:), allocatable :: sur, vol
 
       real :: celvol

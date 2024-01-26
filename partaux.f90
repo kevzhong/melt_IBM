@@ -200,19 +200,19 @@ subroutine set_connectivity
         read(109,*)xyz0(1,i),xyz0(2,i),xyz0(3,i)
       end do
 
-      n_edge_of_vert(1:maxnv)=0
+      ! n_edge_of_vert(1:maxnv)=0
 
-      do i=1,maxne
-        read(109,*)v1,v2
-        vert_of_edge(1,i)=v1
-        vert_of_edge(2,i)=v2
-        n_edge_of_vert(v1)=n_edge_of_vert(v1)+1
-        n_edge_of_vert(v2)=n_edge_of_vert(v2)+1
-        vert_of_vert(n_edge_of_vert(v1),v1)=v2           
-        vert_of_vert(n_edge_of_vert(v2),v2)=v1           
-        edge_of_vert(n_edge_of_vert(v1),v1)=i
-        edge_of_vert(n_edge_of_vert(v2),v2)=i
-      enddo
+      ! do i=1,maxne
+      !   read(109,*)v1,v2
+      !   vert_of_edge(1,i)=v1
+      !   vert_of_edge(2,i)=v2
+      !   n_edge_of_vert(v1)=n_edge_of_vert(v1)+1
+      !   n_edge_of_vert(v2)=n_edge_of_vert(v2)+1
+      !   vert_of_vert(n_edge_of_vert(v1),v1)=v2           
+      !   vert_of_vert(n_edge_of_vert(v2),v2)=v1           
+      !   edge_of_vert(n_edge_of_vert(v1),v1)=i
+      !   edge_of_vert(n_edge_of_vert(v2),v2)=i
+      ! enddo
 
       do i=1,maxnf
           read(109,*)edge_of_face(1,i),edge_of_face(2,i), edge_of_face(3,i)
@@ -276,12 +276,12 @@ subroutine set_connectivity
        endif
     enddo 
 
-    ! Check - vertex cannot be connected to itself
-    do i=1,maxnv
-      do j=1,n_edge_of_vert(i)
-         if (vert_of_vert(j,i).eq.i)  write(*,*)'Error ',vert_of_vert(j,i),i
-      enddo
-    enddo
+    ! ! Check - vertex cannot be connected to itself
+    ! do i=1,maxnv
+    !   do j=1,n_edge_of_vert(i)
+    !      if (vert_of_vert(j,i).eq.i)  write(*,*)'Error ',vert_of_vert(j,i),i
+    !   enddo
+    ! enddo
 
     !Check
     do i=1,maxne
@@ -337,40 +337,40 @@ end subroutine
 
 
 
-subroutine get_maxn_n_edge_of_vert
-  use param
-  use mpih
-  use mls_param
-  implicit none
-  real    :: dummy
-  integer :: i,j,v1,v2,v3,e1,e2,e3
-  integer :: nv,ne,nf
-  integer, dimension(:), allocatable :: num_edge_of_vert
+! subroutine get_maxn_n_edge_of_vert
+!   use param
+!   use mpih
+!   use mls_param
+!   implicit none
+!   real    :: dummy
+!   integer :: i,j,v1,v2,v3,e1,e2,e3
+!   integer :: nv,ne,nf
+!   integer, dimension(:), allocatable :: num_edge_of_vert
 
-    open(109,file=gtsfx)
+!     open(109,file=gtsfx)
 
-      read(109,*) nv, ne, nf
+!       read(109,*) nv, ne, nf
 
-      do i=1,nv
-        read(109,*) dummy, dummy, dummy
-      end do
+!       do i=1,nv
+!         read(109,*) dummy, dummy, dummy
+!       end do
 
-      allocate(num_edge_of_vert(nv))
-      num_edge_of_vert(1:nv)=0
+!       allocate(num_edge_of_vert(nv))
+!       num_edge_of_vert(1:nv)=0
 
-      do i=1,maxne
-        read(109,*) v1,v2
-        num_edge_of_vert(v1) = num_edge_of_vert(v1) + 1
-        num_edge_of_vert(v2) = num_edge_of_vert(v2) + 1
-      enddo
+!       do i=1,maxne
+!         read(109,*) v1,v2
+!         num_edge_of_vert(v1) = num_edge_of_vert(v1) + 1
+!         num_edge_of_vert(v2) = num_edge_of_vert(v2) + 1
+!       enddo
 
-     max_n_edge_of_vert = -1e6
-     do i=1,nv
-       max_n_edge_of_vert = max(num_edge_of_vert(i), max_n_edge_of_vert )
-     enddo
+!      max_n_edge_of_vert = -1e6
+!      do i=1,nv
+!        max_n_edge_of_vert = max(num_edge_of_vert(i), max_n_edge_of_vert )
+!      enddo
 
-    close(109)
-end subroutine
+!     close(109)
+! end subroutine
 
 subroutine writePind
   use param

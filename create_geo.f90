@@ -186,7 +186,7 @@ subroutine set_xyz
 
          !tri_bar(:,i,inp) = pos_cm(:,inp) + dxyz_CM_s(:,i,inp) 
             ! KZ: above commented: don't store tri_centroids as COM-relative for now due to loss of sig figs.
-         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv) 
+         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv,isGhostFace(:,inp)) 
 
           !-- velocity
          omega_s(:,inp) = matmul(AAT,omega_b(:,inp))
@@ -296,8 +296,8 @@ subroutine print_particle_info
   ddx3 = n3m/zlen
 
   if(myid.eq.0) then
-    write(*,*) 'Ave edge/dx: ',    (sum(dist(:,1))/float(maxne)) * ddx3
-    write(*,*) 'Max edge/dx: ',    maxval(dist(:,1)) * ddx3
-    write(*,*) 'Min edge/dx: ',    minval(dist(:,1)) * ddx3
+    write(*,*) 'Ave edge/dx: ',    (sum(eLengths(:,1))/float(maxne)) * ddx3
+    write(*,*) 'Max edge/dx: ',    maxval(eLengths(:,1)) * ddx3
+    write(*,*) 'Min edge/dx: ',    minval(eLengths(:,1)) * ddx3
   end if
 end subroutine

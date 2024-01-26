@@ -11,7 +11,7 @@ subroutine tri_geo
   call set_particle_array_sizes
 
   ! max n vert
-  call get_maxn_n_edge_of_vert
+  ! call get_maxn_n_edge_of_vert
   ! Allocations using vertices,edges and faces as parameters     
   call allocate_trigeo
 
@@ -34,13 +34,21 @@ subroutine tri_geo
 
   do inp=1,Nparticle
 
-        call calculate_distance(dist(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:))
-        call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp))
-        call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp))
+        call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:),isGhostEdge(:,inp))
+
+        call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp),isGhostFace(:,inp))
+
+        call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp),isGhostFace(:,inp))
+
         call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:))
-        call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:))
+
+        call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
+        vert_of_face(:,:),isGhostFace(:,inp),isGhostVert(:,inp))
+
         !call calculate_volume(Volume(inp),maxnv,maxnf,xyz0(:,:),vert_of_face(:,:),vol(:,inp))
-        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp))
+
+        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+
   end do
 
        

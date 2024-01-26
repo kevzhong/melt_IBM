@@ -6,14 +6,14 @@
 subroutine findCentroidIndices
   USE mpih
   USE param
-  USE mls_param, only : pind,Nparticle,maxnf,tri_bar
+  USE mls_param, only : pind,Nparticle,maxnf,tri_bar,isGhostFace
   IMPLICIT NONE
   real pos(3)
   integer i1,j1,k1,ist,jst,kst,inp,ntr
 
   do inp=1,Nparticle
     do ntr=1,maxnf
-
+      if (isGhostFace(ntr,inp) .eqv. .false. ) then
        pos(1:3) = tri_bar(1:3,ntr,inp)
 
        !++++++++Indices of the marker+++++++++++++++
@@ -36,6 +36,7 @@ subroutine findCentroidIndices
        pind(1,ntr,inp)=i1 ; pind(2,ntr,inp)=j1 ; pind(3,ntr,inp)=k1
        pind(4,ntr,inp)=ist; pind(5,ntr,inp)=jst; pind(6,ntr,inp)=kst
        !-------------------------------------------------------------
+      endif
     end do
   end do
 

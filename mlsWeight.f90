@@ -12,7 +12,7 @@ invdx1dt = 1.0d0/dx1/dt
 
 do inp=1,Nparticle
  do ntr = 1, maxnf
-
+  if (isGhostFace(ntr,inp) .eqv. .false. ) then
       if(pind(3,ntr,inp).ge.kstart-1 .and. pind(3,ntr,inp).le.kend+1) then
     
          pos(1:3) = tri_bar(1:3,ntr,inp)
@@ -28,6 +28,7 @@ do inp=1,Nparticle
          call wghttemp(ntr,inp,pos,ptx,ptxAB_temp(1:nel,ntr,inp))
 
       endif
+    endif
 
  enddo
 enddo

@@ -9,7 +9,7 @@
 subroutine findProbeIndices
   USE mpih
   USE param
-  USE mls_param, only : pind,Nparticle,maxnf,tri_bar, tri_nor, h_eulerian
+  USE mls_param, only : pind,Nparticle,maxnf,tri_bar, tri_nor, h_eulerian, isGhostFace
   IMPLICIT NONE
   real pos(3)
   integer i1,j1,k1,inp,nf
@@ -19,6 +19,7 @@ subroutine findProbeIndices
 
   do inp=1,Nparticle
     do nf=1,maxnf
+      if ( isGhostFace(nf,inp) .eqv. .false. ) then
         ! Get nhat vector length: should be unity but compute anyway for safety
         s = norm2( tri_nor(1:3,nf,inp) )
 
@@ -64,6 +65,7 @@ subroutine findProbeIndices
 
        pind(4,nf,inp)=i1; pind(5,nf,inp)=j1; pind(6,nf,inp)=k1  ! indices for negative probe
        !------------------END NEGATIVE PROBE-------------------------
+      endif
     end do
   end do
 
