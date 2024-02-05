@@ -62,17 +62,24 @@ if (imelt .eq. 1) then
     ! Update triangulated geometry details
     ! KZ: Entirety of same computation done by each process since each process stores all the geo info, could be parallelised later if a bottleneck
     do inp = 1,Nparticle
+        call calculate_area(Surface,maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp),isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
+        call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:),isGhostEdge(:,inp))
+        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:),isGhostFace(:,inp))
+
+        if (rm_flag .eqv. true.) then
+            call main_remesh (Surface,sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,xyzv(:,:,inp),tri_nor(:,:,inp),A_thresh,&
+                        vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
+                        isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag)
+        endif
+
         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
-        call calculate_area(Surface,maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp),isGhostFace(:,inp)) ! Update sur
         call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp),isGhostFace(:,inp)) ! Update vertex areas
         call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
-        call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:),isGhostEdge(:,inp))
 
         ! Update Eulerian < -- > Lagrangian forcing transfer coefficient
           cfac = ( sur(:,inp) * h_eulerian ) / celvol ! Note the hard-coded single-particle for cfac
           
           !call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp), vert_of_face(:,:))
-          call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:),isGhostFace(:,inp))
           call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:),&
                                         isGhostFace(:,inp), isGhostVert(:,inp) )
           !if (ismaster) then

@@ -36,7 +36,8 @@ subroutine tri_geo
 
         call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:),isGhostEdge(:,inp))
 
-        call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp),isGhostFace(:,inp))
+        call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:),sur(:,inp),&
+                            isGhostFace(:,inp),rm_flag(inp),A_thresh)
 
         call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:),sur(:,inp),isGhostFace(:,inp))
 

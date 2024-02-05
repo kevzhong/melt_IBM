@@ -48,7 +48,7 @@
         read(15,301) dummy       
         read(15,*) forcing 
         read(15,301) dummy       
-        read(15,*) Tmelt , latHeat, cpsolid
+        read(15,*) Tmelt , latHeat, cpliquid
       close(15)
 
       open(unit=15,file='part.in',status='old')
@@ -57,7 +57,7 @@
         read(15,301) dummy       
         read(15,*) wcon,wscl,dens_ratio
         read(15,301) dummy       
-        read(15,*) gtsfx, rad_p, iremesh
+        read(15,*) gtsfx, rad_p, iremesh, A_thresh
       close(15)
 
 301     format(a4)          

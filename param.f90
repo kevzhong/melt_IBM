@@ -15,7 +15,7 @@
         real      :: dtmax,cfllim
         real      :: tl,epsstar,kfmax
         integer   :: nson,idtv,forcing
-        real      :: Tmelt, latHeat, cpsolid
+        real      :: Tmelt, latHeat, cpliquid
 !=================================================
 !       end of input file
 !=================================================
@@ -167,6 +167,8 @@
       logical, dimension(:,:), allocatable :: isGhostEdge
       logical, dimension(:,:), allocatable :: isGhostVert
       real, dimension(:,:), allocatable :: eLengths
+      real :: PERC_Athresh, A_thresh
+      logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
 
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
@@ -208,7 +210,7 @@
 
       real    invdx1dt
       real, dimension(:), allocatable :: cfac
-      real :: h_eulerian
+      real :: h_eulerian, A_eulerian
       real, dimension (3,3) :: i_inv, i_inv2
 
       !-- mlsWeight

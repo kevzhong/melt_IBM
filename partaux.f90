@@ -200,19 +200,19 @@ subroutine set_connectivity
         read(109,*)xyz0(1,i),xyz0(2,i),xyz0(3,i)
       end do
 
-      ! n_edge_of_vert(1:maxnv)=0
+      !n_edge_of_vert(1:maxnv)=0
 
-      ! do i=1,maxne
-      !   read(109,*)v1,v2
-      !   vert_of_edge(1,i)=v1
-      !   vert_of_edge(2,i)=v2
-      !   n_edge_of_vert(v1)=n_edge_of_vert(v1)+1
-      !   n_edge_of_vert(v2)=n_edge_of_vert(v2)+1
-      !   vert_of_vert(n_edge_of_vert(v1),v1)=v2           
-      !   vert_of_vert(n_edge_of_vert(v2),v2)=v1           
-      !   edge_of_vert(n_edge_of_vert(v1),v1)=i
-      !   edge_of_vert(n_edge_of_vert(v2),v2)=i
-      ! enddo
+      do i=1,maxne
+        read(109,*)v1,v2
+        vert_of_edge(1,i)=v1
+        vert_of_edge(2,i)=v2
+        !n_edge_of_vert(v1)=n_edge_of_vert(v1)+1
+        !n_edge_of_vert(v2)=n_edge_of_vert(v2)+1
+        !vert_of_vert(n_edge_of_vert(v1),v1)=v2           
+        !vert_of_vert(n_edge_of_vert(v2),v2)=v1           
+        !edge_of_vert(n_edge_of_vert(v1),v1)=i
+        !edge_of_vert(n_edge_of_vert(v2),v2)=i
+      enddo
 
       do i=1,maxnf
           read(109,*)edge_of_face(1,i),edge_of_face(2,i), edge_of_face(3,i)

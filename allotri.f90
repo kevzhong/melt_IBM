@@ -17,11 +17,13 @@ implicit none
   allocate(isGhostEdge(maxne,Nparticle))
   allocate(isGhostVert(maxnv,Nparticle))
   allocate(eLengths(maxne,Nparticle))
+  allocate(rm_flag(Nparticle))
 
   isGhostFace(:,:) = .false.
   isGhostEdge(:,:) = .false.
   isGhostVert(:,:) = .false.
-
+  rm_flag = .false.
+  
   !allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 
   allocate(pind(6,maxnf,Nparticle))

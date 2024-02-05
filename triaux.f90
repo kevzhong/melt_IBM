@@ -76,7 +76,7 @@ Volume=Volume/6.
 return
 end subroutine calculate_volume
 !------------------------------------------------------
-subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace)
+subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh)
 
 implicit none
 integer :: nv,nf,v1,v2,v3,i
@@ -85,6 +85,8 @@ logical, dimension(nf) :: isGhostFace
 real, dimension (3,nv) ::xyz
 real, dimension (nf) :: sur
 real :: Surface,d12,d23,d31,sp
+logical :: rm_flag
+real :: A_thresh
 
 Surface=0.0
 do i=1,nf
@@ -105,6 +107,10 @@ do i=1,nf
                 sp=(d12+d23+d31)/2.
                 sur(i)=sqrt(sp*(sp-d12)*(sp-d23)*(sp-d31))
                 Surface=Surface+sur(i)
+
+                if (sur(i) .le. A_thresh) then
+                        rm_flag = .true. ! set the remesh flag to true if any triangle less than the threshold area
+                endif
         endif
 enddo
 
