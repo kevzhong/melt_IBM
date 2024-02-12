@@ -497,60 +497,203 @@ subroutine write_tecplot_geom
         namfi2='flowmov/geom_'//ibod//'_'//ipfi
   
         !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),vert_nor(:,:,inp),namfi2)
+        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+        vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
       end do
   end if
   
   end subroutine write_tecplot_geom
-  
-  !---------------------------------------------------------------------------------------------
-        subroutine write_VertGeom (nv,nf,xyz,vmelt,dtdn_o,dtdn_i,vert_nor,filename)
-        use param
+   !---------------------------------------------------------------------------------------------
+  subroutine write_VertGeom (nv,nf,xyz,vmelt,dtdn_o,dtdn_i,vert_nor,filename,isGhostFace,isGhostVert)
+    use param
+    use mpih
+    use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
+    implicit none
+    character(70) filename,geotecfile
+    integer i,nv,nf
+    real, dimension (3,nv) :: xyz , vert_nor 
+    real, dimension (nv) :: vmelt, dtdn_o, dtdn_i
+    logical, dimension(nv) :: isGhostVert
+    logical, dimension(nf) :: isGhostFace
+    integer, dimension(nv) :: vert_mask
+    integer :: vcnt
+    real tprfi
+    integer itime
+    character(7) ipfi
+
+
+    tprfi = 1/tframe
+    itime=nint(time*tprfi)
+    write(ipfi,82)itime
+ 82 format(i7.7)
+
+   
+
+      geotecfile=trim(filename)//'.dat'
+!        write(*,*)' Write file ',trim(geotecfile)
+
+      open(11,file=geotecfile)
+
+      write(11,*)'TITLE = "Geo"'
+      !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
+      write(11,*)'VARIABLES = X Y Z vmelt dtdn_o dtdn_i nhat_x nhat_y nhat_z'
+  !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
+      write(11,*)'ZONE T="FETri" N=',count(isGhostVert .eqv. .false.),' E=',count(isGhostFace .eqv. .false.),' ZONETYPE=FETriangle'
+      ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
+      write(11,*)'DATAPACKING=POINT                                       '
+      !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
+      !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
+
+      vcnt = 1
+
+      do i=1,nv
+        if (isGhostVert(i) .eqv. .false.) then
+        write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), dtdn_o(i), dtdn_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
+
+        ! For tracking of cumulative non-ghost vertices
+        vert_mask(i) = vcnt
+        vcnt = vcnt + 1
+        endif
+      end do
+
+      do i=1,nf
+        if (isGhostFace(i) .eqv. .false.) then
+          write(11,*) vert_mask( vert_of_face(1,i) ), vert_mask( vert_of_face(2,i) ), vert_mask( vert_of_face(3,i) )
+        endif
+      end do
+
+
+      close(11)
+      return
+      end subroutine write_VertGeom
+
+
+      subroutine debug_write(suffix)
         use mpih
-        use mls_param, only: vert_of_face
-        implicit none
-        character(70) filename,geotecfile
-        integer i,nv,nf
-        real, dimension (3,nv) :: xyz , vert_nor 
-        real, dimension (nv) :: vmelt, dtdn_o, dtdn_i
-        real tprfi
-        integer itime
+        use mpi_param
+        use param
+        use mls_param
+        
+        character(70) namfile,namfi2
         character(7) ipfi
-
-
+        character*2 ibod
+        real tprfi
+        integer itime, suffix
         tprfi = 1/tframe
         itime=nint(time*tprfi)
         write(ipfi,82)itime
-     82 format(i7.7)
-  
-       
-  
-          geotecfile=trim(filename)//'.dat'
-  !        write(*,*)' Write file ',trim(geotecfile)
-  
-          open(11,file=geotecfile)
-  
-          write(11,*)'TITLE = "Geo"'
-          !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
-          write(11,*)'VARIABLES = X Y Z vmelt dtdn_o dtdn_i nhat_x nhat_y nhat_z'
-      !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
-          write(11,*)'ZONE T="FETri" N=',nv,' E=',nf,' ZONETYPE=FETriangle'
-          ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
-          write(11,*)'DATAPACKING=POINT                                       '
-          !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
-          !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
+        82 format(i7.7)
+        98 format(i2.2)
+        
+        if(ismaster)then
+            do inp=1,Nparticle
+        
+              write(ibod,98) inp
+              write(ipfi,82) suffix !KZ: hard-coded
 
-          do i=1,nv
-          write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), dtdn_o(i), dtdn_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
-          end do
+              namfi2='flowmov/FlipGeom_'//ibod//'_'//ipfi
+        
+              call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+              vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
+            end do
+        end if
+        
+        end subroutine debug_write
 
-          do i=1,nf
-          write(11,*)vert_of_face(1:3,i)
-          end do
+
+
+subroutine debug_writeSingle
+        use mpih
+        use mpi_param
+        use param
+        use mls_param
+        
+        character(70) namfile,namfi2
+        character(7) ipfi
+        character*2 ibod
+        real tprfi
+        integer itime
+        tprfi = 1/tframe
+        itime=nint(time*tprfi)
+        write(ipfi,82)itime
+        82 format(i7.7)
+        98 format(i2.2)
+        
+        if(ismaster)then
+            do inp=1,Nparticle
+        
+              write(ibod,98) inp
+        
+              !namfi2='flowmov/geom_'//ibod//'_'//ipfi
+        
+              !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
+              !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+              !vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
+
+              write(ipfi,82) 3471 !KZ: hard-coded
+              namfi2='flowmov/tri_' // ipfi
+              call write_singleTri (3471,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+
+              write(ipfi,82) 4477 !KZ: hard-coded
+              namfi2='flowmov/tri_' // ipfi
+              call write_singleTri (4477,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+
+              write(ipfi,82) 2270 !KZ: hard-coded
+              namfi2='flowmov/tri_' // ipfi
+              call write_singleTri (2270,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+            end do
+        end if
+        
+        end subroutine debug_writeSingle
+
+!---------------------------------------------------------------------------------------------
   
-  
-          close(11)
-          return
-          end subroutine write_VertGeom
-  !---------------------------------------------------------------------------------------------
+        subroutine write_singleTri (ntri,nv,nf,xyz,filename)
+          use param
+          use mpih
+          use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
+          implicit none
+          character(70) filename,geotecfile
+          integer i,nv,nf, ntri
+          real, dimension (3,nv) :: xyz
+          integer :: vcnt
+          real tprfi
+          integer itime
+          character(7) ipfi
+      
+      
+          tprfi = 1/tframe
+          itime=nint(time*tprfi)
+          write(ipfi,82)itime
+       82 format(i7.7)
+      
+         
+      
+            geotecfile=trim(filename)//'.dat'
+      !        write(*,*)' Write file ',trim(geotecfile)
+      
+            open(11,file=geotecfile)
+      
+            write(11,*)'TITLE = "Geo"'
+            !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
+            write(11,*)'VARIABLES = X Y Z'
+        !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
+            write(11,*)'ZONE T="FETri" N=',3,' E=',1,' ZONETYPE=FETriangle'
+            ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
+            write(11,*)'DATAPACKING=POINT                                       '
+            !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
+            !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
+      
+            vcnt = 1
+      
+            do i=1,3
+              write(11,*) xyz(1,vert_of_face(i,ntri)), xyz(2,vert_of_face(i,ntri)), xyz(3,vert_of_face(i,ntri))
+            end do
+      
+
+              write(11,*) 1,2,3
+
+            close(11)
+            return
+            end subroutine write_singleTri

@@ -1,7 +1,7 @@
  N1M          N2M         N3M 
  128           128           128          
 NTST   NSST    TFRAME    TPIN      IRESET 
- 2     3       1e-4      5e-3       0
+ 600     3       1e-4      5e-3       0
 NWRIT         NREAD         PREAD 
   1             0             0
  XLEN         YLEN          ZLEN
@@ -17,4 +17,4 @@ NWRIT         NREAD         PREAD
 FORCING
    0 
 TMELT       LATHEAT     CP_LIQUID
-  0.5d0       0.5d0       1.0d0
+  0.0d0       1.0d0       1.0d0

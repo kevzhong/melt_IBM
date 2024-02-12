@@ -14,7 +14,8 @@ do inp=1,Nparticle
             ! Accumulate outward-normal term, outward = liquid
             vmelt(nv,inp) = cpliquid / latHeat * ( (1.0d0/prandtl)*dtdn_iVert(nv,inp) -(1.0d0/prandtl)*dtdn_oVert(nv,inp) )
             rhs_stefan(1:3) = vmelt(nv,inp)*nhat(1:3)
-            !rhs_stefan(1:3) =  cpliquid / latHeat * ( (1.0d0/prandtl)*dtdn_iVert(nv,inp) -(1.0d0/prandtl)*dtdn_oVert(nv,inp) ) * nhat
+            !rhs_stefan(1:3) =  cpliquid / latHeat * &
+            !                    ( (1.0d0/prandtl)*dtdn_iVert(nv,inp) -(1.0d0/prandtl)*dtdn_oVert(nv,inp) ) * nhat
             !vmelt(nv,inp) = dot_product( rhs_stefan, nhat ) ! Store the scalar local melting velocity
             
             ! Update interface location
