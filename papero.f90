@@ -38,7 +38,7 @@
         read(15,301) dummy
         read(15,*) xlen,ylen,zlen
         read(15,301) dummy
-        read(15,*) ren,prandtl,dt,resid
+        read(15,*) ren,prandtl,betagz,dt,resid
         read(15,301) dummy
         read(15,*) tsta,starea,cflmax
         read(15,301) dummy
@@ -48,7 +48,7 @@
         read(15,301) dummy       
         read(15,*) forcing 
         read(15,301) dummy       
-        read(15,*) Tmelt , latHeat, cpliquid
+        read(15,*) Tmelt , Tliq, Tsol, latHeat, cpliquid
       close(15)
 
       open(unit=15,file='part.in',status='old')
@@ -81,6 +81,9 @@
       endif
 
       gtsfx = "gts/" // trim(gtsfx)
+
+
+      pec = ren * prandtl
 
 
       n1=n1m+1                                                          

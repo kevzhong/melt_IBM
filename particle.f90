@@ -22,7 +22,7 @@ if(imlsfor.eq.1)then
     my_down=myid-1
     my_up=myid+1
 
-    do mstep=1,1 !KZ: iteration(?) over enforcing immersed-boundary condition
+    do mstep=1,1 !Multi-direct forcing iteration. cf. Breugem (2012) eqn. 10
         call update_both_ghosts(n1,n2,vx,kstart,kend)
         call update_both_ghosts(n1,n2,vy,kstart,kend)
         call update_both_ghosts(n1,n2,vz,kstart,kend)
@@ -50,9 +50,9 @@ if(imlsfor.eq.1)then
     end do
 endif
  
-!call update_both_ghosts(n1,n2,vx,kstart,kend)
-!call update_both_ghosts(n1,n2,vy,kstart,kend)
-!call update_both_ghosts(n1,n2,vz,kstart,kend)
+call update_both_ghosts(n1,n2,vx,kstart,kend)
+call update_both_ghosts(n1,n2,vy,kstart,kend)
+call update_both_ghosts(n1,n2,vz,kstart,kend)
 call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
@@ -62,13 +62,14 @@ if (imelt .eq. 1) then
     ! Update triangulated geometry details
     ! KZ: Entirety of same computation done by each process since each process stores all the geo info, could be parallelised later if a bottleneck
     do inp = 1,Nparticle
-        call calculate_area(Surface,maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp),isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
+        call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face,sur(:,inp),&
+                            isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
         call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:),isGhostEdge(:,inp))
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:),isGhostFace(:,inp))
 
         ! Remesh if <= threshold_area detected from calculate_area()
         if ( (rm_flag(inp) .eqv. .true.) .and. (iremesh .eq. 1 ) ) then
-            call main_remesh (Surface,sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,xyzv(:,:,inp),tri_nor(:,:,inp),A_thresh,&
+            call main_remesh (Surface(inp),sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,xyzv(:,:,inp),tri_nor(:,:,inp),A_thresh,&
                         vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
                         isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp))
         endif

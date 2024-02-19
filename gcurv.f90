@@ -94,9 +94,11 @@ character(70) namfile
        write(6,*) 'Initialization Time = ', tin(2) -tin(1), ' sec.'
       endif
 
-      allocate(ax(n1,n2,kstart-1:kend+1))
-      allocate(ay(n1,n2,kstart-1:kend+1))
-      allocate(az(n1,n2,kstart-1:kend+1))
+      allocate(VOFx(n1,n2,kstart-1:kend+1))
+      allocate(VOFy(n1,n2,kstart-1:kend+1))
+      allocate(VOFz(n1,n2,kstart-1:kend+1))
+      allocate(VOFp(n1,n2,kstart-1:kend+1))
+
 !
 !  ********* starts the time dependent calculation ***
 
@@ -126,6 +128,9 @@ character(70) namfile
           write(6,*) "---------------"
           write(6,'(A,I10,A,E10.3)')"nt  ", ntime," time  ",time
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
+          write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
+          write(6,*) "V(t)/VE", Volume(1) / celvol
+
           endif
         !endif
 
@@ -142,8 +147,7 @@ character(70) namfile
 !              call writePPquat
 !              call write_tail_head
 !              call write_shortdist
-!              call mpi_write_field
-            !call writeVertData
+              call mpi_write_field
          endif
            call CalcInjection
            call CalcDissipation

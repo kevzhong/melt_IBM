@@ -1,13 +1,13 @@
       subroutine hdnl3 
       use param
-      use local_arrays, only: vy,vz,qcap,vx,forcz
+      use local_arrays, only: vy,vz,qcap,vx,temp,forcz
       use mpi_param, only: kstart,kend
       use mls_param,only: dens_ratio
       implicit none
       integer :: jc,kc
       integer :: km,kp,jmm,jpp,ic,im,ip
       real    :: h32,h33,h31
-      real    :: udx1,udx2,udx3
+      real    :: udx1,udx2,udx3, fbz
 
       udx1=dx1*0.25
       udx2=dx2*0.25
@@ -60,11 +60,20 @@
            *(vz(ic,jc,kp)+vz(ic,jc,kc))) &
           -((vz(ic,jc,kc)+vz(ic,jc,km)) &
            *(vz(ic,jc,kc)+vz(ic,jc,km))))*udx3
+
+
+!   buoyancy term
+      fbz = betagz * ( temp(ic,jc,kc) + temp(ic,jc,km) ) * 0.5d0
  
-      if(az(ic,jc,kc).eq.1.0)then
-      qcap(ic,jc,kc)=-(h31+h32+h33)+az(ic,jc,kc)*forcz(ic,jc,kc)/zlen!+   &
-                     ! (1-az(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/zlen
-      endif
+
+      !qcap(ic,jc,kc)=-(h31+h32+h33) + fbz + &
+      !                  az(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
+      !                (1.0-az(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+
+      qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz ) * VOFz(ic,jc,kc) + &
+                        VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
+                        (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+
       enddo
       enddo
       enddo

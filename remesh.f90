@@ -758,11 +758,11 @@ subroutine get_vertEdges(valence,eNeighbours,v,e,ne,nf,face_of_edge,vert_of_edge
     ! Compute the valence of vertex v
     implicit none
     integer :: v, e, ne, nf
+    integer :: valence, cnt
     integer, dimension(3,nf) :: edge_of_face
     integer, dimension(2,ne) :: face_of_edge, vert_of_edge
     integer, dimension(valence) :: eNeighbours
     integer :: prevFace, currentFace, currentEdge, prevEdge, F1
-    integer :: valence, cnt
 
     ! Accmulate the face adjacency
     ! Arbitrary starting face

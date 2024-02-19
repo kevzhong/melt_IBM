@@ -35,30 +35,30 @@
       do k=kstart,kend
          do j=1,n2m
             do i=1,n1m
-               vx_m = vx_m + vx(i,j,k)*ax(i,j,k)
-               vy_m = vy_m + vy(i,j,k)*ay(i,j,k)
-               vz_m = vz_m + vz(i,j,k)*az(i,j,k)
+               vx_m = vx_m + vx(i,j,k)*VOFx(i,j,k)
+               vy_m = vy_m + vy(i,j,k)*VOFy(i,j,k)
+               vz_m = vz_m + vz(i,j,k)*VOFz(i,j,k)
                pr_me(i,j,k) = pr_me(i,j,k) + pr(i,j,k)
-               vorx_me = vorx_me + vorx(i,j,k)*ax(i,j,k)
-               vory_me = vory_me + vory(i,j,k)*ay(i,j,k)
-               vorz_me = vorz_me + vorz(i,j,k)*az(i,j,k)
+               vorx_me = vorx_me + vorx(i,j,k)*VOFx(i,j,k)
+               vory_me = vory_me + vory(i,j,k)*VOFy(i,j,k)
+               vorz_me = vorz_me + vorz(i,j,k)*VOFz(i,j,k)
 
-               vorx_rms_vol = vorx_rms_vol + (vorx(i,j,k)*ax(i,j,k))**2
-               vory_rms_vol = vory_rms_vol + (vory(i,j,k)*ay(i,j,k))**2
-               vorz_rms_vol = vorz_rms_vol + (vorz(i,j,k)*az(i,j,k))**2
+               vorx_rms_vol = vorx_rms_vol + (vorx(i,j,k)*VOFx(i,j,k))**2
+               vory_rms_vol = vory_rms_vol + (vory(i,j,k)*VOFy(i,j,k))**2
+               vorz_rms_vol = vorz_rms_vol + (vorz(i,j,k)*VOFz(i,j,k))**2
 
-               vx_rms(i,j,k) = vx_rms(i,j,k) + (vx(i,j,k)*ax(i,j,k))**2
-               vy_rms(i,j,k) = vy_rms(i,j,k) + (vy(i,j,k)*ay(i,j,k))**2
-               vz_rms(i,j,k) = vz_rms(i,j,k) + (vz(i,j,k)*az(i,j,k))**2
+               vx_rms(i,j,k) = vx_rms(i,j,k) + (vx(i,j,k)*VOFx(i,j,k))**2
+               vy_rms(i,j,k) = vy_rms(i,j,k) + (vy(i,j,k)*VOFy(i,j,k))**2
+               vz_rms(i,j,k) = vz_rms(i,j,k) + (vz(i,j,k)*VOFz(i,j,k))**2
                pr_rms(i,j,k) = pr_rms(i,j,k) + pr(i,j,k)**2
 
-               vx_rms_vol = vx_rms_vol + (vx(i,j,k)*ax(i,j,k))**2
-               vy_rms_vol = vy_rms_vol + (vy(i,j,k)*ay(i,j,k))**2
-               vz_rms_vol = vz_rms_vol + (vz(i,j,k)*az(i,j,k))**2
+               vx_rms_vol = vx_rms_vol + (vx(i,j,k)*VOFx(i,j,k))**2
+               vy_rms_vol = vy_rms_vol + (vy(i,j,k)*VOFy(i,j,k))**2
+               vz_rms_vol = vz_rms_vol + (vz(i,j,k)*VOFz(i,j,k))**2
                vxvyvz_rms_vol = vxvyvz_rms_vol + ( &
-                (vx(i+1,j,k)*ax(i+1,j,k)+vx(i,j,k)*ax(i,j,k))**2+ &
-                (vy(i,j+1,k)*ay(i,j+1,k)+vy(i,j,k)*ay(i,j,k))**2+ &
-                (vz(i,j,k+1)*az(i,j,k+1)+vz(i,j,k)*az(i,j,k))**2)*0.25
+                (vx(i+1,j,k)*VOFx(i+1,j,k)+vx(i,j,k)*VOFx(i,j,k))**2+ &
+                (vy(i,j+1,k)*VOFy(i,j+1,k)+vy(i,j,k)*VOFy(i,j,k))**2+ &
+                (vz(i,j,k+1)*VOFz(i,j,k+1)+vz(i,j,k)*VOFz(i,j,k))**2)*0.25
             end do
          end do
       end do
@@ -117,13 +117,13 @@
          do j=n2m/4,3*n2m/4
 
             do i=n1m/4,3*n1m/4
-               vorx_mes = vorx_mes + vorx(i,j,k)*ax(i,j,k)
-               vory_mes = vory_mes + vory(i,j,k)*ay(i,j,k)
-               vorz_mes = vorz_mes + vorz(i,j,k)*az(i,j,k)
+               vorx_mes = vorx_mes + vorx(i,j,k)*VOFx(i,j,k)
+               vory_mes = vory_mes + vory(i,j,k)*VOFy(i,j,k)
+               vorz_mes = vorz_mes + vorz(i,j,k)*VOFz(i,j,k)
 
-               vorx_rms_svol = vorx_rms_svol + (vorx(i,j,k)*ax(i,j,k))**2
-               vory_rms_svol = vory_rms_svol + (vory(i,j,k)*ay(i,j,k))**2
-               vorz_rms_svol = vorz_rms_svol + (vorz(i,j,k)*az(i,j,k))**2
+               vorx_rms_svol = vorx_rms_svol + (vorx(i,j,k)*VOFx(i,j,k))**2
+               vory_rms_svol = vory_rms_svol + (vory(i,j,k)*VOFy(i,j,k))**2
+               vorz_rms_svol = vorz_rms_svol + (vorz(i,j,k)*VOFz(i,j,k))**2
 
             end do
          end do

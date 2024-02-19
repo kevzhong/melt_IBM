@@ -54,10 +54,10 @@ subroutine convex_hull_q1(AA,inp)
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
              alpha_q = alpha*celvol*vx(ii,jj,k)
-             if(ax(ii,jj,k).lt.1.0)then
-             ax(ii,jj,k) = ax(ii,jj,k)
+             if(VOFx(ii,jj,k).lt.1.0)then
+             VOFx(ii,jj,k) = VOFx(ii,jj,k)
              else
-             ax(ii,jj,k) = 1.0 - alpha
+             VOFx(ii,jj,k) = 1.0 - alpha
              end if
              ! compute int u over V
              u_tot(1,inp) = u_tot(1,inp) + alpha_q
@@ -192,10 +192,10 @@ subroutine convex_hull_q2(AA,inp)
              alpha_q = alpha*celvol*vy(ii,jj,k)
              
 
-             if(ay(ii,jj,k).lt.1.0)then
-             ay(ii,jj,k) = ay(ii,jj,k)
+             if(VOFy(ii,jj,k).lt.1.0)then
+             VOFy(ii,jj,k) = VOFy(ii,jj,k)
              else
-             ay(ii,jj,k) = 1.0 - alpha
+             VOFy(ii,jj,k) = 1.0 - alpha
              end if
 
              ! compute int u over V 
@@ -330,10 +330,10 @@ subroutine convex_hull_q3(AA,inp)
              jj = modulo(j-1,n2m) + 1
              alpha_q = alpha*celvol*vz(ii,jj,k)
 
-             if(az(ii,jj,k).lt.1.0)then
-             az(ii,jj,k) = az(ii,jj,k)
+             if(VOFz(ii,jj,k).lt.1.0)then
+             VOFz(ii,jj,k) = VOFz(ii,jj,k)
              else
-             az(ii,jj,k) = 1.0 - alpha
+             VOFz(ii,jj,k) = 1.0 - alpha
              end if
 
              ! compute int u over V 

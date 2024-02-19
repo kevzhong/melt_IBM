@@ -39,4 +39,8 @@ for_temp_mean = for_temp_mean / dble(n1m*n2m*n3m)
   end do
  end do
 
+ if (forcing .eq. 1) then ! Only subtract mean IBM force if simulating HIT
+   temp(:,:,:) = temp(:,:,:) - for_temp_mean
+ endif
+
 end

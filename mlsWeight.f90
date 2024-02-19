@@ -22,9 +22,9 @@ do inp=1,Nparticle
          ptx(2:4) = pos(1:3)
 
 
-         !call wght1(ntr,inp,pos,ptx,ptxAB_q1(1:nel,ntr,inp))
-         !call wght2(ntr,inp,pos,ptx,ptxAB_q2(1:nel,ntr,inp))
-         !call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
+         call wght1(ntr,inp,pos,ptx,ptxAB_q1(1:nel,ntr,inp))
+         call wght2(ntr,inp,pos,ptx,ptxAB_q2(1:nel,ntr,inp))
+         call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
          call wghttemp(ntr,inp,pos,ptx,ptxAB_temp(1:nel,ntr,inp))
 
       endif
@@ -291,10 +291,11 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 ! volume of a face with a specific marker - thickness taken as average of grid spacing
   
 !WGHT1
-pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1
-pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1
+pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1 ! xi indices
+pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1 !yj indices
 ! pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
   
+! zk indinces
 k1  = floor(pos(3)*dx3) + 1
 pind_i(3)=k1-1
 pind_o(3)=k1+1

@@ -203,7 +203,7 @@
       write(45,'("frame_x_",i5.5,".h5:/Pr")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Time Value=""",e12.5,"""/>")')time
+      !write(45,'("<Time Value=""",e12.5,"""/>")')time
       write(45,'("</Grid>")')
       write(45,'("</Domain>")')
       write(45,'("</Xdmf>")')
@@ -541,7 +541,7 @@
       write(45,'("frame_y_",i5.5,".h5:/hel")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Time Value=""",e12.5,"""/>")')time
+      !write(45,'("<Time Value=""",e12.5,"""/>")')time
       write(45,'("</Grid>")')
       write(45,'("</Domain>")')
       write(45,'("</Xdmf>")')
@@ -758,7 +758,7 @@
       write(45,'("frame_z_",i5.5,".h5:/vorz")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Time Value=""",e12.5,"""/>")')time
+      !write(45,'("<Time Value=""",e12.5,"""/>")')time
       write(45,'("</Grid>")')
       write(45,'("</Domain>")')
       write(45,'("</Xdmf>")')

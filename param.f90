@@ -15,7 +15,7 @@
         real      :: dtmax,cfllim
         real      :: tl,epsstar,kfmax
         integer   :: nson,idtv,forcing
-        real      :: Tmelt, latHeat, cpliquid
+        real      :: Tmelt, Tliq, Tsol, latHeat, cpliquid
 !=================================================
 !       end of input file
 !=================================================
@@ -29,7 +29,7 @@
         real, allocatable, dimension(:) :: zc,zm
 
         ! volume integral
-        real, allocatable, dimension(:,:,:) :: ax, ay, az
+        real, allocatable, dimension(:,:,:) :: VOFx, VOFy, VOFz, VOFp
 !==========================================================
 !******* Grid indices**************************************
         integer, allocatable, dimension(:) :: jmv,jpv
@@ -50,7 +50,7 @@
         integer  :: iaxsy
         real :: cflm 
         real :: keta
-        real :: ren, prandtl, pec
+        real :: ren, prandtl, pec, betagz
         real :: pi
         real :: al,ga,ro
         real :: beta, betatemp
@@ -78,8 +78,8 @@
         real,allocatable,dimension(:,:,:) :: temp
         real,allocatable,dimension(:,:,:) :: qbuf,forcx,forcy,forcz
         real,allocatable,dimension(:,:,:) :: pr,rhs
-        real,allocatable,dimension(:,:,:) :: ru1,ru2,ru3
-        real,allocatable,dimension(:,:,:) :: qcap
+        real,allocatable,dimension(:,:,:) :: ru1,ru2,ru3,rut
+        real,allocatable,dimension(:,:,:) :: qcap, htemp
         real,allocatable,dimension(:,:,:) :: dph,dq
       end module local_arrays
 

@@ -36,6 +36,9 @@
       call block(n3m, numtasks, myid, kstart, kend, countk)
       dk=kend-kstart+1
 
+      !KZ FOR DEBUG
+      write(*,*) "myid:  ",myid, "kstart is: ", kstart, "kend is: ", kend
+
 #ifdef DEBUG
       write(*,*) "jstart: ",jstart
       write(*,*) "jend: ",jend
@@ -774,9 +777,9 @@ end subroutine mpi_globalsum_double_var
       integer(HID_T) :: dset_vy
       integer(HID_T) :: dset_vz
       integer(HID_T) :: dset_pr
-      integer(HID_T) :: dset_ax
-      integer(HID_T) :: dset_ay
-      integer(HID_T) :: dset_az
+      integer(HID_T) :: dset_VOFx
+      integer(HID_T) :: dset_VOFy
+      integer(HID_T) :: dset_VOFz
       integer(HSIZE_T) :: dims(3)
 
       integer(HID_T) :: plist_id
@@ -849,12 +852,12 @@ end subroutine mpi_globalsum_double_var
                       filespace, dset_vz, hdf_error)
       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, &
                       filespace, dset_pr, hdf_error)
-      call h5dcreate_f(file_id, 'ax', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_ax, hdf_error)
-      call h5dcreate_f(file_id, 'ay', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_ay, hdf_error)
-      call h5dcreate_f(file_id, 'az', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_az, hdf_error)
+      call h5dcreate_f(file_id, 'VOFx', H5T_NATIVE_DOUBLE, &
+                      filespace, dset_VOFx, hdf_error)
+      call h5dcreate_f(file_id, 'VOFy', H5T_NATIVE_DOUBLE, &
+                      filespace, dset_VOFy, hdf_error)
+      call h5dcreate_f(file_id, 'VOFz', H5T_NATIVE_DOUBLE, &
+                      filespace, dset_VOFz, hdf_error)
 
       call h5screate_simple_f(ndims, data_count, memspace, hdf_error)
 ! vx
@@ -902,36 +905,36 @@ end subroutine mpi_globalsum_double_var
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
 ! ax
-      call h5dget_space_f(dset_ax, slabspace, hdf_error)
+      call h5dget_space_f(dset_VOFx, slabspace, hdf_error)
       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
                             data_offset, data_count, hdf_error)
       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
                               hdf_error)
-       call h5dwrite_f(dset_ax, H5T_NATIVE_DOUBLE, &
-         ax(1:n1,1:n2,kstart:kend), dims,  &
+       call h5dwrite_f(dset_VOFx, H5T_NATIVE_DOUBLE, &
+       VOFx(1:n1,1:n2,kstart:kend), dims,  &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
 ! ay
-      call h5dget_space_f(dset_ay, slabspace, hdf_error)
+      call h5dget_space_f(dset_VOFy, slabspace, hdf_error)
       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
                             data_offset, data_count, hdf_error)
       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
                               hdf_error)
-       call h5dwrite_f(dset_ay, H5T_NATIVE_DOUBLE, &
-         ay(1:n1,1:n2,kstart:kend), dims,  &
+       call h5dwrite_f(dset_VOFy, H5T_NATIVE_DOUBLE, &
+       VOFy(1:n1,1:n2,kstart:kend), dims,  &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
 !az
-      call h5dget_space_f(dset_az, slabspace, hdf_error)
+      call h5dget_space_f(dset_VOFz, slabspace, hdf_error)
       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
                             data_offset, data_count, hdf_error)
       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
                               hdf_error)
-       call h5dwrite_f(dset_az, H5T_NATIVE_DOUBLE, &
-         az(1:n1,1:n2,kstart:kend), dims,  &
+       call h5dwrite_f(dset_VOFz, H5T_NATIVE_DOUBLE, &
+       VOFz(1:n1,1:n2,kstart:kend), dims,  &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
 
@@ -940,9 +943,9 @@ end subroutine mpi_globalsum_double_var
       call h5dclose_f(dset_vy, hdf_error)
       call h5dclose_f(dset_vz, hdf_error)
       call h5dclose_f(dset_pr, hdf_error)
-      call h5dclose_f(dset_ax, hdf_error)
-      call h5dclose_f(dset_ay, hdf_error)
-      call h5dclose_f(dset_az, hdf_error)
+      call h5dclose_f(dset_VOFx, hdf_error)
+      call h5dclose_f(dset_VOFy, hdf_error)
+      call h5dclose_f(dset_VOFz, hdf_error)
 
 
       call h5sclose_f(filespace, hdf_error)
@@ -1003,7 +1006,7 @@ end subroutine mpi_globalsum_double_var
       write(45,'("field_",i7.7,".h5:/az")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Time Value=""",e12.5,"""/>")')time
+      !write(45,'("<Time Value=""",e12.5,"""/>")')time
       write(45,'("</Grid>")')
       write(45,'("</Domain>")')
       write(45,'("</Xdmf>")')

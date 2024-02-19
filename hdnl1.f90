@@ -58,10 +58,15 @@
       h13=((vz(ic,jc,kp)+vz(im,jc,kp))*(vx(ic,jc,kp)+vx(ic,jc,kc)) &
           -(vz(ic,jc,kc)+vz(im,jc,kc))*(vx(ic,jc,kc)+vx(ic,jc,km)) &
           )*udx3
-      if(ax(ic,jc,kc).eq.1.0)then
-      dq(ic,jc,kc)=-(h11+h12+h13)+ax(ic,jc,kc)*forcx(ic,jc,kc)/xlen!+   &
-      !(1-ax(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/xlen
-      end if
+
+
+      !dq(ic,jc,kc)=-(h11+h12+h13)+ax(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
+      !             (1.0-ax(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+
+      ! KZ: volume-penalty for advection terms
+      dq(ic,jc,kc)=-(h11+h12+h13)*VOFx(ic,jc,kc)+VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
+                   (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+
       enddo
       enddo
       enddo

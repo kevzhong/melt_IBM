@@ -38,9 +38,11 @@
       call AllocateReal3DArray(rhs,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(dq,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(qcap,1,n1,1,n2,kstart,kend)
+      call AllocateReal3DArray(htemp,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(ru1,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(ru2,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(ru3,1,n1,1,n2,kstart,kend)
+      call AllocateReal3DArray(rut,1,n1,1,n2,kstart,kend)
 
       call AllocateReal3DArray(vx_me,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(vy_me,1,n1,1,n2,kstart,kend)

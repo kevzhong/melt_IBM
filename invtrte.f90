@@ -1,6 +1,6 @@
       subroutine invtrte 
       use param
-      use local_arrays, only: temp, pr,rhs
+      use local_arrays, only: temp, pr,rhs,rut,htemp
       use mpi_param, only: kstart,kend
       implicit none
       integer :: jc,kc,km,kp,jp,jm,ic,ip,im
@@ -13,7 +13,7 @@
       udx2q=dx2q
       udx3q=dx3q
       udx3 = al*dx3
-
+      
       do kc=kstart,kend
         km=kc-1
         kp=kc+1
@@ -47,18 +47,20 @@
             !rhs(ic,jc,kc)=(ga*qcap(ic,jc,kc)+ro*ru3(ic,jc,kc) &
             !              +alre*dcvz-dpx33)*dt 
 
-            rhs(ic,jc,kc) =  (al/prandtl) * dcte * dt !KZ: no explicit RHS terms for pure diffusion
+            rhs(ic,jc,kc) =  dt * (ga*htemp(ic,jc,kc) + ro*rut(ic,jc,kc) ) + &
+             (al/pec) * dcte * dt
 
 !  updating of the explicit terms
 
-            !ruro(ic,jc,kc)=qcap(ic,jc,kc)
+            rut(ic,jc,kc)=htemp(ic,jc,kc)
+
          enddo
        enddo
       enddo
 
-      call solxi(dt/prandtl*0.5d0*al*dx1q)
-      call solxj(dt/prandtl*0.5d0*al*dx2q)
-      call solxk(temp(1:n1,1:n2,kstart:kend),dt/prandtl*0.5d0*al*dx3q)
+      call solxi(dt/pec*0.5d0*al*dx1q)
+      call solxj(dt/pec*0.5d0*al*dx2q)
+      call solxk(temp(1:n1,1:n2,kstart:kend),dt/pec*0.5d0*al*dx3q)
  
       return
       end

@@ -43,11 +43,17 @@ for_z_mean = for_z_mean / dble(n1m*n2m*n3m)
  do kc=kstart,kend
   do jc=1,n2m
    do ic=1,n1m
-      vx(ic,jc,kc) = vx(ic,jc,kc) +  for_xc(ic,jc,kc) - for_x_mean
-      vy(ic,jc,kc) = vy(ic,jc,kc) +  for_yc(ic,jc,kc) - for_y_mean
-      vz(ic,jc,kc) = vz(ic,jc,kc) +  for_zc(ic,jc,kc) - for_z_mean
+      vx(ic,jc,kc) = vx(ic,jc,kc) +  for_xc(ic,jc,kc) !- for_x_mean
+      vy(ic,jc,kc) = vy(ic,jc,kc) +  for_yc(ic,jc,kc) !- for_y_mean
+      vz(ic,jc,kc) = vz(ic,jc,kc) +  for_zc(ic,jc,kc) !- for_z_mean
    end do
   end do
  end do
+
+ if (forcing .eq. 1) then ! Only subtract mean IBM force if simulating HIT
+   vx(:,:,:) = vx(:,:,:) - for_x_mean
+   vy(:,:,:) = vy(:,:,:) - for_y_mean
+   vz(:,:,:) = vz(:,:,:) - for_z_mean
+ endif
 
 end

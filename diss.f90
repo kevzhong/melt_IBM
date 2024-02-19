@@ -57,21 +57,21 @@
        ip= ipv(ic)
 
 !       if(imlsfor.eq.1) then
-       if((ax(ip,jc,kc).eq.1).and.(ax(ic,jc,kc).eq.1).and. &
-          (ax(ic,jp,kc).eq.1).and.(ax(ip,jp,kc).eq.1).and. &
-          (ax(ic,jm,kc).eq.1).and.(ax(ip,jm,kc).eq.1).and. &
-          (ax(ic,jc,kp).eq.1).and.(ax(ip,jc,kp).eq.1).and. &
-          (ax(ic,jc,km).eq.1).and.(ax(ip,jc,km).eq.1).and. &
-          (ay(ip,jc,kc).eq.1).and.(ay(ip,jp,kc).eq.1).and. &
-          (ay(im,jc,kc).eq.1).and.(ay(im,jp,kc).eq.1).and. &
-          (ay(ic,jp,kc).eq.1).and.(ay(ic,jc,kc).eq.1).and. &
-          (ay(ic,jc,kp).eq.1).and.(ay(ic,jp,kp).eq.1).and. &
-          (ay(ic,jc,km).eq.1).and.(ay(ic,jp,km).eq.1).and. &
-          (az(ip,jc,kc).eq.1).and.(az(ip,jc,kp).eq.1).and. &
-          (az(im,jc,kc).eq.1).and.(az(im,jc,kp).eq.1).and. &
-          (az(ic,jp,kc).eq.1).and.(az(ic,jp,kp).eq.1).and. &
-          (az(ic,jm,kc).eq.1).and.(az(ic,jm,kp).eq.1).and. &
-          (az(ic,jc,kp).eq.1).and.(az(ic,jc,kc).eq.1))then
+       if((VOFx(ip,jc,kc).eq.1).and.(VOFx(ic,jc,kc).eq.1).and. &
+          (VOFx(ic,jp,kc).eq.1).and.(VOFx(ip,jp,kc).eq.1).and. &
+          (VOFx(ic,jm,kc).eq.1).and.(VOFx(ip,jm,kc).eq.1).and. &
+          (VOFx(ic,jc,kp).eq.1).and.(VOFx(ip,jc,kp).eq.1).and. &
+          (VOFx(ic,jc,km).eq.1).and.(VOFx(ip,jc,km).eq.1).and. &
+          (VOFy(ip,jc,kc).eq.1).and.(VOFy(ip,jp,kc).eq.1).and. &
+          (VOFy(im,jc,kc).eq.1).and.(VOFy(im,jp,kc).eq.1).and. &
+          (VOFy(ic,jp,kc).eq.1).and.(VOFy(ic,jc,kc).eq.1).and. &
+          (VOFy(ic,jc,kp).eq.1).and.(VOFy(ic,jp,kp).eq.1).and. &
+          (VOFy(ic,jc,km).eq.1).and.(VOFy(ic,jp,km).eq.1).and. &
+          (VOFz(ip,jc,kc).eq.1).and.(VOFz(ip,jc,kp).eq.1).and. &
+          (VOFz(im,jc,kc).eq.1).and.(VOFz(im,jc,kp).eq.1).and. &
+          (VOFz(ic,jp,kc).eq.1).and.(VOFz(ic,jp,kp).eq.1).and. &
+          (VOFz(ic,jm,kc).eq.1).and.(VOFz(ic,jm,kp).eq.1).and. &
+          (VOFz(ic,jc,kp).eq.1).and.(VOFz(ic,jc,kc).eq.1))then
 
        h11=( vx(ip,jc,kc)-vx(ic,jc,kc) )*udx1
 

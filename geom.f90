@@ -115,6 +115,14 @@ function princ_axis_rotm() result(AAT)
  AAT(3,3) = 1.0d0
 end
 
+function signed_distance(x0,x1,nhat) result(phi)
+  implicit none
+  real, dimension(3) :: x0,x1,nhat
+  real :: phi
+  ! Compute the SIGNED distance of a point x0 to a PLANE defined by its normal nhat and a point on the plane, x1
+
+  phi = dot_product( nhat , x0 - x1   )
+end function signed_distance
 
 
 end

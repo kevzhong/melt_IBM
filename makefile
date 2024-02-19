@@ -13,7 +13,7 @@ LINKS = -L/opt/homebrew/Cellar/fftw/3.3.10_1/lib -lfftw3 -lz -llapack -lblas -ld
 PROGRAM = a.out
 
 FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
-          hdnl1.f90 hdnl2.f90 hdnl3.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
+          hdnl1.f90 hdnl2.f90 hdnl3.f90 hdnlte.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
           interp.f90 invtr1.f90 invtr2.f90 invtr3.f90 invtrte.f90 matrix_transpose.f90     \
           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \

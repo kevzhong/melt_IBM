@@ -33,9 +33,9 @@ call update_both_ghosts(n1,n2,vz,kstart,kend)
            ip=ipv(ic)
        
  !      if(imlsfor.eq.1)then
-       if((ax(ic,jc,kc).eq.1).and.(ax(ip,jc,kc).eq.1).and. &
-          (ay(ic,jc,kc).eq.1).and.(ay(ic,jp,kc).eq.1).and. &
-          (az(ic,jc,kc).eq.1).and.(az(ic,jc,kp).eq.1))then
+       if((VOFx(ic,jc,kc).eq.1).and.(VOFx(ip,jc,kc).eq.1).and. &
+          (VOFy(ic,jc,kc).eq.1).and.(VOFy(ic,jp,kc).eq.1).and. &
+          (VOFz(ic,jc,kc).eq.1).and.(VOFz(ic,jc,kp).eq.1))then
 
        eps_in = eps_in + ((forcx(ic,jc,kc)*vx(ic,jc,kc)+forcx(ip,jc,kc)*vx(ip,jc,kc))/xlen+ &
       &                    (forcy(ic,jc,kc)*vy(ic,jp,kc)+forcy(ic,jp,kc)*vy(ic,jp,kc))/ylen + &

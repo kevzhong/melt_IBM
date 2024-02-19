@@ -463,7 +463,7 @@ subroutine writePPpartVol
   namfile='flowmov/partPPVol.txt'
 
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
-  write(43,'(100E15.7)')time, Volume(1) !KZ: note hard-coded single particle for now
+  write(43,'(100E15.7)')time, Volume(1), Surface(1) !KZ: note hard-coded single particle for now
 
   close(43)
   end if
