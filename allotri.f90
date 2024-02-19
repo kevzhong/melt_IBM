@@ -54,8 +54,8 @@ implicit none
 
   !allocate(  ddx_ptxAB(nel,maxnv,Nparticle) , ddy_ptxAB(nel,maxnv,Nparticle), ddz_ptxAB(nel,maxnv,Nparticle) )
 
-  allocate(  dtdn_o(maxnf,Nparticle) , dtdn_i(maxnf,Nparticle)  ) !Normal gradients at vertices
-  allocate(  dtdn_oVert(maxnv,Nparticle) , dtdn_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
+  allocate(  qw_o(maxnf,Nparticle) , qw_i(maxnf,Nparticle)  ) !Normal gradients at vertices
+  allocate(  qw_oVert(maxnv,Nparticle) , qw_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
 
   allocate(vmelt(maxnv,Nparticle))
 

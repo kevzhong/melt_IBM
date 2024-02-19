@@ -6,16 +6,16 @@ implicit none
 real, dimension(3) :: rhs_stefan, nhat
 integer :: inp,nv
 
-! KZ: for now, therm. diffusivity kappa = 1/prandtl
 do inp=1,Nparticle
     do nv = 1,maxnv
         if (isGhostVert(nv,inp) .eqv. .false. ) then
             nhat(1:3) = vert_nor(1:3,nv,inp)
             ! Accumulate outward-normal term, outward = liquid
-            vmelt(nv,inp) = cpliquid / latHeat * ( (1.0d0/pec)*dtdn_iVert(nv,inp) -(1.0d0/pec)*dtdn_oVert(nv,inp) )
+            !vmelt(nv,inp) = cpliquid / latHeat * ( (1.0d0/pec)*qw_iVert(nv,inp) -(1.0d0/pec)*qw_oVert(nv,inp) )
+            vmelt(nv,inp) = cpliquid / latHeat * ( qw_iVert(nv,inp) - qw_oVert(nv,inp) )
             rhs_stefan(1:3) = vmelt(nv,inp)*nhat(1:3)
             !rhs_stefan(1:3) =  cpliquid / latHeat * &
-            !                    ( (1.0d0/prandtl)*dtdn_iVert(nv,inp) -(1.0d0/prandtl)*dtdn_oVert(nv,inp) ) * nhat
+            !                    ( (1.0d0/prandtl)*qw_iVert(nv,inp) -(1.0d0/prandtl)*qw_oVert(nv,inp) ) * nhat
             !vmelt(nv,inp) = dot_product( rhs_stefan, nhat ) ! Store the scalar local melting velocity
             
             ! Update interface location

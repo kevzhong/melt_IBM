@@ -134,14 +134,12 @@ character(70) namfile
           endif
         !endif
 
-                             
 
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            call findCMindices
            call mkmov_hdf_ycut
            call write_tecplot_geom
-           call writePPpartVol
 !              call writePind            
 !              call writePPpartpos
 !              call writePPquat
@@ -149,6 +147,9 @@ character(70) namfile
 !              call write_shortdist
               call mpi_write_field
          endif
+         
+        ! ASCII write
+          call writePPpartVol
            call CalcInjection
            call CalcDissipation
 

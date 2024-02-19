@@ -497,7 +497,7 @@ subroutine write_tecplot_geom
         namfi2='flowmov/geom_'//ibod//'_'//ipfi
   
         !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
         vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
       end do
@@ -505,7 +505,7 @@ subroutine write_tecplot_geom
   
   end subroutine write_tecplot_geom
    !---------------------------------------------------------------------------------------------
-  subroutine write_VertGeom (nv,nf,xyz,vmelt,dtdn_o,dtdn_i,vert_nor,filename,isGhostFace,isGhostVert)
+  subroutine write_VertGeom (nv,nf,xyz,vmelt,qw_o,qw_i,vert_nor,filename,isGhostFace,isGhostVert)
     use param
     use mpih
     use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
@@ -513,7 +513,7 @@ subroutine write_tecplot_geom
     character(70) filename,geotecfile
     integer i,nv,nf
     real, dimension (3,nv) :: xyz , vert_nor 
-    real, dimension (nv) :: vmelt, dtdn_o, dtdn_i
+    real, dimension (nv) :: vmelt, qw_o, qw_i
     logical, dimension(nv) :: isGhostVert
     logical, dimension(nf) :: isGhostFace
     integer, dimension(nv) :: vert_mask
@@ -537,7 +537,7 @@ subroutine write_tecplot_geom
 
       write(11,*)'TITLE = "Geo"'
       !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
-      write(11,*)'VARIABLES = X Y Z vmelt dtdn_o dtdn_i nhat_x nhat_y nhat_z'
+      write(11,*)'VARIABLES = X Y Z vmelt qw_liquid qw_solid nhat_x nhat_y nhat_z'
   !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
       write(11,*)'ZONE T="FETri" N=',count(isGhostVert .eqv. .false.),' E=',count(isGhostFace .eqv. .false.),' ZONETYPE=FETriangle'
       ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
@@ -549,7 +549,7 @@ subroutine write_tecplot_geom
 
       do i=1,nv
         if (isGhostVert(i) .eqv. .false.) then
-        write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), dtdn_o(i), dtdn_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
+        write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), qw_o(i), qw_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
 
         ! For tracking of cumulative non-ghost vertices
         vert_mask(i) = vcnt
@@ -594,7 +594,7 @@ subroutine write_tecplot_geom
 
               namfi2='flowmov/FlipGeom_'//ibod//'_'//ipfi
         
-              call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+              call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
               vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
             end do
         end if
@@ -628,7 +628,7 @@ subroutine debug_writeSingle
               !namfi2='flowmov/geom_'//ibod//'_'//ipfi
         
               !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-              !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),dtdn_oVert(:,inp),dtdn_iVert(:,inp),&
+              !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
               !vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
               write(ipfi,82) 3471 !KZ: hard-coded

@@ -38,10 +38,10 @@ if(imlsfor.eq.1)then
 
         if (imelt .eq. 1) then 
             call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
-            call mls_normDerivs ! Calculate dTdn at +/- faces, then interpolate to vertices
+            call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
             
-            call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_oVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
-            call MPI_ALLREDUCE(MPI_IN_PLACE,dtdn_iVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+            call MPI_ALLREDUCE(MPI_IN_PLACE,qw_oVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
+            call MPI_ALLREDUCE(MPI_IN_PLACE,qw_iVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
 
         endif
 

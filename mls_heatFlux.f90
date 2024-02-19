@@ -1,4 +1,4 @@
-subroutine mls_normDerivs
+subroutine mls_heatFlux
 USE param
 USE mls_param
 USE mpi_param, only: kstart, kend
@@ -10,13 +10,13 @@ real, dimension(3) :: gradT
 integer :: inp,nf
 real :: s
 
-! Evaluate dTdn at probe locations extrapolated from triangle centroids
+! Evaluate heat flux at probe locations extrapolated from triangle centroids
 
-dtdn_o(:,:) = 0.0d0
-dtdn_i(:,:) = 0.0d0
+qw_o(:,:) = 0.0d0
+qw_i(:,:) = 0.0d0
 
-dtdn_oVert(:,:) = 0.0d0
-dtdn_iVert(:,:) = 0.0d0
+qw_oVert(:,:) = 0.0d0
+qw_iVert(:,:) = 0.0d0
 
 
 gradT = 0.0d0
@@ -36,12 +36,14 @@ do inp=1,Nparticle
          probe_inds(1:3) = pind(1:3,nf,inp) ! Positive probe cage-indices
 
          call wght_gradT(pos,ptx,gradT,probe_inds)
-         dtdn_o(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
+         qw_o(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
                         + tri_nor(2,nf,inp) * gradT(2) & ! ny dTdy
                         + tri_nor(3,nf,inp) * gradT(3)   ! nz dTdz
 
-         ! Transfer the face A*dTdn to its vertices, to dtdn_oVert and area, Avert 
-         call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),dtdn_o(nf,inp),dtdn_oVert(:,inp),maxnv)
+         qw_o(nf,inp) = qw_o(nf,inp) / pec
+
+         ! Transfer the face A*qw to its vertices, to qw_oVert and area, Avert 
+         call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),qw_o(nf,inp),qw_oVert(:,inp),maxnv)
 
          !write(*,*) "centroid loc", nf, " is ", tri_bar(1:3,nf,1)
       endif !end if pind(3...)
@@ -58,19 +60,21 @@ do inp=1,Nparticle
          probe_inds(1:3) = pind(4:6,nf,inp) ! Negative probe cage-indices
 
          call wght_gradT(pos,ptx,gradT,probe_inds)
-         dtdn_i(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
+         qw_i(nf,inp) = tri_nor(1,nf,inp) * gradT(1) & ! nx dTdx
                         + tri_nor(2,nf,inp) * gradT(2) & ! ny dTdy
                         + tri_nor(3,nf,inp) * gradT(3)   ! nz dTdz
 
+        qw_i(nf,inp) = qw_i(nf,inp) / pec
+
         ! Note the same normal-sign convetion
           
-        call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),dtdn_i(nf,inp),dtdn_iVert(:,inp),maxnv)
+        call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),qw_i(nf,inp),qw_iVert(:,inp),maxnv)
 
       endif !end if pindv(6...)
     endif
  enddo
 enddo
-end subroutine mls_normDerivs
+end subroutine mls_heatFlux
 
 
 subroutine wght_gradT(pos,ptx,gradT,probe_inds)
@@ -244,19 +248,19 @@ enddo !end k
   endif
   end subroutine wght_gradT
 
-  subroutine faceToVert_interp(vert_of_face,Atri,Avert,dtdn_F,dtdn_v,nv)
+  subroutine faceToVert_interp(vert_of_face,Atri,Avert,qw_F,qw_v,nv)
 
     ! For a SINGLE triangle/face, spreads the area-weighted heat flux and area to its 3 vertices
     implicit none
 
     integer :: i, nv
     integer, dimension(3) :: vert_of_face ! 3 vertices of the specified triangle
-    real, intent(in) :: Atri, dtdn_F
-    real, dimension(nv), intent(out)  :: dtdn_v ! Vertex heat flux
+    real, intent(in) :: Atri, qw_F
+    real, dimension(nv), intent(out)  :: qw_v ! Vertex heat flux
     real, dimension(nv), intent(in)  :: Avert ! Area associated with vertices
 
     do i = 1,3 !vertices v1, v2, v3
-      dtdn_v( vert_of_face(i) ) = dtdn_v( vert_of_face(i) ) + dtdn_F * ( Atri / Avert( vert_of_face(i) ) )
+      qw_v( vert_of_face(i) ) = qw_v( vert_of_face(i) ) + qw_F * ( Atri / Avert( vert_of_face(i) ) )
     enddo
 
   end subroutine faceToVert_interp
