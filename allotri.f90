@@ -5,10 +5,10 @@ use mpih
 implicit none 
 
   allocate(n_edge_of_vert(maxnv))
-  allocate(vert_of_edge(2,maxne))
-  allocate(face_of_edge(2,maxne))
-  allocate(vert_of_face(3,maxnf))
-  allocate(edge_of_face(3,maxnf))
+  allocate(vert_of_edge(2,maxne,Nparticle))
+  allocate(face_of_edge(2,maxne,Nparticle))
+  allocate(vert_of_face(3,maxnf,Nparticle))
+  allocate(edge_of_face(3,maxnf,Nparticle))
   !allocate(vert_of_vert(max_n_edge_of_vert,maxnv))
   !allocate(edge_of_vert(max_n_edge_of_vert,maxnv))
 
@@ -43,7 +43,9 @@ implicit none
   allocate(Avert(maxnv,Nparticle))
 
 
+  ! Initial geometry
   allocate(xyz0(3,maxnv))
+
   allocate(xyzv(3,maxnv,Nparticle))
 
   allocate(dxyz_CM_b(3,maxnf,Nparticle))
@@ -77,5 +79,5 @@ implicit none
   allocate(Surface(Nparticle))
   allocate(Volume(Nparticle))
 
-  allocate(cfac(maxnf))
+  allocate(cfac(maxnf,Nparticle))
 end 

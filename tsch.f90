@@ -22,16 +22,20 @@
         ga=gam(ns)
         ro=rom(ns)
 
-        do i=1,n1
-           do j = 1,n2
-             do k = kstart-1,kend+1
-              VOFx(i,j,k) = 1.
-              VOFy(i,j,k) = 1.
-              VOFz(i,j,k) = 1.
-              VOFp(i,j,k) = 1.
-            enddo
-          enddo
-        enddo
+        !do i=1,n1
+        !   do j = 1,n2
+        !     do k = kstart-1,kend+1
+        !      VOFx(i,j,k) = 1.
+        !      VOFy(i,j,k) = 1.
+        !      VOFz(i,j,k) = 1.
+        !      VOFp(i,j,k) = 1.
+        !    enddo
+        !  enddo
+        !enddo
+        VOFx(:,:,:) = 1.
+        VOFy(:,:,:) = 1.
+        VOFz(:,:,:) = 1.
+        VOFp(:,:,:) = 1.
 
         do inp=1,Nparticle
           call calc_rot_matrix(quat(:,inp),AA)
@@ -43,18 +47,14 @@
           call convex_hull_q32(AA,bbox_inds,inp)
           call convex_hull_qc2(AA,bbox_inds,inp)
 
-          !write(*,*) "Finished convex hulls"
-
         enddo
 
-        !write(*,*) "Evaluating explicit terms now"
 
         call hdnl1
         call hdnl2
         call hdnl3
         call hdnlte
 
-        !write(*,*) "Evaluating implicit terms now"
 
         call invtr1 
         call invtr2      
@@ -62,19 +62,20 @@
         call invtrte
 
 
-        do i=1,n1
-           do j = 1,n2
-             do k = kstart-1,kend+1
-              VOFx(i,j,k) = 1.
-              VOFy(i,j,k) = 1.
-              VOFz(i,j,k) = 1.
-              VOFp(i,j,k) = 1.
-              enddo
-            enddo
-        enddo
-
-        !write(*,*) "Calling particle routine now"
-
+        !do i=1,n1
+        !   do j = 1,n2
+        !     do k = kstart-1,kend+1
+        !      VOFx(i,j,k) = 1.
+        !      VOFy(i,j,k) = 1.
+        !      VOFz(i,j,k) = 1.
+        !      VOFp(i,j,k) = 1.
+        !    enddo
+        !  enddo
+        !enddo
+        VOFx(:,:,:) = 1.
+        VOFy(:,:,:) = 1.
+        VOFz(:,:,:) = 1.
+        VOFp(:,:,:) = 1.
 
         call particle
         

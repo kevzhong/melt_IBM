@@ -65,7 +65,7 @@ if (pind(6,ntr,inp).ge.kstartp .and. pind(6,ntr,inp).le.kend) then
 
          ii = modulo(i-1,n1m) + 1
 
-         for_zc(ii,jj,k) = for_zc(ii,jj,k) + cfac(ntr) * (Vel-Um) * ptxAB(inw)
+         for_zc(ii,jj,k) = for_zc(ii,jj,k) + cfac(ntr,inp) * (Vel-Um) * ptxAB(inw)
          inw = inw +1
          enddo
          enddo

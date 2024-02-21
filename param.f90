@@ -155,12 +155,12 @@
       integer, parameter :: nel=27
 
       integer, dimension(:),   allocatable :: n_edge_of_vert
-      integer, dimension(:,:), allocatable :: vert_of_edge
-      integer, dimension(:,:), allocatable :: vert_of_face
-      integer, dimension(:,:), allocatable :: edge_of_face
-      integer, dimension(:,:), allocatable :: vert_of_vert
-      integer, dimension(:,:), allocatable :: edge_of_vert
-      integer, dimension(:,:), allocatable :: face_of_edge
+      integer, dimension(:,:,:), allocatable :: vert_of_edge
+      integer, dimension(:,:,:), allocatable :: vert_of_face
+      integer, dimension(:,:,:), allocatable :: edge_of_face
+      integer, dimension(:,:,:), allocatable :: face_of_edge
+      !integer, dimension(:,:), allocatable :: vert_of_vert
+      !integer, dimension(:,:), allocatable :: edge_of_vert
 
       !Re-meshing data structures
       logical, dimension(:,:), allocatable :: isGhostFace
@@ -209,7 +209,7 @@
       real, dimension(:),allocatable :: Volume
 
       real    invdx1dt
-      real, dimension(:), allocatable :: cfac
+      real, dimension(:,:), allocatable :: cfac
       real :: h_eulerian, A_eulerian
       real, dimension (3,3) :: i_inv, i_inv2
 

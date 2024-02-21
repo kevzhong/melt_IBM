@@ -57,7 +57,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
          ii = modulo(i-1,n1m) + 1
 
-         for_temp(ii,jj,k) = for_temp(ii,jj,k) + cfac(ntr) * (Tmelt-Tm) * ptxAB(inw)
+         for_temp(ii,jj,k) = for_temp(ii,jj,k) + cfac(ntr,inp) * (Tmelt-Tm) * ptxAB(inw)
 
          inw = inw +1
          enddo

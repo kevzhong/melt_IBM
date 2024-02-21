@@ -189,8 +189,10 @@ subroutine set_connectivity
   use mls_param
   implicit none
   integer :: i,j,v1,v2,v3,e1,e2,e3
-  integer :: nv,ne,nf
+  integer :: nv,ne,nf, inp
   integer :: dummyInd
+
+    inp = 1
 
     open(109,file=gtsfx)
 
@@ -204,173 +206,92 @@ subroutine set_connectivity
 
       do i=1,maxne
         read(109,*)v1,v2
-        vert_of_edge(1,i)=v1
-        vert_of_edge(2,i)=v2
-        !n_edge_of_vert(v1)=n_edge_of_vert(v1)+1
-        !n_edge_of_vert(v2)=n_edge_of_vert(v2)+1
-        !vert_of_vert(n_edge_of_vert(v1),v1)=v2           
-        !vert_of_vert(n_edge_of_vert(v2),v2)=v1           
-        !edge_of_vert(n_edge_of_vert(v1),v1)=i
-        !edge_of_vert(n_edge_of_vert(v2),v2)=i
+        vert_of_edge(1,i,inp)=v1
+        vert_of_edge(2,i,inp)=v2
       enddo
 
       do i=1,maxnf
-          read(109,*)edge_of_face(1,i),edge_of_face(2,i), edge_of_face(3,i)
+          read(109,*)edge_of_face(1,i,inp),edge_of_face(2,i,inp), edge_of_face(3,i,inp)
       end do
 
       do i=1,maxnf
-        e1=edge_of_face(1,i)
-        e2=edge_of_face(2,i)
+        e1=edge_of_face(1,i,inp)
+        e2=edge_of_face(2,i,inp)
 
-        if (vert_of_edge(2,e1).eq.vert_of_edge(1,e2)) then
-           v1=vert_of_edge(1,e1)
-           v2=vert_of_edge(2,e1)
-           v3=vert_of_edge(2,e2)
-        elseif(vert_of_edge(2,e1).eq.vert_of_edge(2,e2)) then
-           v1=vert_of_edge(1,e1)
-           v2=vert_of_edge(2,e1)
-           v3=vert_of_edge(1,e2)
-        elseif(vert_of_edge(1,e1).eq.vert_of_edge(1,e2)) then
-           v1=vert_of_edge(2,e1)
-           v2=vert_of_edge(1,e1)
-           v3=vert_of_edge(2,e2)
+        if (vert_of_edge(2,e1,inp).eq.vert_of_edge(1,e2,inp)) then
+           v1=vert_of_edge(1,e1,inp)
+           v2=vert_of_edge(2,e1,inp)
+           v3=vert_of_edge(2,e2,inp)
+        elseif(vert_of_edge(2,e1,inp).eq.vert_of_edge(2,e2,inp)) then
+           v1=vert_of_edge(1,e1,inp)
+           v2=vert_of_edge(2,e1,inp)
+           v3=vert_of_edge(1,e2,inp)
+        elseif(vert_of_edge(1,e1,inp).eq.vert_of_edge(1,e2,inp)) then
+           v1=vert_of_edge(2,e1,inp)
+           v2=vert_of_edge(1,e1,inp)
+           v3=vert_of_edge(2,e2,inp)
         else 
-           v1=vert_of_edge(2,e1)
-           v2=vert_of_edge(1,e1)
-           v3=vert_of_edge(1,e2)
+           v1=vert_of_edge(2,e1,inp)
+           v2=vert_of_edge(1,e1,inp)
+           v3=vert_of_edge(1,e2,inp)
         endif 
 
-           vert_of_face(1,i)=v1
-           vert_of_face(2,i)=v2
-           vert_of_face(3,i)=v3
+           vert_of_face(1,i,inp)=v1
+           vert_of_face(2,i,inp)=v2
+           vert_of_face(3,i,inp)=v3
       end do
 
     close(109)  !VS   Completed reading the gts file
 
     ! Check - for faces and edges
-    face_of_edge(1:2,1:maxne)=0
+    face_of_edge(1:2,1:maxne,inp)=0
     do i=1,maxnf
-       e1=edge_of_face(1,i)
-       e2=edge_of_face(2,i)
-       e3=edge_of_face(3,i)
-       if (face_of_edge(1,e1).eq.0) then
-          face_of_edge(1,e1)=i
-       elseif (face_of_edge(2,e1).eq.0) then
-          face_of_edge(2,e1)=i
+       e1=edge_of_face(1,i,inp)
+       e2=edge_of_face(2,i,inp)
+       e3=edge_of_face(3,i,inp)
+       if (face_of_edge(1,e1,inp).eq.0) then
+          face_of_edge(1,e1,inp)=i
+       elseif (face_of_edge(2,e1,inp).eq.0) then
+          face_of_edge(2,e1,inp)=i
        else
           write(*,*)'Edge error', i,e1,e2,e3
        endif
-       if (face_of_edge(1,e2).eq.0) then
-          face_of_edge(1,e2)=i
-       elseif (face_of_edge(2,e2).eq.0) then
-          face_of_edge(2,e2)=i
+       if (face_of_edge(1,e2,inp).eq.0) then
+          face_of_edge(1,e2,inp)=i
+       elseif (face_of_edge(2,e2,inp).eq.0) then
+          face_of_edge(2,e2,inp)=i
        else
           write(*,*)'Edge error'
        endif
-       if (face_of_edge(1,e3).eq.0) then
-          face_of_edge(1,e3)=i
-       elseif (face_of_edge(2,e3).eq.0) then
-          face_of_edge(2,e3)=i
+       if (face_of_edge(1,e3,inp).eq.0) then
+          face_of_edge(1,e3,inp)=i
+       elseif (face_of_edge(2,e3,inp).eq.0) then
+          face_of_edge(2,e3,inp)=i
        else
           write(*,*)'Edge error'
        endif
     enddo 
 
-    ! ! Check - vertex cannot be connected to itself
-    ! do i=1,maxnv
-    !   do j=1,n_edge_of_vert(i)
-    !      if (vert_of_vert(j,i).eq.i)  write(*,*)'Error ',vert_of_vert(j,i),i
-    !   enddo
-    ! enddo
-
     !Check
     do i=1,maxne
-       if (face_of_edge(1,i).eq.face_of_edge(2,i)) then
+       if (face_of_edge(1,i,inp).eq.face_of_edge(2,i,inp)) then
           write(*,*)'Error on edges '
        endif
     enddo
 
+    ! Copy initial connectivity arrays for every particle
+    if (Nparticle .gt. 1) then
+      do inp = 2,Nparticle
+        face_of_edge(:,:,inp) = face_of_edge(:,:,1)
+        vert_of_edge(:,:,inp) = vert_of_edge(:,:,1)
 
-    ! ! KZ: Compute the face-of-vertices connectivity
-    ! faces_of_vert = 0
-
-    ! do i=1,maxnf
-
-    !   ! Scan for vertex to assign for vertex 1
-    !   do j = 1,VERTBUFFER
-    !       if ( faces_of_vert( j, vert_of_face(1,i)  ) .eq. 0 ) then
-    !           dummyInd = j !Next-in-line index of face to store
-    !           exit
-    !       endif
-    !   enddo
-    !   faces_of_vert(dummyInd, vert_of_face(1,i)  ) = i
-
-    !   ! Scan for vertex to assign for vertex 2
-    !   do j = 1,VERTBUFFER
-    !       if ( faces_of_vert( j, vert_of_face(2,i)  ) .eq. 0 ) then
-    !           dummyInd = j !Next-in-line index of face to store
-    !           exit
-    !       endif
-    !   enddo
-    !   faces_of_vert(dummyInd, vert_of_face(2,i)  ) = i
-
-
-    !   ! Scan for vertex to assign for vertex 3
-    !   do j = 1,VERTBUFFER
-    !       if ( faces_of_vert( j, vert_of_face(3,i)  ) .eq. 0 ) then
-    !           dummyInd = j !Next-in-line index of face to store
-    !           exit
-    !       endif
-    !   enddo
-    !   faces_of_vert(dummyInd, vert_of_face(3,i)  ) = i
-      
-    ! enddo
-
-    ! KZ store vertex coordinates
-    ! Eventually should be superceded by a COM-relative formulation
-       xyzv(1:3,:,1)= xyz0(1:3,:)
-       xyzv(1,:,1) = xyzv(1,:,1) + 0.5d0*xlen
-       xyzv(2,:,1) = xyzv(2,:,1) + 0.5d0*ylen
-       xyzv(3,:,1) = xyzv(3,:,1) + 0.5d0*zlen
+        edge_of_face(:,:,inp) = edge_of_face(:,:,1)
+        vert_of_face(:,:,inp) = vert_of_face(:,:,1)
+      enddo
+    endif
 
 end subroutine
 
-
-
-! subroutine get_maxn_n_edge_of_vert
-!   use param
-!   use mpih
-!   use mls_param
-!   implicit none
-!   real    :: dummy
-!   integer :: i,j,v1,v2,v3,e1,e2,e3
-!   integer :: nv,ne,nf
-!   integer, dimension(:), allocatable :: num_edge_of_vert
-
-!     open(109,file=gtsfx)
-
-!       read(109,*) nv, ne, nf
-
-!       do i=1,nv
-!         read(109,*) dummy, dummy, dummy
-!       end do
-
-!       allocate(num_edge_of_vert(nv))
-!       num_edge_of_vert(1:nv)=0
-
-!       do i=1,maxne
-!         read(109,*) v1,v2
-!         num_edge_of_vert(v1) = num_edge_of_vert(v1) + 1
-!         num_edge_of_vert(v2) = num_edge_of_vert(v2) + 1
-!       enddo
-
-!      max_n_edge_of_vert = -1e6
-!      do i=1,nv
-!        max_n_edge_of_vert = max(num_edge_of_vert(i), max_n_edge_of_vert )
-!      enddo
-
-!     close(109)
-! end subroutine
 
 subroutine writePind
   use param
@@ -497,7 +418,7 @@ subroutine write_tecplot_geom
         namfi2='flowmov/geom_'//ibod//'_'//ipfi
   
         !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-        call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
+        call write_VertGeom (inp,maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
         vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
       end do
@@ -505,13 +426,13 @@ subroutine write_tecplot_geom
   
   end subroutine write_tecplot_geom
    !---------------------------------------------------------------------------------------------
-  subroutine write_VertGeom (nv,nf,xyz,vmelt,qw_o,qw_i,vert_nor,filename,isGhostFace,isGhostVert)
+  subroutine write_VertGeom (inp,nv,nf,xyz,vmelt,qw_o,qw_i,vert_nor,filename,isGhostFace,isGhostVert)
     use param
     use mpih
     use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
     implicit none
     character(70) filename,geotecfile
-    integer i,nv,nf
+    integer i,nv,nf,inp
     real, dimension (3,nv) :: xyz , vert_nor 
     real, dimension (nv) :: vmelt, qw_o, qw_i
     logical, dimension(nv) :: isGhostVert
@@ -559,7 +480,7 @@ subroutine write_tecplot_geom
 
       do i=1,nf
         if (isGhostFace(i) .eqv. .false.) then
-          write(11,*) vert_mask( vert_of_face(1,i) ), vert_mask( vert_of_face(2,i) ), vert_mask( vert_of_face(3,i) )
+          write(11,*) vert_mask( vert_of_face(1,i,inp) ), vert_mask( vert_of_face(2,i,inp) ), vert_mask( vert_of_face(3,i,inp) )
         endif
       end do
 
@@ -569,131 +490,131 @@ subroutine write_tecplot_geom
       end subroutine write_VertGeom
 
 
-      subroutine debug_write(suffix)
-        use mpih
-        use mpi_param
-        use param
-        use mls_param
+!       subroutine debug_write(suffix)
+!         use mpih
+!         use mpi_param
+!         use param
+!         use mls_param
         
-        character(70) namfile,namfi2
-        character(7) ipfi
-        character*2 ibod
-        real tprfi
-        integer itime, suffix
-        tprfi = 1/tframe
-        itime=nint(time*tprfi)
-        write(ipfi,82)itime
-        82 format(i7.7)
-        98 format(i2.2)
+!         character(70) namfile,namfi2
+!         character(7) ipfi
+!         character*2 ibod
+!         real tprfi
+!         integer itime, suffix
+!         tprfi = 1/tframe
+!         itime=nint(time*tprfi)
+!         write(ipfi,82)itime
+!         82 format(i7.7)
+!         98 format(i2.2)
         
-        if(ismaster)then
-            do inp=1,Nparticle
+!         if(ismaster)then
+!             do inp=1,Nparticle
         
-              write(ibod,98) inp
-              write(ipfi,82) suffix !KZ: hard-coded
+!               write(ibod,98) inp
+!               write(ipfi,82) suffix !KZ: hard-coded
 
-              namfi2='flowmov/FlipGeom_'//ibod//'_'//ipfi
+!               namfi2='flowmov/FlipGeom_'//ibod//'_'//ipfi
         
-              call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
-              vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
-            end do
-        end if
+!               call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
+!               vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
+!             end do
+!         end if
         
-        end subroutine debug_write
+!         end subroutine debug_write
 
 
 
-subroutine debug_writeSingle
-        use mpih
-        use mpi_param
-        use param
-        use mls_param
+! subroutine debug_writeSingle
+!         use mpih
+!         use mpi_param
+!         use param
+!         use mls_param
         
-        character(70) namfile,namfi2
-        character(7) ipfi
-        character*2 ibod
-        real tprfi
-        integer itime
-        tprfi = 1/tframe
-        itime=nint(time*tprfi)
-        write(ipfi,82)itime
-        82 format(i7.7)
-        98 format(i2.2)
+!         character(70) namfile,namfi2
+!         character(7) ipfi
+!         character*2 ibod
+!         real tprfi
+!         integer itime
+!         tprfi = 1/tframe
+!         itime=nint(time*tprfi)
+!         write(ipfi,82)itime
+!         82 format(i7.7)
+!         98 format(i2.2)
         
-        if(ismaster)then
-            do inp=1,Nparticle
+!         if(ismaster)then
+!             do inp=1,Nparticle
         
-              write(ibod,98) inp
+!               write(ibod,98) inp
         
-              !namfi2='flowmov/geom_'//ibod//'_'//ipfi
+!               !namfi2='flowmov/geom_'//ibod//'_'//ipfi
         
-              !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-              !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
-              !vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
+!               !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
+!               !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
+!               !vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
-              write(ipfi,82) 3471 !KZ: hard-coded
-              namfi2='flowmov/tri_' // ipfi
-              call write_singleTri (3471,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+!               write(ipfi,82) 3471 !KZ: hard-coded
+!               namfi2='flowmov/tri_' // ipfi
+!               call write_singleTri (3471,maxnv,maxnf,xyzv(:,:,inp),namfi2)
 
-              write(ipfi,82) 4477 !KZ: hard-coded
-              namfi2='flowmov/tri_' // ipfi
-              call write_singleTri (4477,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+!               write(ipfi,82) 4477 !KZ: hard-coded
+!               namfi2='flowmov/tri_' // ipfi
+!               call write_singleTri (4477,maxnv,maxnf,xyzv(:,:,inp),namfi2)
 
-              write(ipfi,82) 2270 !KZ: hard-coded
-              namfi2='flowmov/tri_' // ipfi
-              call write_singleTri (2270,maxnv,maxnf,xyzv(:,:,inp),namfi2)
-            end do
-        end if
+!               write(ipfi,82) 2270 !KZ: hard-coded
+!               namfi2='flowmov/tri_' // ipfi
+!               call write_singleTri (2270,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+!             end do
+!         end if
         
-        end subroutine debug_writeSingle
+!         end subroutine debug_writeSingle
 
-!---------------------------------------------------------------------------------------------
+! !---------------------------------------------------------------------------------------------
   
-        subroutine write_singleTri (ntri,nv,nf,xyz,filename)
-          use param
-          use mpih
-          use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
-          implicit none
-          character(70) filename,geotecfile
-          integer i,nv,nf, ntri
-          real, dimension (3,nv) :: xyz
-          integer :: vcnt
-          real tprfi
-          integer itime
-          character(7) ipfi
+!         subroutine write_singleTri (ntri,nv,nf,xyz,filename)
+!           use param
+!           use mpih
+!           use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
+!           implicit none
+!           character(70) filename,geotecfile
+!           integer i,nv,nf, ntri
+!           real, dimension (3,nv) :: xyz
+!           integer :: vcnt
+!           real tprfi
+!           integer itime
+!           character(7) ipfi
       
       
-          tprfi = 1/tframe
-          itime=nint(time*tprfi)
-          write(ipfi,82)itime
-       82 format(i7.7)
+!           tprfi = 1/tframe
+!           itime=nint(time*tprfi)
+!           write(ipfi,82)itime
+!        82 format(i7.7)
       
          
       
-            geotecfile=trim(filename)//'.dat'
-      !        write(*,*)' Write file ',trim(geotecfile)
+!             geotecfile=trim(filename)//'.dat'
+!       !        write(*,*)' Write file ',trim(geotecfile)
       
-            open(11,file=geotecfile)
+!             open(11,file=geotecfile)
       
-            write(11,*)'TITLE = "Geo"'
-            !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
-            write(11,*)'VARIABLES = X Y Z'
-        !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
-            write(11,*)'ZONE T="FETri" N=',3,' E=',1,' ZONETYPE=FETriangle'
-            ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
-            write(11,*)'DATAPACKING=POINT                                       '
-            !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
-            !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
+!             write(11,*)'TITLE = "Geo"'
+!             !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
+!             write(11,*)'VARIABLES = X Y Z'
+!         !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
+!             write(11,*)'ZONE T="FETri" N=',3,' E=',1,' ZONETYPE=FETriangle'
+!             ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
+!             write(11,*)'DATAPACKING=POINT                                       '
+!             !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
+!             !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
       
-            vcnt = 1
+!             vcnt = 1
       
-            do i=1,3
-              write(11,*) xyz(1,vert_of_face(i,ntri)), xyz(2,vert_of_face(i,ntri)), xyz(3,vert_of_face(i,ntri))
-            end do
+!             do i=1,3
+!               write(11,*) xyz(1,vert_of_face(i,ntri)), xyz(2,vert_of_face(i,ntri)), xyz(3,vert_of_face(i,ntri))
+!             end do
       
 
-              write(11,*) 1,2,3
+!               write(11,*) 1,2,3
 
-            close(11)
-            return
-            end subroutine write_singleTri
+!             close(11)
+!             return
+!             end subroutine write_singleTri

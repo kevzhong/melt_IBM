@@ -11,7 +11,7 @@ NWRIT         NREAD         PREAD
  TSTA        STAREAD        CFLMAX
  0            0              1.7
  TL          EPSSTAR         KFMAX
- 8.48e1      5.8125e-2        2.3
+ 0.2120      0.0372           2.3
  IDTV         DTMAX          CFLLIM
    0           5e-3           1.0
 FORCING

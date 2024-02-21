@@ -58,7 +58,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
          ii = modulo(i-1,n1m) + 1
 
-         for_yc(ii,jj,k) = for_yc(ii,jj,k) + cfac(ntr) * (Vel-Um) * ptxAB(inw)
+         for_yc(ii,jj,k) = for_yc(ii,jj,k) + cfac(ntr,inp) * (Vel-Um) * ptxAB(inw)
 
          inw = inw +1
          enddo

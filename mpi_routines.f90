@@ -369,7 +369,7 @@ end subroutine mpi_globalsum_double_var
       use param
       use mpih
       use mpi_param, only: kstart,kend
-      use local_arrays, only: vy,vz,vx,pr
+      use local_arrays, only: vy,vz,vx,pr,temp
       use hdf5
       implicit none
 
@@ -384,6 +384,7 @@ end subroutine mpi_globalsum_double_var
       integer(HID_T) :: dset_vy
       integer(HID_T) :: dset_vz
       integer(HID_T) :: dset_pr
+      integer(HID_T) :: dset_temp
       integer(HID_T) :: dset_enst
 
       integer(HSIZE_T) :: dims(3)
@@ -413,6 +414,7 @@ end subroutine mpi_globalsum_double_var
       filnam3 = 'continuation/continua_vy.h5'
       filnam4 = 'continuation/continua_vz.h5'
       filnam5 = 'continuation/continua_pr.h5'
+      filnam6 = 'continuation/continua_temp.h5'
 
 !RO   Set offsets and element counts
    
@@ -565,6 +567,39 @@ end subroutine mpi_globalsum_double_var
 
       call h5sclose_f(memspace, hdf_error)
       call h5fclose_f(file_id, hdf_error)
+
+! Temperature
+
+      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+
+      call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+      call h5fcreate_f(filnam6, H5F_ACC_TRUNC_F, file_id, &
+       hdf_error, access_prp=plist_id)
+
+      call h5pclose_f(plist_id, hdf_error)
+
+      call h5dcreate_f(file_id, 'Temperature', H5T_NATIVE_DOUBLE, &
+                      filespace, dset_temp, hdf_error)
+
+      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+      call h5dget_space_f(dset_temp, slabspace, hdf_error)
+      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+                            data_offset, data_count, hdf_error)
+      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+                              hdf_error)
+       call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+         temp(1:n1,1:n2,kstart:kend), dims,  &
+         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+         xfer_prp = plist_id)
+      call h5pclose_f(plist_id, hdf_error)
+
+      call h5dclose_f(dset_temp, hdf_error)
+
+      call h5sclose_f(memspace, hdf_error)
+      call h5fclose_f(file_id, hdf_error)
  
       if (myid .eq. 0) then
        open(13,file='continuation/continua_grid.dat',status='unknown')
@@ -707,6 +742,9 @@ end subroutine mpi_globalsum_double_var
         case (4)
           dsetname = trim('pr')
           filnam1 = trim('continuation/continua_pr.h5')
+        case (5)
+          dsetname = trim('Temperature')
+          filnam1 = trim('continuation/continua_temp.h5')
       end select
 
 !RO   Set offsets and element counts
@@ -762,7 +800,7 @@ end subroutine mpi_globalsum_double_var
       use param
       use mpih
       use mpi_param, only: kstart,kend
-      use local_arrays, only: vy,vz,vx,pr
+      use local_arrays, only: vy,vz,vx,pr,temp
       use hdf5
       implicit none
       integer ic,jc,kc
@@ -777,9 +815,11 @@ end subroutine mpi_globalsum_double_var
       integer(HID_T) :: dset_vy
       integer(HID_T) :: dset_vz
       integer(HID_T) :: dset_pr
+      integer(HID_T) :: dset_temp
       integer(HID_T) :: dset_VOFx
       integer(HID_T) :: dset_VOFy
       integer(HID_T) :: dset_VOFz
+      integer(HID_T) :: dset_VOFp
       integer(HSIZE_T) :: dims(3)
 
       integer(HID_T) :: plist_id
@@ -852,13 +892,16 @@ end subroutine mpi_globalsum_double_var
                       filespace, dset_vz, hdf_error)
       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, &
                       filespace, dset_pr, hdf_error)
+      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
+      filespace, dset_temp, hdf_error)
       call h5dcreate_f(file_id, 'VOFx', H5T_NATIVE_DOUBLE, &
                       filespace, dset_VOFx, hdf_error)
       call h5dcreate_f(file_id, 'VOFy', H5T_NATIVE_DOUBLE, &
                       filespace, dset_VOFy, hdf_error)
       call h5dcreate_f(file_id, 'VOFz', H5T_NATIVE_DOUBLE, &
                       filespace, dset_VOFz, hdf_error)
-
+      call h5dcreate_f(file_id, 'VOFp', H5T_NATIVE_DOUBLE, &
+      filespace, dset_VOFp, hdf_error)
       call h5screate_simple_f(ndims, data_count, memspace, hdf_error)
 ! vx
       call h5dget_space_f(dset_vx, slabspace, hdf_error)
@@ -904,6 +947,17 @@ end subroutine mpi_globalsum_double_var
          pr(1:n1,1:n2,kstart:kend), dims,  &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
+!temp
+         call h5dget_space_f(dset_temp, slabspace, hdf_error)
+         call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+                               data_offset, data_count, hdf_error)
+         call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+         call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+                                 hdf_error)
+          call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+            temp(1:n1,1:n2,kstart:kend), dims,  &
+            hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+            xfer_prp = plist_id)
 ! ax
       call h5dget_space_f(dset_VOFx, slabspace, hdf_error)
       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
@@ -937,15 +991,27 @@ end subroutine mpi_globalsum_double_var
        VOFz(1:n1,1:n2,kstart:kend), dims,  &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
          xfer_prp = plist_id)
-
+!vofp
+         call h5dget_space_f(dset_VOFp, slabspace, hdf_error)
+         call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+                               data_offset, data_count, hdf_error)
+         call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+         call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+                                 hdf_error)
+          call h5dwrite_f(dset_VOFp, H5T_NATIVE_DOUBLE, &
+          VOFp(1:n1,1:n2,kstart:kend), dims,  &
+            hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+            xfer_prp = plist_id)
 
       call h5dclose_f(dset_vx, hdf_error)
       call h5dclose_f(dset_vy, hdf_error)
       call h5dclose_f(dset_vz, hdf_error)
       call h5dclose_f(dset_pr, hdf_error)
+      call h5dclose_f(dset_temp, hdf_error)
       call h5dclose_f(dset_VOFx, hdf_error)
       call h5dclose_f(dset_VOFy, hdf_error)
       call h5dclose_f(dset_VOFz, hdf_error)
+      call h5dclose_f(dset_VOFp, hdf_error)
 
 
       call h5sclose_f(filespace, hdf_error)
@@ -991,19 +1057,29 @@ end subroutine mpi_globalsum_double_var
       write(45,'("field_",i7.7,".h5:/Pr")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Attribute Name=""ax"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<Attribute Name=""Temperature"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
-      write(45,'("field_",i7.7,".h5:/ax")') itime
+      write(45,'("field_",i7.7,".h5:/Temp")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Attribute Name=""ay"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<Attribute Name=""VOFx"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
-      write(45,'("field_",i7.7,".h5:/ay")') itime
+      write(45,'("field_",i7.7,".h5:/VOFx")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
-      write(45,'("<Attribute Name=""az"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<Attribute Name=""VOFy"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
-      write(45,'("field_",i7.7,".h5:/az")') itime
+      write(45,'("field_",i7.7,".h5:/VOFy")') itime
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
+      write(45,'("<Attribute Name=""VOFz"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
+      write(45,'("field_",i7.7,".h5:/VOFz")') itime
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
+      write(45,'("<Attribute Name=""VOFp"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
+      write(45,'("field_",i7.7,".h5:/VOFp")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
       !write(45,'("<Time Value=""",e12.5,"""/>")')time

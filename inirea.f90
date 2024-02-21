@@ -2,7 +2,7 @@
       subroutine inirea 
       use mpih
       use mpi_param, only: kstart,kend
-      use local_arrays, only: vx,vy,vz
+      use local_arrays, only: vx,vy,vz,temp
       use param
       use AuxiliaryRoutines
       IMPLICIT NONE
@@ -115,7 +115,8 @@
       call mpi_read_continua(n1,n2,n3,kstart,kend,1,vx)
       call mpi_read_continua(n1,n2,n3,kstart,kend,2,vy)
       call mpi_read_continua(n1,n2,n3,kstart,kend,3,vz)
-
+      !call mpi_read_continua(n1,n2,n3,kstart,kend,4,pr) 
+      call mpi_read_continua(n1,n2,n3,kstart,kend,5,temp)
       endif
 
       if(myid.eq.numtasks-1) then

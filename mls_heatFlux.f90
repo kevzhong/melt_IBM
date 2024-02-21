@@ -43,7 +43,7 @@ do inp=1,Nparticle
          qw_o(nf,inp) = qw_o(nf,inp) / pec
 
          ! Transfer the face A*qw to its vertices, to qw_oVert and area, Avert 
-         call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),qw_o(nf,inp),qw_oVert(:,inp),maxnv)
+         call faceToVert_interp(vert_of_face(1:3,nf,inp),sur(nf,inp),Avert(:,inp),qw_o(nf,inp),qw_oVert(:,inp),maxnv)
 
          !write(*,*) "centroid loc", nf, " is ", tri_bar(1:3,nf,1)
       endif !end if pind(3...)
@@ -68,7 +68,7 @@ do inp=1,Nparticle
 
         ! Note the same normal-sign convetion
           
-        call faceToVert_interp(vert_of_face(1:3,nf),sur(nf,inp),Avert(:,inp),qw_i(nf,inp),qw_iVert(:,inp),maxnv)
+        call faceToVert_interp(vert_of_face(1:3,nf,inp),sur(nf,inp),Avert(:,inp),qw_i(nf,inp),qw_iVert(:,inp),maxnv)
 
       endif !end if pindv(6...)
     endif

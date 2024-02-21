@@ -9,6 +9,7 @@ subroutine setup_particles
   real,dimension(3,3):: AA,AAT
   real :: alpha
   real :: angle
+  real :: I1, I2, I3
 
   Npx = 1; Npy = 1; Npz = 1
 
@@ -105,6 +106,21 @@ subroutine setup_particles
      enddo
    end do
 
+     ! particle moment of intertia
+  I1 = 0.0261201133
+  I2 = 0.0261201133
+  I3 = 0.0261201133
+
+  I_inv = 0.
+  I_inv(1,1) = 1. / I1 
+  I_inv(2,2) = 1. / I2 
+  I_inv(3,3) = 1. / I3 
+
+  I_inv2 = 0.
+  I_inv2(1,1) = (I2-I3) / I1
+  I_inv2(2,2) = (I3-I1) / I2
+  I_inv2(3,3) = (I1-I2) / I3
+
 end subroutine
 
 subroutine set_particle_rad
@@ -124,9 +140,9 @@ subroutine set_particle_rad
     ! This is r
     do i=1,maxnf
 
-      v1=vert_of_face(1,i)
-      v2=vert_of_face(2,i)
-      v3=vert_of_face(3,i)
+      v1=vert_of_face(1,i,1)
+      v2=vert_of_face(2,i,1)
+      v3=vert_of_face(3,i,1)
 
       dxyz_CM_b(:,i,inp) = matmul(AAT_P, (xyz0(:,v1) + xyz0(:,v2) + xyz0(:,v3)) / 3.d0)
     end do
@@ -147,7 +163,16 @@ subroutine set_xyz
   real :: radius,angle, om,tp
   real ::zmin,zmax
 
+    ! KZ store vertex coordinates
+    ! Eventually should be superceded by a COM-relative formulation
+    xyzv(1:3,:,1)= xyz0(1:3,:)
+    xyzv(1,:,1) = xyzv(1,:,1) + 0.5d0*xlen
+    xyzv(2,:,1) = xyzv(2,:,1) + 0.5d0*ylen
+    xyzv(3,:,1) = xyzv(3,:,1) + 0.5d0*zlen
+
    do inp = 1,Nparticle
+
+
 
       call calc_rot_matrix(quat(:,inp),AA)
 
@@ -155,29 +180,6 @@ subroutine set_xyz
       AAT = transpose(AA)
       ! x-rot pi/2
       tail_head(:,inp) = AAT(:,3)
-!      AAR1(1,1) = 1
-!      AAR1(1,2) = 0
-!      AAR1(1,3) = 0
-!      AAR1(2,1) = 0
-!      AAR1(2,2) = 0
-!      AAR1(2,3) = -1
-!      AAR1(3,1) = 0
-!      AAR1(3,2) = 1
-!      AAR1(3,3) = 0
-!      AAR1=transpose(AAR1)
-      ! y-rot pi/2
-!      AAR(1,1) = 1
-!      AAR(1,2) = 0
-!      AAR(1,3) = 0
-
-!      AAR(2,1) = 0
-!      AAR(2,2) = -1
-!      AAR(2,3) = 0
-
-!      AAR(3,1) = 0
-!      AAR(3,2) = 0
-!      AAR(3,3) = 1
-     ! AAR=transpose(AAR)
 
       do i=1,maxnf
          !-- position
@@ -186,7 +188,7 @@ subroutine set_xyz
 
          !tri_bar(:,i,inp) = pos_cm(:,inp) + dxyz_CM_s(:,i,inp) 
             ! KZ: above commented: don't store tri_centroids as COM-relative for now due to loss of sig figs.
-         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face,maxnf,maxnv,isGhostFace(:,inp)) 
+         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
 
           !-- velocity
          omega_s(:,inp) = matmul(AAT,omega_b(:,inp))

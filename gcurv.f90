@@ -150,8 +150,8 @@ character(70) namfile
          
         ! ASCII write
           call writePPpartVol
-           call CalcInjection
-           call CalcDissipation
+          call CalcInjection
+          call CalcDissipation
 
        time=time+dt
       if((ntime.eq.ntst).or.(mod(ntime,10).eq.0)) then          !to perform when needed not only at the end
