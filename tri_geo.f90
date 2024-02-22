@@ -16,8 +16,7 @@ subroutine tri_geo
   call allocate_trigeo
 
 
-
-  if(pread.eq.0) then
+  if(pread.eq.0) then ! Read in initial geometry
     call set_connectivity ! Read xyz vertex coordinates and triangle connectivity arrays
     ! Reposition particles and set physical quantities
     call setup_particles
@@ -30,13 +29,14 @@ subroutine tri_geo
       call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),&
                         isGhostFace(:,inp),rm_flag(inp),A_thresh)
       call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp))
+      call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
       call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp))
       call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
             vert_of_face(:,:,inp),isGhostFace(:,inp),isGhostVert(:,inp))
       call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
     enddo
 
-  else if(pread.eq.1)then
+  else if(pread.eq.1)then ! Otherwise, read from continuation files
     ! read in particle data from file
     call import_particles
     call import_collision

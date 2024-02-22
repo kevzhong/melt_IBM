@@ -66,6 +66,7 @@ if (imelt .eq. 1) then
                             isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
         call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp))
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+        call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
 
         ! Remesh if <= threshold_area detected from calculate_area()
         if ( (rm_flag(inp) .eqv. .true.) .and. (iremesh .eq. 1 ) ) then

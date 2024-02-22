@@ -42,7 +42,7 @@
         read(15,301) dummy
         read(15,*) tsta,starea,cflmax
         read(15,301) dummy
-        read(15,*) tl, epsstar, kfmax
+        read(15,*) tl, epsstar, kf_on_kmin
         read(15,301) dummy       
         read(15,*) idtv,dtmax,cfllim 
         read(15,301) dummy       

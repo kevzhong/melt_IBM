@@ -11,6 +11,7 @@ use coll_mod
 implicit none
 real    :: ti(2), tin(3)
 real    :: dmax,tpc
+real :: tstart, tend
 character(70) namfile
   call mpi_workdistribution
   call InitArrays
@@ -117,8 +118,18 @@ character(70) namfile
          cflm=cflm*dt
        endif
 
+       ! Reset wall times
+       wtime_vof = 0.
+       eul_solve_wtime = 0.
+       mls_wtime = 0.
+       pressure_wtime = 0.
+       hit_wtime = 0.
+
        if (forcing.eq.1) then
+        tstart = MPI_WTIME()
        call CalcHITRandomForce
+       tend = MPI_WTIME()
+       hit_wtime = tend - tstart
        endif
 
        call tschem
@@ -130,6 +141,7 @@ character(70) namfile
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
+          write(6,'(A,F10.6)') "Max tri skewness:", maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) 
 
           endif
         !endif
@@ -152,6 +164,7 @@ character(70) namfile
           call writePPpartVol
           call CalcInjection
           call CalcDissipation
+          call writeClock
 
        time=time+dt
       if((ntime.eq.ntst).or.(mod(ntime,10).eq.0)) then          !to perform when needed not only at the end
@@ -161,5 +174,9 @@ character(70) namfile
       call continua_particle
       call continua_collision
      end if
+
+     ti(2) = MPI_WTIME()
+     wtime_total = ti(2) - ti(1)
+
       enddo
 end

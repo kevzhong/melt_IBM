@@ -13,7 +13,7 @@
         real      :: pra,dt,resid,cflmax,tsta
         integer   :: starea
         real      :: dtmax,cfllim
-        real      :: tl,epsstar,kfmax
+        real      :: tl,epsstar,kf_on_kmin
         integer   :: nson,idtv,forcing
         real      :: Tmelt, Tliq, Tsol, latHeat, cpliquid
 !=================================================
@@ -66,6 +66,16 @@
         logical :: ismaster = .false.
         logical :: solvestructure = .false.
         logical :: mlsforcing = .false.
+
+
+        ! For code timing / benchmarking
+        real :: wtime_vof
+        real :: eul_solve_wtime
+        real :: mls_wtime
+        real :: pressure_wtime
+        real :: hit_wtime
+        real :: wtime_total
+        
       end module param
       
 !************* End of param module******************************
@@ -167,6 +177,7 @@
       logical, dimension(:,:), allocatable :: isGhostEdge
       logical, dimension(:,:), allocatable :: isGhostVert
       real, dimension(:,:), allocatable :: eLengths
+      real, dimension(:,:), allocatable :: skewness
       real :: PERC_Athresh, A_thresh
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
 

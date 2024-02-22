@@ -17,7 +17,9 @@
       complex :: dummy1,dummy3,dummy1b,dummy2b,dummy3b
 
       wlow=0.01 !kmin=0.0159 -> kmin*2*pi/xlen=0.01
-      whigh=kfmax*2*pi/xlen
+      !wlow = 2.0d0 * pi / xlen ! Lowest wavenumber <--> largest length scale to force set by box size
+      !wlow = 1.0e-10 ! Avoid zero wavenumber
+      whigh=kf_on_kmin*2*pi/xlen ! Prescribed highest threshold wavenumber <---> smallest length scale to force
       fcoefs=0.0d0
 
       if(myid.eq.0) then
@@ -30,6 +32,7 @@
          waven=sqrt(kl**2+km**2+kn**2)
          if((waven.gt.wlow).and.(waven.lt.(whigh))) then
          do i=1,3
+            ! Box-Muller transform
           call random_number(u1)
           call random_number(u2)
           bcoefs(2*i-1,l,m,n) = bcoefs(2*i-1,l,m,n)*(1-dt/tl) +  & 

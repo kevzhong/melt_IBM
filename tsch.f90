@@ -10,6 +10,7 @@
       real,dimension(3,3)     :: AA, AAT
       real,dimension(3,2)     :: bbox_inds
       real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
+      real :: tstart, tend
 
       integer :: ns, inp, ntr, nsub
       integer :: i,j,k
@@ -32,6 +33,14 @@
         !    enddo
         !  enddo
         !enddo
+        wtime_vof = 0.
+        !eul_solve_wtime = 0.
+        !mls_wtime = 0.
+        !pressure_wtime = 0.
+        !hit_wtime = 0.
+
+        tstart = MPI_WTIME()
+        
         VOFx(:,:,:) = 1.
         VOFy(:,:,:) = 1.
         VOFz(:,:,:) = 1.
@@ -48,8 +57,10 @@
           call convex_hull_qc2(AA,bbox_inds,inp)
 
         enddo
+        tend = MPI_WTIME()
+        wtime_vof = wtime_vof + (tend - tstart)
 
-
+        tstart = MPI_WTIME()
         call hdnl1
         call hdnl2
         call hdnl3
@@ -60,6 +71,8 @@
         call invtr2      
         call invtr3
         call invtrte
+        tend = MPI_WTIME()
+        eul_solve_wtime = eul_solve_wtime + (tend - tstart)
 
 
         !do i=1,n1
@@ -77,8 +90,13 @@
         VOFz(:,:,:) = 1.
         VOFp(:,:,:) = 1.
 
+        tstart = MPI_WTIME()
         call particle
-        
+        tend = MPI_WTIME()
+        mls_wtime = mls_wtime + (tend - tstart)
+
+        tstart = MPI_WTIME()
+
         !------------ KZ: update VOF, remove later since called by Newton--Euler -----
         do inp=1,Nparticle
           call calc_rot_matrix(quat(:,inp),AA)
@@ -89,7 +107,10 @@
           call convex_hull_qc2(AA,bbox_inds,inp)
         enddo
         !------------------------------------------------------------------------------
+        tend = MPI_WTIME()
+        wtime_vof = wtime_vof + (tend - tstart)
 
+        tstart = MPI_WTIME()
         call divg
         call phcalc 
 
@@ -97,6 +118,10 @@
         
         call updvp  ! SOLENOIDAL VEL FIELD
         call prcalc  ! PRESSURE FIELD
+
+        tend = MPI_WTIME()
+        pressure_wtime = pressure_wtime + (tend - tstart)
+
 
         call update_both_ghosts(n1,n2,vx,kstart,kend)
         call update_both_ghosts(n1,n2,vy,kstart,kend)

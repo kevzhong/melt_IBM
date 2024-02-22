@@ -390,6 +390,36 @@ subroutine writePPpartVol
   end if
 end subroutine writePPpartVol
 
+subroutine writeClock
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+  !wtime_vof = 0.
+  !eul_solve_wtime = 0.
+  !mls_wtime = 0.
+  !pressure_wtime = 0.
+  !hit_wtime = 0.
+
+
+  if (myid.eq.0) then
+
+  namfile='flowmov/clock.txt'
+
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)')time, wtime_vof, eul_solve_wtime, mls_wtime, pressure_wtime, hit_wtime,wtime_total
+
+  close(43)
+  end if
+end subroutine writeClock
+
 
 
 subroutine write_tecplot_geom

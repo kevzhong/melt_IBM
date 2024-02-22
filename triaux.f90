@@ -301,6 +301,37 @@ subroutine calc_centroids_from_vert(tri_cent,xyz,vert_of_face,nf,nv,isGhostFace)
                 endif
         enddo
 end subroutine
+
+subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
+
+        implicit none
+        integer :: ne,nf,e1,e2,e3,i
+        integer, dimension (3,nf) :: edge_of_face
+        logical, dimension(nf) :: isGhostFace
+        real, dimension (nf) :: skewness, sur
+        real, dimension(ne) :: eLengths
+        real :: perim, sur_opt
+        
+        do i=1,nf
+                if (isGhostFace(i) .eqv. .false. ) then
+                        ! Compute triangle perimeter
+                        e1=edge_of_face(1,i)
+                        e2=edge_of_face(2,i)
+                        e3=edge_of_face(3,i)
+
+                        perim = eLengths(e1) + eLengths(e2) + eLengths(e3)
+
+                        ! Equilateral triangle area with matched perimeter
+                        sur_opt = sqrt(3.0) / 4.0 * (perim / 3.0)**2
+
+                        skewness(i) = ( sur_opt - sur(i) ) / sur_opt
+
+                endif
+        enddo
+        
+        return
+end subroutine calculate_skewness
+
 !------------------------------------------------------
 
 
