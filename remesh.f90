@@ -1,5 +1,5 @@
 !------------------------------------------------------
-subroutine main_remesh (Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,A_thresh,&
+subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,&
                         vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
                         isGhostFace,isGhostEdge,isGhostVert,rm_flag)
 
@@ -17,12 +17,12 @@ subroutine main_remesh (Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,A_thresh,&
     logical :: rm_flag
     real, dimension(3,nv) :: xyz
     real, dimension(3,nf) :: tri_nor
-    real, dimension(nf) :: sur
+    real, dimension(nf) :: sur, skewness
     real, dimension(ne) :: eLengths
     real, dimension(4,4) :: Q1, Q2 ! Error quadrics of vertices v1, v2
     integer :: f, e, v1, v2
     integer :: F1, F2, e1, e2, re1, re2
-    integer :: ecol_cnt, EN, flip_cnt, cnt
+    integer :: ecol_cnt, EN, flip_cnt, cnt, niter
     !integer :: valence, i
 
     ! Iteratively remesh a triangulated geometry using quadric-error-metrics-guided edge collapses
@@ -39,7 +39,7 @@ subroutine main_remesh (Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,A_thresh,&
     ! EN = numVert - numEdge + numFace
     ! where we will have EN = 2 for closed-manifold surfaces
     ecol_cnt = 0
-    !flip_cnt = 0
+    flip_cnt = 0
 
     do while (rm_flag .eqv. .true.) 
     do f = 1,nf
@@ -99,7 +99,13 @@ subroutine main_remesh (Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,A_thresh,&
             !    call debug_write(flip_cnt) ! for debugging
             !endif
 
-            !call equalizeValences_1ring(cnt,v1,re1,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
+            !do niter = 1,4
+                !call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
+                !call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh) ! Update sur
+                !call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
+                call optimiseSkewness_1ring(cnt,v1,re1,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
+                flip_cnt = flip_cnt + cnt
+            !enddo
 
             !flip_cnt = flip_cnt + cnt
             !if ( (ismaster) .and. (cnt .ne. 0) ) then
@@ -147,10 +153,10 @@ subroutine main_remesh (Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,A_thresh,&
     enddo
 enddo !while
 
-!if (ismaster) then
-!    write(*,*) ecol_cnt," edge collapses performned "
-!    write(*,*) flip_cnt," edge flips performned "
-!endif
+! if (ismaster) then
+!     write(*,*) ecol_cnt," edge collapses performned "
+!     write(*,*) flip_cnt," edge flips performned "
+! endif
 
 end subroutine main_remesh
 !------------------------------------------------------
@@ -313,6 +319,144 @@ subroutine update_edge_connectivity(v1,v2,e1,e2,re1,re2,F1,F2,ne,vert_of_edge,fa
 
 
 end subroutine update_edge_connectivity
+
+subroutine optimiseSkewness_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
+    ! Do a sequence of edge flips around the 1-ring neighbourhood of vertex v
+    use param, only: ismaster
+    !use geom
+    implicit none
+    integer :: v, e, ne, nv, nf, i,j,k
+    integer, dimension(3,nf) :: vert_of_face, edge_of_face
+    integer, dimension(2,ne) :: face_of_edge, vert_of_edge
+    real, dimension(3,nv) :: xyz
+    real, dimension(3) :: vecBuffer
+    integer :: prevFace, currentFace, currentEdge, prevEdge, startFace
+    integer :: v1, v2, v3, v4, F1, F2
+    integer :: flip_cnt
+    real :: skew_pre, skew_post
+    real, dimension(2) :: perim, sur_opt, sur_buffer
+    logical :: flip_OK
+    integer :: v1_val, v2_val, v3_val, v4_val
+    integer :: e_of_v1, e_of_v2, e_of_v3, e_of_v4
+    integer :: debug_cnt
+    
+    integer, allocatable, dimension(:) :: eNeighbours_of_v
+
+    flip_cnt = 0
+
+    skew_pre = 0.
+    skew_post = 0.
+    perim = 0.
+    sur_opt = 0.
+    sur_buffer = 0.
+
+    ! First start off by calculating the valence of the vertex v: no. of neighbours
+    call get_vertValence(v1_val,v,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+    allocate(eNeighbours_of_v(v1_val))
+
+    ! Populate array
+    call get_vertEdges(v1_val,eNeighbours_of_v,v,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+
+    ! Now loop over each edge
+    do j = 1,v1_val
+        currentEdge = eNeighbours_of_v(j)
+
+        F1 = face_of_edge(1,currentEdge)
+        F2 = face_of_edge(2,currentEdge)
+
+        call get_quadrilateral_vertices(v1,v2,v3,v4,v,F1,F2,currentEdge,ne,nf,vert_of_face,vert_of_edge)
+
+        ! Now do a bunch of tests to see if the flip is OK
+        call get_vertValence(v1_val,v1,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+        call get_vertValence(v2_val,v2,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+
+        do i = 1,3
+            if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v3) .gt. 0 ) then
+                e_of_v3 = edge_of_face(i,F1)
+            endif
+
+            if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v4) .gt. 0 ) then
+                e_of_v4 = edge_of_face(i,F2)
+            endif
+        enddo
+
+        call get_vertValence(v3_val,v3,e_of_v3,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+        call get_vertValence(v4_val,v4,e_of_v4,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+
+        ! Do tests to see if edge flip is legal
+        call test_edgeFlip(flip_OK,v1,v2,v3,v4,v1_val,v2_val,v3_val,v4_val,xyz,ne,nf,nv)
+
+        if (flip_OK .eqv. .true.) then
+            ! Get skewness of F1 and F2
+                !F1 = (v1,v2,v3)
+                perim(1) = norm2( xyz(1:3,v2) - xyz(1:3,v1)  ) + norm2( xyz(1:3,v3) - xyz(1:3,v1)  ) + &
+                           norm2( xyz(1:3,v3) - xyz(1:3,v2)  )
+
+                perim(2) = norm2( xyz(1:3,v2) - xyz(1:3,v1)  ) + norm2( xyz(1:3,v4) - xyz(1:3,v1)  ) + &
+                norm2( xyz(1:3,v4) - xyz(1:3,v2)  )
+
+                call cross(vecBuffer, xyz(1:3,v2) - xyz(1:3,v1), xyz(1:3,v3) - xyz(1:3,v1) )
+                sur_buffer(1) = 0.5 * norm2( vecBuffer)
+                call cross(vecBuffer, xyz(1:3,v2) - xyz(1:3,v1), xyz(1:3,v4) - xyz(1:3,v1) )
+                sur_buffer(2) = 0.5 * norm2( vecBuffer)
+
+                !sur_buffer(1) = 0.5 * norm2(   cross(xyz(1:3,v2) - xyz(1:3,v1), xyz(1:3,v3) - xyz(1:3,v1))    )
+                !sur_buffer(2) = 0.5 * norm2(   cross(xyz(1:3,v2) - xyz(1:3,v1), xyz(1:3,v4) - xyz(1:3,v1))    )
+
+                sur_opt = sqrt(3.0) / 4.0 * (perim / 3.0)**2
+
+                skew_pre = sum ( ( sur_opt - sur_buffer ) / sur_opt )
+
+            ! Perform edge flip
+            call edgeFlip(currentEdge,F1,F2,v1,v2,v3,v4,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
+
+            ! Compute new valences, original e is now connected to (v3,v4)
+            call get_vertValence(v3_val,v3,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+            call get_vertValence(v4_val,v4,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+
+            do i = 1,3
+                if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v1) .gt. 0 ) then
+                    e_of_v1 = edge_of_face(i,F1)
+                endif
+            
+                if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v2) .gt. 0 ) then
+                    e_of_v2 = edge_of_face(i,F2)
+                endif
+            enddo
+
+            call get_vertValence(v1_val,v1,e_of_v1,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+            call get_vertValence(v2_val,v2,e_of_v2,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+
+            ! After flip: F1(v3,v4,v1)  F2(v3,v4,v2)
+
+            perim(1) = norm2( xyz(1:3,v3) - xyz(1:3,v4)  ) + norm2( xyz(1:3,v3) - xyz(1:3,v1)  ) + &
+            norm2( xyz(1:3,v4) - xyz(1:3,v1)  )
+
+            perim(2) = norm2( xyz(1:3,v3) - xyz(1:3,v4)  ) + norm2( xyz(1:3,v3) - xyz(1:3,v2)  ) + &
+            norm2( xyz(1:3,v4) - xyz(1:3,v2)  )
+
+            call cross(vecBuffer, xyz(1:3,v4) - xyz(1:3,v3), xyz(1:3,v4) - xyz(1:3,v1) )
+            sur_buffer(1) = 0.5 * norm2( vecBuffer)
+            call cross(vecBuffer, xyz(1:3,v4) - xyz(1:3,v3), xyz(1:3,v4) - xyz(1:3,v2) )
+            sur_buffer(2) = 0.5 * norm2( vecBuffer)
+            sur_opt = sqrt(3.0) / 4.0 * (perim / 3.0)**2
+
+            skew_post = sum ( ( sur_opt - sur_buffer ) / sur_opt )
+
+
+            if (skew_pre .le. skew_post) then ! Flip back if flip did not optimize valences
+                call edgeFlip(currentEdge,F1,F2,v3,v4,v1,v2,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
+            else
+                flip_cnt = flip_cnt + 1
+            endif
+        endif
+
+    enddo
+
+    deallocate(eNeighbours_of_v)
+
+
+end subroutine optimiseSkewness_1ring
 
 subroutine equalizeValences_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
     ! Do a sequence of edge flips around the 1-ring neighbourhood of vertex v
