@@ -178,7 +178,7 @@
       logical, dimension(:,:), allocatable :: isGhostVert
       real, dimension(:,:), allocatable :: eLengths
       real, dimension(:,:), allocatable :: skewness
-      real :: PERC_Athresh, A_thresh
+      real :: PERC_Athresh, A_thresh, skew_thresh
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
 
       integer, dimension(:,:,:), allocatable :: pind

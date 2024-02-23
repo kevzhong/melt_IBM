@@ -157,7 +157,7 @@ character(70) namfile
 !              call writePPquat
 !              call write_tail_head
 !              call write_shortdist
-              call mpi_write_field
+              !call mpi_write_field
          endif
          
         ! ASCII write

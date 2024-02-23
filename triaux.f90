@@ -302,15 +302,16 @@ subroutine calc_centroids_from_vert(tri_cent,xyz,vert_of_face,nf,nv,isGhostFace)
         enddo
 end subroutine
 
-subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
+subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace,rm_flag,skew_thresh)
 
         implicit none
         integer :: ne,nf,e1,e2,e3,i
         integer, dimension (3,nf) :: edge_of_face
         logical, dimension(nf) :: isGhostFace
+        logical :: rm_flag
         real, dimension (nf) :: skewness, sur
         real, dimension(ne) :: eLengths
-        real :: perim, sur_opt
+        real :: perim, sur_opt, skew_thresh
         
         do i=1,nf
                 if (isGhostFace(i) .eqv. .false. ) then
@@ -325,6 +326,10 @@ subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostF
                         sur_opt = sqrt(3.0) / 4.0 * (perim / 3.0)**2
 
                         skewness(i) = ( sur_opt - sur(i) ) / sur_opt
+
+                        if (skewness(i) .ge. skew_thresh) then
+                                rm_flag = .true. ! set the remesh flag to true if any triangle less than the threshold area
+                        endif
 
                 endif
         enddo

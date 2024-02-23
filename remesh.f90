@@ -1,5 +1,5 @@
 !------------------------------------------------------
-subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,&
+subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,skew_thresh,&
                         vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
                         isGhostFace,isGhostEdge,isGhostVert,rm_flag)
 
@@ -8,7 +8,7 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
 
     implicit none
     integer :: nf,nv,ne
-    real :: A_thresh, Surface
+    real :: A_thresh, Surface, skew_thresh
     integer, dimension (3,nf) :: vert_of_face, edge_of_face
     integer, dimension(2,ne) :: vert_of_edge, face_of_edge
     logical, dimension(nf) :: isGhostFace
@@ -43,7 +43,7 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
 
     do while (rm_flag .eqv. .true.) 
     do f = 1,nf
-        if ( (isGhostFace(f) .eqv. .false.) .and.  ( sur(f) .le. A_thresh ) ) then
+        if ( (isGhostFace(f) .eqv. .false.) .and.  ( ( sur(f) .le. A_thresh) .or. (skewness(f) .ge. skew_thresh) ) ) then
             !write(*,*) "Collapsing face", f
             ! Select the smallest edge of the triangle to remove
             e = minloc(  eLengths( edge_of_face(1:3,f) ) , 1  )
@@ -121,7 +121,7 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
             call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
             call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh) ! Update sur
             call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
-
+            call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace,rm_flag,skew_thresh)
 
             ! Optimisation, following truncated steps for isotropic, incremetal remeshing
             ! Sect. 6.5.3 of Botsch et al. (2010)

@@ -2,6 +2,6 @@
     1           0            1
    WCON        WSCL      rhop/rhof
    0.3         1.5          2 
-  GTSFX                RAD       IREMESH     PERCT_ATHRESH
- r005_icosphere_N4.gts  0.05          1           0.1
+  GTSFX                RAD       IREMESH     PERCT_ATHRESH  SKEW_THRESH
+ r01_icosphere_N4.gts  0.1          1           0.2            0.6
 
