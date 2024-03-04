@@ -40,7 +40,10 @@ subroutine tri_geo
   else if(pread.eq.1)then ! Otherwise, read from continuation files
     ! read in particle data from file
     call import_particles
-    call import_collision
+    
+    if (Nparticle .gt. 1 )then
+      call import_collision
+    endif
   end if
 
         if(ismaster)then

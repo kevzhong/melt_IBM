@@ -390,6 +390,36 @@ subroutine writePPpartVol
   end if
 end subroutine writePPpartVol
 
+subroutine writeTriMeshStats
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+
+  if (myid.eq.0) then
+
+  namfile='flowmov/triStats.txt'
+ !KZ: note hard-coded single particle for now
+
+  ! Time, Nv, Ne, Nf, min(skew), max(skew), min(elength), max(elength), min(atri), max(atri)
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  !write(43,'(100E15.7)')time,&
+  write(43, '(F10.6, 3(I5), 6(F10.6))')time,&
+  count(isGhostVert(:,1) .eqv. .false.),count(isGhostEdge(:,1) .eqv. .false.),count(isGhostFace(:,1) .eqv. .false.),&
+  minval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ),   maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , &
+  minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ),   maxval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) , &
+  minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) ),   maxval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) ) 
+
+  close(43)
+  end if
+end subroutine writeTriMeshStats
+
 subroutine writeClock
   use param
   use mls_param

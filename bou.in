@@ -1,13 +1,13 @@
  N1M          N2M         N3M 
  192           192           192          
 NTST   NSST    TFRAME    TPIN      IRESET 
- 10000     3       1e-2      5e-3       0
+ 2     3       1e-3      5e-3       0
 NWRIT         NREAD         PREAD 
-  1             0             0
+  1             1            1
  XLEN         YLEN          ZLEN
  1.0          1.0           1.0
  REN     PRANDTL  BETA_GZ      DT           RESID
- 1000.0     1.0      1.0        1e-3          1.e-2
+ 1000.0     1.0      0.0        1e-3          1.e-2
  TSTA        STAREAD        CFLMAX
  0            0              1.7
  TL          EPSSTAR         KF / KMIN

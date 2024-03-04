@@ -272,12 +272,12 @@ integer, dimension (2,ne) :: vert_of_edge
 logical, dimension(ne) :: isGhostEdge
 real, dimension (3,nv) ::xyz
 real, dimension (ne) :: eLengths
-
 do i=1,ne
         if ( isGhostEdge(i) .eqv. .false. ) then
                 v1=vert_of_edge(1,i)
                 v2=vert_of_edge(2,i)
                 eLengths(i)=sqrt( (xyz(1,v1)-xyz(1,v2))**2 + (xyz(2,v1)-xyz(2,v2))**2 + (xyz(3,v1)-xyz(3,v2))**2 ) 
+
         endif
 enddo
 
@@ -308,11 +308,12 @@ subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostF
         integer :: ne,nf,e1,e2,e3,i
         integer, dimension (3,nf) :: edge_of_face
         logical, dimension(nf) :: isGhostFace
-        logical :: rm_flag
         real, dimension (nf) :: skewness, sur
         real, dimension(ne) :: eLengths
-        real :: perim, sur_opt, skew_thresh
-        
+        real :: perim, sur_opt
+        logical :: rm_flag
+        real :: skew_thresh
+
         do i=1,nf
                 if (isGhostFace(i) .eqv. .false. ) then
                         ! Compute triangle perimeter
@@ -327,10 +328,9 @@ subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostF
 
                         skewness(i) = ( sur_opt - sur(i) ) / sur_opt
 
-                        if (skewness(i) .ge. skew_thresh) then
-                                rm_flag = .true. ! set the remesh flag to true if any triangle less than the threshold area
+                        if (skewness(i) .gt. skew_thresh) then
+                                rm_flag = .true. ! set the remesh flag to true if any edgeLength less than the threshold length
                         endif
-
                 endif
         enddo
         

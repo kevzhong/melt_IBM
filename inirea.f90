@@ -10,7 +10,7 @@
       integer :: ihist
       integer :: n1o,n2o,n3o,n3om
       integer :: j,i,kstarto,kendo
-      real, allocatable, dimension(:,:,:) :: vyold,vzold,vxold
+      real, allocatable, dimension(:,:,:) :: vyold,vzold,vxold, tempold
       integer, parameter :: ghosts = 50 ! min(ghosts) = 1
       integer  :: kstartog,kendog
       integer, allocatable, dimension(:) :: countko
@@ -34,12 +34,12 @@
       
 !EP   Check whether grid specifications have been updated
       if(n2o.ne.n2.or.n3o.ne.n3.or.n1o.ne.n1) then
-      if(ismaster) write(*,*) "Interpolating new grid"
-      if(n1.gt.n1o*2.or.n2.gt.n2o*2.or.n3.gt.n3o*2) then
-      if(ismaster) write(*,*) "New grid resolution can not be more",&
-      " than twice the old resolution"
-       call MpiAbort
-      endif
+            if(ismaster) write(*,*) "Interpolating new grid"
+                  if(n1.gt.n1o*2.or.n2.gt.n2o*2.or.n3.gt.n3o*2) then
+                  if(ismaster) write(*,*) "New grid resolution can not be more",&
+                        " than twice the old resolution"
+                        call MpiAbort
+                  endif
 
       n3om = n3o - 1
       
@@ -109,6 +109,24 @@
 
       deallocate(vzold)
 
+      !KZ   Tmperature
+      allocate(tempold(1:n1o,1:n2o,kstartog-1:kendog+1))
+      call mpi_read_continua(n1o,n2o,n3o,kstartog,kendog,5, &
+       tempold(1:n1o,1:n2o,kstartog-1:kendog+1))
+
+      if(myid.eq.numtasks-1) then
+      do j=1,n2o
+      do i=1,n1o
+      tempold(i,j,n3o) = 0.0
+      enddo
+      enddo
+      endif
+
+      call interp(tempold,temp(1:n1,1:n2,kstart:kend),n1o,n2o,n3o, &
+       3,kstartog,kendog)
+
+      deallocate(tempold)
+
       else
 
 !EP   One to one HDF read
@@ -117,13 +135,23 @@
       call mpi_read_continua(n1,n2,n3,kstart,kend,3,vz)
       !call mpi_read_continua(n1,n2,n3,kstart,kend,4,pr) 
       call mpi_read_continua(n1,n2,n3,kstart,kend,5,temp)
+
       endif
 
-      if(myid.eq.numtasks-1) then
-       vx(1:n1,1:n2,n3) = 0.0
-       vy(1:n1,1:n2,n3) = 0.0
-       vz(1:n1,1:n2,n3) = 0.0
-      endif
+      !if(myid.eq.numtasks-1) then
+      ! vx(1:n1,1:n2,n3) = 0.0
+      ! vy(1:n1,1:n2,n3) = 0.0
+      ! vz(1:n1,1:n2,n3) = 0.0
+      ! temp(1:n1,1:n2,n3) = 0.0
+      !endif
+
+      ! KZ: test to remove halo cell artefacts
+      !if(myid.eq.0) then
+      !      vx(1:n1,1:n2,1) = 0.0
+      !      vy(1:n1,1:n2,1) = 0.0
+      !      vz(1:n1,1:n2,1) = 0.0
+      !      temp(1:n1,1:n2,1) = 0.0
+      !endif
 
       if (ireset.eq.1) then                                             
        ihist=0                                                          

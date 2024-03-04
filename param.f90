@@ -107,7 +107,7 @@
         include 'mpif.h'
         integer :: myid, numtasks, ierr
         integer, parameter :: master=0
-        integer, parameter :: lvlhalo=2
+        integer, parameter :: lvlhalo=1
         integer :: MDP = MPI_DOUBLE_PRECISION
         integer :: MCP = MPI_DOUBLE_COMPLEX
         integer :: STATUS(MPI_STATUS_SIZE,4)

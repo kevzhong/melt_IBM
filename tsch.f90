@@ -23,16 +23,6 @@
         ga=gam(ns)
         ro=rom(ns)
 
-        !do i=1,n1
-        !   do j = 1,n2
-        !     do k = kstart-1,kend+1
-        !      VOFx(i,j,k) = 1.
-        !      VOFy(i,j,k) = 1.
-        !      VOFz(i,j,k) = 1.
-        !      VOFp(i,j,k) = 1.
-        !    enddo
-        !  enddo
-        !enddo
         wtime_vof = 0.
         !eul_solve_wtime = 0.
         !mls_wtime = 0.
@@ -75,16 +65,6 @@
         eul_solve_wtime = eul_solve_wtime + (tend - tstart)
 
 
-        !do i=1,n1
-        !   do j = 1,n2
-        !     do k = kstart-1,kend+1
-        !      VOFx(i,j,k) = 1.
-        !      VOFy(i,j,k) = 1.
-        !      VOFz(i,j,k) = 1.
-        !      VOFp(i,j,k) = 1.
-        !    enddo
-        !  enddo
-        !enddo
         VOFx(:,:,:) = 1.
         VOFy(:,:,:) = 1.
         VOFz(:,:,:) = 1.

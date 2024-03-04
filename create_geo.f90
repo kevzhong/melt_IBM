@@ -135,7 +135,7 @@ subroutine set_particle_rad
 
   AAT_P = princ_axis_rotm()
 
-  if(myid.eq.0) print *, AAT_P
+  !if(myid.eq.0) print *, AAT_P
   do inp = 1,Nparticle
     ! This is r
     do i=1,maxnf
@@ -229,6 +229,84 @@ end subroutine
     dname = trim("r_x_u_tot")
     call hdf_read_2d(r_x_u_tot,shape(r_x_u_tot),dname)
 
+    dname = trim("volume")
+    call hdf_read_1d(Volume,Nparticle,dname)
+    dname = trim("total_area")
+    call hdf_read_1d(Surface,Nparticle,dname)
+
+
+    ! ------------------- GEOMETRY --------------------------------------
+    ! ----------------------------   Edge information ----------------------------
+
+    !----- Connectivity information ---------------
+    dname = trim("vert_of_edge")
+    call hdf_read_3dInt(vert_of_edge,shape(vert_of_edge),dname)
+
+    dname = trim("face_of_edge")
+    call hdf_read_3dInt(face_of_edge,shape(face_of_edge),dname)
+
+    dname = trim("isGhostEdge")
+    call hdf_read_2dInt(isGhostEdge,shape(isGhostEdge),dname)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+
+    dname = trim("eLengths")
+    call hdf_read_2d(eLengths,shape(eLengths),dname)
+
+    !---------------------------------------------
+
+    
+    ! ----------------------------   Face information ----------------------------
+
+    !----- Connectivity information ---------------
+    dname = trim("vert_of_face")
+    call hdf_read_3dInt(vert_of_face,shape(vert_of_face),dname)
+
+    dname = trim("edge_of_face")
+    call hdf_read_3dInt(edge_of_face,shape(edge_of_face),dname)
+
+    dname = trim("isGhostFace")
+    call hdf_read_2dInt(isGhostFace,shape(isGhostFace),dname)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+
+    dname = trim("tri_bar")
+    call hdf_read_3d(tri_bar,shape(tri_bar),dname)
+
+    dname = trim("tri_nor")
+    call hdf_read_3d(tri_nor,shape(tri_nor),dname)
+
+    dname = trim("Atri")
+    call hdf_read_2d(sur,shape(sur),dname)
+
+    dname = trim("skewness")
+    call hdf_read_2d(skewness,shape(skewness),dname)
+    !---------------------------------------------
+
+    ! ----------------------------   Vertex information --------------------------
+
+    !----- Connectivity information ---------------
+
+    dname = trim("isGhostVert")
+    call hdf_read_2dInt(isGhostVert,shape(isGhostVert),dname)
+
+    dname = trim("xyzv")
+    call hdf_read_3d(xyzv,shape(xyzv),dname)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+    dname = trim("vert_nor")
+    call hdf_read_3d(vert_nor,shape(vert_nor),dname)
+
+    dname = trim("Avert")
+    call hdf_read_2d(Avert,shape(Avert),dname)
+
+    !---------------------------------------------
+
+    !--------------------------------------------------------------------
+
 
     call mpi_bcast(pos_CM,size(pos_cm),mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(vel_CM,size(vel_cm),mpi_double,0,mpi_comm_world,ierr)
@@ -240,6 +318,27 @@ end subroutine
 
     call mpi_bcast(u_tot,    size(u_tot),    mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(r_x_u_tot,size(r_x_u_tot),mpi_double,0,mpi_comm_world,ierr)
+
+    call mpi_bcast(Volume,size(Volume),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(Surface,size(Surface),mpi_double,0,mpi_comm_world,ierr)
+
+    call mpi_bcast(vert_of_edge,size(vert_of_edge),mpi_integer,0,mpi_comm_world,ierr)
+    call mpi_bcast(face_of_edge,size(face_of_edge),mpi_integer,0,mpi_comm_world,ierr)
+    call mpi_bcast(isGhostEdge,size(isGhostEdge),mpi_logical,0,mpi_comm_world,ierr)
+    call mpi_bcast(eLengths,size(eLengths),mpi_double,0,mpi_comm_world,ierr)
+
+    call mpi_bcast(vert_of_face,size(vert_of_face),mpi_integer,0,mpi_comm_world,ierr)
+    call mpi_bcast(edge_of_face,size(edge_of_face),mpi_integer,0,mpi_comm_world,ierr)
+    call mpi_bcast(isGhostFace,size(isGhostFace),mpi_logical,0,mpi_comm_world,ierr)
+    call mpi_bcast(tri_bar,size(tri_bar),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(tri_nor,size(tri_nor),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(sur,size(sur),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(skewness,size(skewness),mpi_double,0,mpi_comm_world,ierr)
+
+    call mpi_bcast(isGhostVert,size(isGhostVert),mpi_logical,0,mpi_comm_world,ierr)
+    call mpi_bcast(xyzv,size(xyzv),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(vert_nor,size(vert_nor),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(Avert,size(Avert),mpi_double,0,mpi_comm_world,ierr)
 
  end subroutine
 
@@ -265,7 +364,7 @@ end subroutine
   if (myid.eq.0) then 
     call hdf5_create_blank_file(filename)
 
-    ! 2D
+    !---------------------- Newton--Euler, rigid-body quantities ------------
     dataset = trim("pos_CM")
     call hdf_write_2d(pos_CM,(/3,Nparticle/),dataset)
     dataset = trim("vel_CM")
@@ -283,6 +382,89 @@ end subroutine
     call hdf_write_2d(u_tot,(/3,Nparticle/),dataset)
     dataset = trim("r_x_u_tot")
     call hdf_write_2d(r_x_u_tot,(/3,Nparticle/),dataset)
+
+
+    ! Global quantities: Volume, surface area, 
+    ! Inertia tensor, principal axes, etc (eventually)
+
+    dataset = trim("volume")
+    call hdf_write_1d(Volume,Nparticle,dataset)
+    dataset = trim("total_area")
+    call hdf_write_1d(Surface,Nparticle,dataset)
+
+    !-------------- BEGIN GEOMETRY INFORMATION -----------------------------------
+
+    ! ----------------------------   Edge information ----------------------------
+
+    !----- Connectivity information ---------------
+    dataset = trim("vert_of_edge")
+    call hdf_write_3dInt(vert_of_edge,(/2,maxne,Nparticle/),dataset)
+
+    dataset = trim("face_of_edge")
+    call hdf_write_3dInt(face_of_edge,(/2,maxne,Nparticle/),dataset)
+
+    dataset = trim("isGhostEdge")
+    call hdf_write_2dInt(isGhostEdge,(/maxne,Nparticle/),dataset)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+
+    dataset = trim("eLengths")
+    call hdf_write_2d(eLengths,(/maxne,Nparticle/),dataset)
+
+    !---------------------------------------------
+
+    
+    ! ----------------------------   Face information ----------------------------
+
+    !----- Connectivity information ---------------
+    dataset = trim("vert_of_face")
+    call hdf_write_3dInt(vert_of_face,(/3,maxnf,Nparticle/),dataset)
+
+    dataset = trim("edge_of_face")
+    call hdf_write_3dInt(edge_of_face,(/3,maxnf,Nparticle/),dataset)
+
+    dataset = trim("isGhostFace")
+    call hdf_write_2dInt(isGhostFace,(/maxnf,Nparticle/),dataset)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+
+    dataset = trim("tri_bar")
+    call hdf_write_3d(tri_bar,(/3,maxnf,Nparticle/),dataset)
+
+    dataset = trim("tri_nor")
+    call hdf_write_3d(tri_nor,(/3,maxnf,Nparticle/),dataset)
+
+    dataset = trim("Atri")
+    call hdf_write_2d(sur,(/maxnf,Nparticle/),dataset)
+
+    dataset = trim("skewness")
+    call hdf_write_2d(skewness,(/maxnf,Nparticle/),dataset)
+    !---------------------------------------------
+
+
+    ! ----------------------------   Vertex information --------------------------
+
+    !----- Connectivity information ---------------
+
+    dataset = trim("isGhostVert")
+    call hdf_write_2dInt(isGhostVert,(/maxnv,Nparticle/),dataset)
+
+    dataset = trim("xyzv")
+    call hdf_write_3d(xyzv,(/3,maxnv,Nparticle/),dataset)
+    !---------------------------------------------
+
+    !----- Derived geoemtric quantities ----------
+    dataset = trim("vert_nor")
+    call hdf_write_3d(vert_nor,(/3,maxnv,Nparticle/),dataset)
+
+    dataset = trim("Avert")
+    call hdf_write_2d(Avert,(/maxnv,Nparticle/),dataset)
+
+    !---------------------------------------------
+
+
 
   end if
   end subroutine

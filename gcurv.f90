@@ -142,7 +142,8 @@ character(70) namfile
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
           write(6,'(A,F10.6)') "Max tri skewness:", maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) 
-
+          write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
+          write(6,'(A,F10.6)') "min Atri/AE:", minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) )/A_eulerian 
           endif
         !endif
 
@@ -162,6 +163,7 @@ character(70) namfile
          
         ! ASCII write
           call writePPpartVol
+          call writeTriMeshStats
           call CalcInjection
           call CalcDissipation
           call writeClock

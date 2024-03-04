@@ -579,7 +579,7 @@ end subroutine mpi_globalsum_double_var
 
       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'Temperature', H5T_NATIVE_DOUBLE, &
+      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
                       filespace, dset_temp, hdf_error)
 
       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
@@ -743,7 +743,7 @@ end subroutine mpi_globalsum_double_var
           dsetname = trim('pr')
           filnam1 = trim('continuation/continua_pr.h5')
         case (5)
-          dsetname = trim('Temperature')
+          dsetname = trim('Temp')
           filnam1 = trim('continuation/continua_temp.h5')
       end select
 
@@ -792,6 +792,8 @@ end subroutine mpi_globalsum_double_var
       call h5sclose_f(memspace, hdf_error)
       call h5fclose_f(file_id, hdf_error)
 !     call h5close_f(hdf_error)
+
+      if(myid.eq.0)write(*,'(5x,a)')'reading complete: '//filnam1
 
       end subroutine mpi_read_continua
 !================================================
