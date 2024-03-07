@@ -35,18 +35,19 @@
         VOFy(:,:,:) = 1.
         VOFz(:,:,:) = 1.
         VOFp(:,:,:) = 1.
+        if(imlsfor.eq.1)then
+          do inp=1,Nparticle
+            call calc_rot_matrix(quat(:,inp),AA)
 
-        do inp=1,Nparticle
-          call calc_rot_matrix(quat(:,inp),AA)
+            call get_bbox_inds(bbox_inds,inp)
 
-          call get_bbox_inds(bbox_inds,inp)
-
-          call convex_hull_q12(AA,bbox_inds,inp)
-          call convex_hull_q22(AA,bbox_inds,inp)
-          call convex_hull_q32(AA,bbox_inds,inp)
-          call convex_hull_qc2(AA,bbox_inds,inp)
-
+            call convex_hull_q12(AA,bbox_inds,inp)
+            call convex_hull_q22(AA,bbox_inds,inp)
+            call convex_hull_q32(AA,bbox_inds,inp)
+            call convex_hull_qc2(AA,bbox_inds,inp)
         enddo
+        endif
+        
         tend = MPI_WTIME()
         wtime_vof = wtime_vof + (tend - tstart)
 
@@ -78,6 +79,7 @@
         tstart = MPI_WTIME()
 
         !------------ KZ: update VOF, remove later since called by Newton--Euler -----
+        if(imlsfor.eq.1)then
         do inp=1,Nparticle
           call calc_rot_matrix(quat(:,inp),AA)
           call get_bbox_inds(bbox_inds,inp)
@@ -86,6 +88,7 @@
           call convex_hull_q32(AA,bbox_inds,inp)
           call convex_hull_qc2(AA,bbox_inds,inp)
         enddo
+      endif
         !------------------------------------------------------------------------------
         tend = MPI_WTIME()
         wtime_vof = wtime_vof + (tend - tstart)

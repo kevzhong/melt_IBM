@@ -48,7 +48,6 @@ if(imlsfor.eq.1)then
         call velforce
         call tempforce
     end do
-endif
  
 call update_both_ghosts(n1,n2,vx,kstart,kend)
 call update_both_ghosts(n1,n2,vy,kstart,kend)
@@ -92,6 +91,8 @@ endif
 
 if (imlsstr.eq.1) then
     call update_part_pos
+endif
+
 endif
 
  end

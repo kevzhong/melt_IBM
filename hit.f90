@@ -36,9 +36,9 @@
           call random_number(u1)
           call random_number(u2)
           bcoefs(2*i-1,l,m,n) = bcoefs(2*i-1,l,m,n)*(1-dt/tl) +  & 
-     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*cos(2*pi*u2)
+     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*cos(2.0*pi*u2)
           bcoefs(2*i,l,m,n) = bcoefs(2*i,l,m,n)*(1-dt/tl) +  & 
-     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*cos(2*pi*u2)
+     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*sin(2.0*pi*u2)
          end do
          scalpr=bcoefs(1,l,m,n)*kl + bcoefs(2,l,m,n)*km + &
      &          bcoefs(3,l,m,n)*kn
