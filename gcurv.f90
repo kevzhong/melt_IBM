@@ -153,7 +153,6 @@ character(70) namfile
            call findCMindices
            call mkmov_hdf_ycut
            call write_tecplot_geom
-           call write_h5_geo
 !              call writePind            
 !              call writePPpartpos
 !              call writePPquat
