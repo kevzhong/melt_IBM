@@ -61,27 +61,28 @@ if(imlsfor.eq.1)then
         ! Update triangulated geometry details
         ! KZ: Entirety of same computation done by each process since each process stores all the geo info, could be parallelised later if a bottleneck
         do inp = 1,Nparticle
-            call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
-                                isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
-            call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp))
-            call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-            call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp)&
-                                    ,rm_flag(inp),skew_thresh)
-        
-            ! Remesh if <= threshold_area detected from calculate_area()
-            if ( (rm_flag(inp) .eqv. .true.) .and. (iremesh .eq. 1 ) ) then
-                call main_remesh (Surface(inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),maxnf,maxne,maxnv,&
-                            xyzv(:,:,inp),tri_nor(:,:,inp),&
-                            A_thresh,skew_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
-                            face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp))
-            endif
-        
-            call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
-            call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp)) ! Update vertex areas
-            call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
-        
-            call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
-                                            isGhostFace(:,inp), isGhostVert(:,inp) )
+        call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
+                            isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
+        call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp))
+        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+        call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp)&
+                                ,rm_flag(inp),skew_thresh)
+    
+        ! Remesh if <= threshold_area detected from calculate_area()
+        if ( (rm_flag(inp) .eqv. .true.) .and. (iremesh .eq. 1 ) ) then
+            call main_remesh (Surface(inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),maxnf,maxne,maxnv,&
+                        xyzv(:,:,inp),tri_nor(:,:,inp),&
+                        A_thresh,skew_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
+                        face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
+                        anchorVert(:,inp) )
+        endif
+    
+        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
+        call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp)) ! Update vertex areas
+        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+    
+        call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
+                                        isGhostFace(:,inp), isGhostVert(:,inp) )
         enddo
     
         ! Update Eulerian < -- > Lagrangian forcing transfer coefficient

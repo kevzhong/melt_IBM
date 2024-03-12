@@ -24,6 +24,8 @@ implicit none
   isGhostEdge(:,:) = .false.
   isGhostVert(:,:) = .false.
   rm_flag(:) = .false.
+  anchorVert(:,:) = .true.
+
   
   !allocate(faces_of_vert(VERTBUFFER,maxnv)) !KZ face-vertex connectvity for vertex normals
 

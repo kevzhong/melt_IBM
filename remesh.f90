@@ -1,7 +1,7 @@
 !------------------------------------------------------
 subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,skew_thresh,&
                         vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
-                        isGhostFace,isGhostEdge,isGhostVert,rm_flag)
+                        isGhostFace,isGhostEdge,isGhostVert,rm_flag,anchorVert)
 
     use mpih
     use param, only: ismaster
@@ -13,7 +13,7 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
     integer, dimension(2,ne) :: vert_of_edge, face_of_edge
     logical, dimension(nf) :: isGhostFace
     logical, dimension(ne) :: isGhostEdge
-    logical, dimension(nv) :: isGhostVert
+    logical, dimension(nv) :: isGhostVert, anchorVert
     logical :: rm_flag
     real, dimension(3,nv) :: xyz
     real, dimension(3,nf) :: tri_nor
@@ -113,6 +113,8 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
             !    call debug_write(flip_cnt) ! for debugging
             !endif
 
+            ! Flag un-anchored vertices, for coupling to smoothing
+            call flag_vertices_1ring(anchorVert,v1,re1,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
             !-------------- Update relevant geometric information --------------
 
             !Reset flag after remesh,  will be modified to .true. again if small triangle area detected
@@ -557,253 +559,6 @@ subroutine equalizeValences_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edg
 end subroutine equalizeValences_1ring
 
 
-! subroutine equalizeValences_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
-!     ! Do a sequence of edge flips around the 1-ring neighbourhood of vertex v
-!     use param, only: ismaster
-!     implicit none
-!     integer :: v, e, ne, nv, nf, i
-!     integer, dimension(3,nf) :: vert_of_face, edge_of_face
-!     integer, dimension(2,ne) :: face_of_edge, vert_of_edge
-!     real, dimension(3,nv) :: xyz
-!     integer :: prevFace, currentFace, currentEdge, prevEdge, startFace
-!     integer :: v1, v2, v3, v4, F1, F2
-!     integer :: flip_cnt
-!     integer :: deviation_pre, deviation_post
-!     logical :: flip_OK
-!     integer :: v1_val, v2_val, v3_val, v4_val
-!     integer :: e_of_v1, e_of_v2, e_of_v3, e_of_v4
-!     integer :: debug_cnt
-!     ! Accmulate the face adjacency
-!     ! Arbitrary starting face
-!     startFace = face_of_edge(1,e)
-!     prevFace = startFace 
-!     currentFace = 0
-
-!     currentEdge = 0
-!     prevEdge = e
-    
-!     flip_cnt = 0
-!     debug_cnt = 0
-!     !----------------------- BEGIN EDGE FLIPPING OPERATIONS ----------------------------------------
-
-!     F1 = face_of_edge(1,e)
-!     F2 = face_of_edge(2,e)
-
-!     call get_quadrilateral_vertices(v1,v2,v3,v4,v,F1,F2,e,ne,nf,vert_of_face,vert_of_edge)
-
-!     ! Now do a bunch of tests to see if the flip is OK
-!     call get_vertValence(v1_val,v1,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!     call get_vertValence(v2_val,v2,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!     if (ismaster) then
-!         if (v .eq. 671) then
-!         write(*,*) "Num neighbours is. edge is", v1_val, "with starting face", startFace
-!         endif
-!      endif
-
-!     do i = 1,3
-!         if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v3) .gt. 0 ) then
-!             e_of_v3 = edge_of_face(i,F1)
-!         endif
-
-!         if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v4) .gt. 0 ) then
-!             e_of_v4 = edge_of_face(i,F2)
-!         endif
-!     enddo
-
-!     call get_vertValence(v3_val,v3,e_of_v3,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!     call get_vertValence(v4_val,v4,e_of_v4,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!     ! Do tests to see if edge flip is legal
-!     call test_edgeFlip(flip_OK,v1,v2,v3,v4,v1_val,v2_val,v3_val,v4_val,xyz,ne,nf,nv)
-!     !write(*,*) "Flip_OK is ", flip_OK
-
-!     if (flip_OK .eqv. .true.) then
-!         deviation_pre = abs(v1_val - 6) + abs(v2_val - 6) + &
-!                         abs(v3_val - 6) + abs(v4_val - 6) 
-
-!         ! Perform edge flip
-!         call edgeFlip(e,F1,F2,v1,v2,v3,v4,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
-
-!         ! Compute new valences, original e is now connected to (v3,v4)
-!         call get_vertValence(v3_val,v3,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!         call get_vertValence(v4_val,v4,e,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!         do i = 1,3
-!             if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v1) .gt. 0 ) then
-!                 e_of_v1 = edge_of_face(i,F1)
-!             endif
-    
-!             if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v2) .gt. 0 ) then
-!                 e_of_v2 = edge_of_face(i,F2)
-!             endif
-!         enddo
-
-!         call get_vertValence(v1_val,v1,e_of_v1,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!         call get_vertValence(v2_val,v2,e_of_v2,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!         deviation_post = abs(v1_val - 6) + abs(v2_val - 6) + &
-!                         abs(v3_val - 6) + abs(v4_val - 6) 
-
-!         if (deviation_pre .le. deviation_post) then ! Flip back if flip did not optimize valences
-!             call edgeFlip(e,F1,F2,v3,v4,v1,v2,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
-!         else
-
-!             ! If edge was flipped, need "incident edge" e
-!             do i = 1,3
-!                 if ( ( edge_of_face(i,startFace) .ne. e ) .and. &
-!                     count( vert_of_edge(:,edge_of_face(i,startFace) ) .eq. v4   ) .gt. 0 ) then
-!                         e = edge_of_face(i,startFace)
-!                         ! Note this overwrite might be dangerous
-!                         prevEdge = e
-!                 endif
-!             enddo
-
-!             flip_cnt = flip_cnt + 1
-!         endif
-!     endif
-
-!     !----------------------- END EDGE FLIPPING OPERATIONS ----------------------------------------
-!     !if (ismaster) then
-!     !    if (v .eq. 671) then
-!     !    write(*,*) "Entering 1-ring while-loop for vertex-center", v ," and incident edge", e
-!     !    write(*,*) "Faces of incident edge are", face_of_edge(:,e)
-!     !    write(*,*) "First FLIP_OK was", flip_OK
-!     !    endif
-!     !endif
-!     !----------------------- BEGIN 1-RING LOOP ---------------------------------------------------
-!     do while (currentEdge .ne. e )
-
-!         if (face_of_edge(1,prevEdge) .ne. prevFace) then
-!             currentFace = face_of_edge(1,prevEdge)
-!         else
-!             currentFace = face_of_edge(2,prevEdge)
-!         endif
-
-
-!         if (currentFace .eq. startFace) exit
-
-!         ! Find next edge, store as currentEdge
-!         call get_next_edge_of_v(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prevEdge,currentEdge)
-
-!         if (ismaster) then
-!            if (v .eq. 671) then
-!            write(*,*) "Prev. edge is", prevEdge
-!            write(*,*) "Next edge is", currentEdge
-!            write(*,*) "Current face is", currentFace
-
-!            endif
-!         endif
-
-!         !----------------------- BEGIN EDGE FLIPPING OPERATIONS ----------------------------------------
-
-!         F1 = face_of_edge(1,currentEdge)
-!         F2 = face_of_edge(2,currentEdge)
-
-!         call get_quadrilateral_vertices(v1,v2,v3,v4,v,F1,F2,currentEdge,ne,nf,vert_of_face,vert_of_edge)
-
-!         ! Now do a bunch of tests to see if the flip is OK
-!         call get_vertValence(v1_val,v1,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!         call get_vertValence(v2_val,v2,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!         do i = 1,3
-!             if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v3) .gt. 0 ) then
-!                 e_of_v3 = edge_of_face(i,F1)
-!             endif
-
-!             if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v4) .gt. 0 ) then
-!                 e_of_v4 = edge_of_face(i,F2)
-!             endif
-!         enddo
-
-!         call get_vertValence(v3_val,v3,e_of_v3,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!         call get_vertValence(v4_val,v4,e_of_v4,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!         ! Do tests to see if edge flip is legal
-!         call test_edgeFlip(flip_OK,v1,v2,v3,v4,v1_val,v2_val,v3_val,v4_val,xyz,ne,nf,nv)
-
-
-!         if (flip_OK .eqv. .true.) then
-!             deviation_pre = abs(v1_val - 6) + abs(v2_val - 6) + &
-!                             abs(v3_val - 6) + abs(v4_val - 6) 
-
-
-!             ! Perform edge flip
-!             call edgeFlip(currentEdge,F1,F2,v1,v2,v3,v4,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
-
-!             !call debug_write
-!             !call debug_writeSingle
-
-
-!             ! Compute new valences, original e is now connected to (v3,v4)
-!             call get_vertValence(v3_val,v3,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!             call get_vertValence(v4_val,v4,currentEdge,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!             do i = 1,3
-!                 if ( count ( vert_of_edge(:,edge_of_face(i,F1) ) .eq. v1) .gt. 0 ) then
-!                     e_of_v1 = edge_of_face(i,F1)
-!                 endif
-            
-!                 if ( count ( vert_of_edge(:,edge_of_face(i,F2) ) .eq. v2) .gt. 0 ) then
-!                     e_of_v2 = edge_of_face(i,F2)
-!                 endif
-!             enddo
-
-!             call get_vertValence(v1_val,v1,e_of_v1,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-!             call get_vertValence(v2_val,v2,e_of_v2,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
-
-!             !if (ismaster) then
-!             !    debug_cnt = debug_cnt + 1
-!             !    write(*,*) "Post-flip v1, v2 valences are ",v1_val, v2_val
-!             !endif
-!             deviation_post = abs(v1_val - 6) + abs(v2_val - 6) + &
-!                             abs(v3_val - 6) + abs(v4_val - 6) 
-
-!             if (deviation_pre .le. deviation_post) then ! Flip back if flip did not optimize valences
-!                 call edgeFlip(currentEdge,F1,F2,v3,v4,v1,v2,ne,nf,vert_of_edge,vert_of_face,edge_of_face,face_of_edge)
-!             else
-!                 !if (ismaster) then
-!                 !    write(*,*) "Current edge", currentEdge
-!                 !    write(*,*) "Current face", currentFace
-!                 !    write(*,*) "Faces of current edge", face_of_edge(:,currentEdge)
-!                 !    write(*,*) "Vertices of  Current edge", vert_of_edge(:,currentEdge)
-!                 !endif
-!                 if ( (ismaster) .and. (v .eq. 671) ) then
-!                     write(*,*) "Edge ", currentEdge ,"was flipped"
-!                     write(*,*) "Faces of this edge are ", face_of_edge(:,currentEdge)
-!                 endif
-!                 ! If the flip is retained, currentEdge needs to be changed since F2 no longer in the 1-ring
-!                 do i = 1,3
-!                     if ( ( edge_of_face(i,currentFace) .ne. currentEdge ) .and. &
-!                         count( vert_of_edge(:,edge_of_face(i,currentFace) ) .eq. v4   ) .gt. 0 ) then
-!                             currentEdge = edge_of_face(i,currentFace)
-!                     endif
-!                 enddo
-!                 flip_cnt = flip_cnt + 1
-
-!                 if ( (ismaster) .and. (v .eq. 671) ) then
-!                     write(*,*) "The edge is changed to ", currentEdge
-!                     write(*,*) "Faces of this edge are ", face_of_edge(:,currentEdge)
-!                     call debug_writeSingle
-!                 endif
-!             endif
-!         endif
-
-!         !----------------------- END EDGE FLIPPING OPERATIONS ----------------------------------------
-!         !if (ismaster) then
-!         !    debug_cnt = debug_cnt + 1
-!         !    write(*,*) "Iteration ", debug_cnt, " finished"
-!         !endif
-
-!         prevFace = currentFace
-!         prevEdge = currentEdge
-
-
-
-!     enddo 
-! end subroutine equalizeValences_1ring
-
-
 subroutine get_quadrilateral_vertices(v1,v2,v3,v4,v,F1,F2,e,ne,nf,vert_of_face,vert_of_edge)
     ! Given faces F1 and F2 which are defined to be adjacent by edge e, calculate the bounding quadrilateral vertices,
     ! (v1,v2,v3,v4)
@@ -1110,3 +865,50 @@ subroutine get_next_edge_of_v(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prev
         stop
     endif
     end subroutine get_next_edge_of_v
+
+
+
+subroutine flag_vertices_1ring(anchorVert,v,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+        use param, only: ismaster
+        ! Flag the vertices in the 1-ring neighbourhood of vertex v to be un-anchored for later smoothing
+        implicit none
+        integer :: v, e, nv,ne, nf
+        integer ::  cnt
+        logical, dimension(nv) :: anchorVert
+        integer, dimension(3,nf) :: edge_of_face
+        integer, dimension(2,ne) :: face_of_edge, vert_of_edge
+        integer :: prevFace, currentFace, currentEdge, prevEdge, F1
+    
+        ! 1-ring center
+        anchorVert(v) = .false.
+
+        ! Accmulate the face adjacency
+        ! Arbitrary starting face
+        F1 = face_of_edge(1,e)
+        prevFace = F1 
+        currentFace = 0
+    
+        currentEdge = 0
+        prevEdge = e
+    
+        cnt = 1
+    
+        do while (currentEdge .ne. e )
+    
+            if (face_of_edge(1,prevEdge) .ne. prevFace) then
+                currentFace = face_of_edge(1,prevEdge)
+            else
+                currentFace = face_of_edge(2,prevEdge)
+            endif
+    
+            if (currentFace .eq. F1) exit
+    
+            cnt = cnt + 1
+    
+            ! Find next edge, store as currentEdge
+            call get_next_edge_of_v(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prevEdge,currentEdge)
+            anchorVert( vert_of_edge(:,currentEdge)  ) = .false.
+            prevFace = currentFace
+            prevEdge = currentEdge
+        enddo 
+end subroutine flag_vertices_1ring

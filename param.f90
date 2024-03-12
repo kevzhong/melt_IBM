@@ -180,6 +180,7 @@
       real, dimension(:,:), allocatable :: skewness
       real :: PERC_Athresh, A_thresh, skew_thresh
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
+      logical, dimension(:,:), allocatable :: anchorVert
 
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
