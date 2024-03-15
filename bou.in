@@ -1,7 +1,7 @@
  N1M          N2M         N3M 
  192           192           192          
 NTST   NSST    TFRAME    TPIN      IRESET 
- 1000     3       1e-2      5e-3       0
+ 2000     3       1e-2      5e-3       0
 NWRIT         NREAD         PREAD 
   1             0            0
  XLEN         YLEN          ZLEN
@@ -13,8 +13,8 @@ NWRIT         NREAD         PREAD
  TL          EPSSTAR         KF / KMIN
  0.2120      0.0372           2.3
  IDTV         DTMAX          CFLLIM
-   1           5e-3           1.0
+   0           5e-3           1.0
 FORCING
    1 
 TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID
-  0.0d0   1.0d0      0.0d0      4.0d0       1.0d0
+  0.0d0   1.0d0      0.0d0      2.0d0       1.0d0

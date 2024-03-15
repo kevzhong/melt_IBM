@@ -16,6 +16,7 @@ implicit none
   allocate(isGhostFace(maxnf,Nparticle))
   allocate(isGhostEdge(maxne,Nparticle))
   allocate(isGhostVert(maxnv,Nparticle))
+  allocate(anchorVert(maxnv,Nparticle))
   allocate(eLengths(maxne,Nparticle))
   allocate(skewness(maxnf,Nparticle))
   allocate(rm_flag(Nparticle))

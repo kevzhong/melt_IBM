@@ -7,7 +7,7 @@
       integer :: jc,kc
       integer :: km,kp,jmm,jpp,ic,im,ip
       real    :: h32,h33,h31
-      real    :: udx1,udx2,udx3, fbz
+      real    :: udx1,udx2,udx3, fbz, T_interp
 
       udx1=dx1*0.25
       udx2=dx2*0.25
@@ -63,7 +63,8 @@
 
 
 !   buoyancy term
-      fbz = betagz * ( temp(ic,jc,kc) + temp(ic,jc,km) ) * 0.5d0
+      T_interp =  ( temp(ic,jc,kc) + temp(ic,jc,km) ) * 0.5d0 
+      fbz = betagz * ( T_interp - Tliq ) ! Relative to ambient liquid
  
 
       !qcap(ic,jc,kc)=-(h31+h32+h33) + fbz + &

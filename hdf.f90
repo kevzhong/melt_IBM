@@ -218,4 +218,38 @@
 
       end subroutine HdfSerialReadReal2D
 
+subroutine HdfWriteSerialInt2D(filename,dsetname,ndx,ndy,var)
+      use hdf5
+      
+      implicit none
+      character*50,intent(in) :: dsetname,filename
+      integer, intent(in) :: ndx,ndy
+      integer :: var(ndx,ndy)
+      integer(HID_T) :: file_id
+      integer(HID_T) :: filespace
+      integer(HID_T) :: dset
+      integer :: hdf_error, ndims
+      integer(HSIZE_T) :: dims(2)
+
+!RO   Set offsets and element counts
+   
+      ndims = 2
+      dims(1)=ndx
+      dims(2)=ndy
+
+      call h5screate_simple_f(ndims, dims, filespace, hdf_error)
+
+      call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, hdf_error)
+
+      call h5dcreate_f(file_id, dsetname, H5T_NATIVE_INTEGER, &
+                      filespace, dset, hdf_error)
+
+      call h5dwrite_f(dset, H5T_NATIVE_INTEGER,var, dims, hdf_error)
+
+      call h5dclose_f(dset, hdf_error)
+
+      call h5sclose_f(filespace, hdf_error)
+      call h5fclose_f(file_id, hdf_error)
+      
+      end subroutine HdfWriteSerialInt2D
 
