@@ -272,6 +272,7 @@ subroutine main_smooth(nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,anchorVe
     real :: valence
     integer :: INFO
     real, allocatable, dimension(:,:) :: L ! Laplacian matrix
+    real, allocatable, dimension(:,:) :: L_squared !
     real, allocatable, dimension(:,:) :: b ! rhs vector
     !real, allocatable, dimension(:) :: bx ! rhs vector
     !real, allocatable, dimension(:) :: by ! rhs vector
@@ -342,6 +343,7 @@ subroutine main_smooth(nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,anchorVe
     !endif
 
     allocate( L(nv_active,nv_active) )
+    allocate( L_squared(nv_active,nv_active) )
     !allocate( bx(nv_active) )
     !allocate( by(nv_active) )
     !allocate( bz(nv_active) )
@@ -399,13 +401,14 @@ subroutine main_smooth(nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,anchorVe
     enddo
 
     ! Exponentiate for higher-order smoothing
-    L = matmul(L,L)
+    !L = matmul(L,L)
+    call DGEMM('N','N',nv_active,nv_active,nv_active,1.0d0,L,nv_active,L,nv_active, 0.0d0,L_squared,nv_active)
 
     ! Apply Dirichlet boundary conditions to anchored vertices
     do i =1,nv_active
         if ( anchorVert( vert_mask(i) ) .eqv. .true. ) then
-            L(i,:) = 0.0d0
-            L(i,i) = 1.0d0
+            L_squared(i,:) = 0.0d0
+            L_squared(i,i) = 1.0d0
             !bx(i) = xyz(1,vert_mask(i))
             !by(i) = xyz(2,vert_mask(i))
             !bz(i) = xyz(3,vert_mask(i))
@@ -423,7 +426,7 @@ subroutine main_smooth(nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,anchorVe
 
     ! Now solve linear system
     ! Test for now, can make much more efficient later
-    call  dgesv	(nv_active,3,L,nv_active,IPIV,b,nv_active,INFO)
+    call  dgesv	(nv_active,3,L_squared,nv_active,IPIV,b,nv_active,INFO)
 
     ! if (ismaster) then
     !     write(*,*) "dgesv info flag:", INFO
@@ -445,17 +448,22 @@ subroutine main_smooth(nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,anchorVe
         xyz( 1:3 , vert_mask(i) ) = b(i,1:3)
     enddo
 
-
+    !if (ismaster) then
+    !    write(*,*) "Reached end of smoothing"
+    !    write(*,*) "max(b(:,1,2,3))", maxval(b(:,1),1), maxval(b(:,2),1), maxval(b(:,3),1) 
+    !    write(*,*) "min(b(:,1,2,3))", minval(b(:,1),1), minval(b(:,2),1), minval(b(:,3),1) 
+    !endif
 
     ! Reset anchor flags
     anchorVert(:) = .true.
 
     deallocate( L )
+    deallocate( L_squared )
     deallocate( b  )
     deallocate( IPIV )
     deallocate( vert_mask )
 
-    ! write(*,*) "Reached end of smoothing"
+
     ! call write_tecplot_geom
 
     !call MPI_BARRIER(MPI_COMM_WORLD,ierr)
