@@ -181,7 +181,8 @@
       real :: PERC_Athresh, A_thresh, skew_thresh
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
       logical, dimension(:,:), allocatable :: anchorVert
-
+      logical, dimension(:,:), allocatable :: flagged_edge
+      
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
       integer, dimension(:,:), allocatable :: pind1
