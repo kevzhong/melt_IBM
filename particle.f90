@@ -11,9 +11,13 @@ implicit none
 integer :: mstep, inp, i,ntr
 integer :: my_up,my_down
 logical :: entered_remesh
-real :: vol_pre, vol_melt, vol_coarse, vol_smooth ! Store some volumes to track drift in volume
+real :: vol_pre, vol_melt, vol_coarse, vol_smooth , drift ! Store some volumes to track drift in volume
 
 entered_remesh = .false.
+vol_pre = 0.0d0
+vol_melt = 0.0d0
+vol_coarse = 0.0d0
+vol_smooth = 0.0d0
 
 if(imlsfor.eq.1)then
 
@@ -74,13 +78,14 @@ if (imelt .eq. 1) then
     call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
                             rm_flag(inp))
     call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-    call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
-    isGhostFace(:,inp), isGhostVert(:,inp) )
+    !call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
+    !isGhostFace(:,inp), isGhostVert(:,inp) )
     call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp),&
     rm_flag(inp), skew_thresh )
 
-    call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
-    call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+    !call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
+    !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+    call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
     ! Volume change due to melting
     vol_melt = Volume(1)
 
@@ -94,23 +99,33 @@ if (imelt .eq. 1) then
                          face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
                          anchorVert(:,inp),flagged_edge(:,inp))
         
-        call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
-        isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
-        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp))
-        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+        !call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
+        !isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
+        !call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+        !call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp))
+        !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+        call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_coarse = Volume(1)
 
-        call main_smooth( -(vol_coarse - vol_melt) ,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
+        call main_smooth( -(vol_coarse - vol_melt),drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
         face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
 
-        call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
-        isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
-        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp))
-        call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+        !call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
+        !isGhostFace(:,inp),rm_flag(inp),A_thresh) ! Update sur
+        !call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+        !call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp))
+        !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+        call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_smooth = Volume(1)
+
+        if (Volume(inp) .lt. V_thresh ) then
+            write(*,*) "Geometry volume smaller than threshold, exiting now!"
+            call write_tecplot_geom
+            call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+            call MPI_Finalize(ierr)
+        endif
+
     endif
 
     call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
@@ -118,30 +133,25 @@ if (imelt .eq. 1) then
     call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
                 rm_flag(inp))
     call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+    call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
+        isGhostFace(:,inp), isGhostVert(:,inp) )
     call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp),&
         rm_flag(inp), skew_thresh )
     call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) ! Update tri_bar
     call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp)) ! Update vertex areas
     call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+    !call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
     call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
                                     isGhostFace(:,inp), isGhostVert(:,inp) )
 
 
     if (entered_remesh .eqv. .true.) then
-        call writeRemeshVol(vol_pre, vol_melt, vol_coarse, vol_smooth)
-
-        if (ismaster) then
-           !write(*,*) "active verts:", count(isGhostVert(:,inp) .eqv. .false.)
-           !write(*,*) "un-anchored verts:", count(anchorVert(:,inp) .eqv. .false.)
-           !write(*,*) "vol_melt - vol_coarse was", vol_melt - vol_coarse
-           !write(*,*) "vol_coarse - vol_smooth (should be -ve of above)", vol_coarse - vol_smooth
-            write(*,*) "Re-meshing residual(1)", vol_melt - vol_smooth
-           !write(*,*) "vol_coarse - vol_smooth is ", vol_coarse - vol_smooth
-        endif
+        call writeRemeshResiduals(vol_melt - vol_smooth, drift)
+        !if (ismaster) then
+        !   write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
+        !endif
     endif
 
-
-    
     enddo
 
     ! Update Eulerian < -- > Lagrangian forcing transfer coefficient

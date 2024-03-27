@@ -129,9 +129,6 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
             call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
             call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace,rm_flag,skew_thresh)
 
-            ! Optimisation, following truncated steps for isotropic, incremetal remeshing
-            ! Sect. 6.5.3 of Botsch et al. (2010)
-
             !!---------------------- Equalize valences in 1-ring of v1 with edge-flips-----------------
 
 

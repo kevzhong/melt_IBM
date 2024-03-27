@@ -57,7 +57,10 @@
         read(15,301) dummy       
         read(15,*) wcon,wscl,dens_ratio
         read(15,301) dummy       
-        read(15,*) gtsfx, rad_p, iremesh, PERC_Athresh, skew_thresh
+        read(15,*) gtsfx, rad_p
+        read(15,301) dummy       
+        read(15,*) iremesh, PERC_Athresh, skew_thresh, V_ON_VE_PERC
+
       close(15)
 
 301     format(a4)          

@@ -549,33 +549,28 @@ subroutine write_tecplot_geom
       return
       end subroutine write_VertGeom
 
-subroutine writeRemeshVol(vol_pre, vol_melt, vol_coarse, vol_smooth)
+subroutine writeRemeshResiduals(DV, drift)
   use param
   use mls_param
   use mpih
 
   IMPLICIT none
 
-  real :: vol_pre, vol_melt, vol_coarse, vol_smooth ! Store some volumes to track drift in volume
-  real :: DV_melt, DV_coarse, DV_smooth
+  real :: DV, drift
 
   character(70) namfile
 
 
   if (myid.eq.0) then
 
-    DV_melt = vol_pre - vol_melt
-    DV_coarse = vol_melt - vol_coarse
-    DV_smooth = vol_coarse - vol_smooth 
-
-  namfile='flowmov/remeshVol.txt'
+  namfile='flowmov/remeshResiduals.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  write(43,'(100E15.7)')DV_melt, DV_coarse, DV_smooth
+  write(43,'(100E15.7)')DV, drift*dx1
   close(43)
   end if
-end subroutine writeRemeshVol
+end subroutine writeRemeshResiduals
 
 
 !       subroutine debug_write(suffix)

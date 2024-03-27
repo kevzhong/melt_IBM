@@ -169,8 +169,6 @@
       integer, dimension(:,:,:), allocatable :: vert_of_face
       integer, dimension(:,:,:), allocatable :: edge_of_face
       integer, dimension(:,:,:), allocatable :: face_of_edge
-      !integer, dimension(:,:), allocatable :: vert_of_vert
-      !integer, dimension(:,:), allocatable :: edge_of_vert
 
       !Re-meshing data structures
       logical, dimension(:,:), allocatable :: isGhostFace
@@ -178,11 +176,11 @@
       logical, dimension(:,:), allocatable :: isGhostVert
       real, dimension(:,:), allocatable :: eLengths
       real, dimension(:,:), allocatable :: skewness
-      real :: PERC_Athresh, A_thresh, skew_thresh
+      real :: PERC_Athresh, A_thresh, skew_thresh, V_ON_VE_PERC, V_thresh
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
       logical, dimension(:,:), allocatable :: anchorVert
       logical, dimension(:,:), allocatable :: flagged_edge
-      
+
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
       integer, dimension(:,:), allocatable :: pind1

@@ -1,6 +1,6 @@
 !------------------------------------------------------
 !!!!!!!!!!! Volume-preserving smoothing !!!!!!!!!!!!!!!!!!!!!
-subroutine main_smooth(target_DV,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
+subroutine main_smooth(target_DV,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
                        vert_of_edge,vert_of_face,face_of_edge,edge_of_face)
 
     use mpih
@@ -10,15 +10,16 @@ subroutine main_smooth(target_DV,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFac
     integer :: nv,ne,nf
     integer ::  cnt, v1, v2, v1val, v2val, cnt2
     integer :: i,j, jp1, num_iter
+    logical :: vol_corrected
     logical, dimension(ne) :: isGhostEdge, flagged_edge
     logical, dimension(nf) :: isGhostFace
     logical, dimension(nv) :: isGhostVert
     integer, dimension(2,ne) :: vert_of_edge, face_of_edge
     integer, dimension(3,nf) :: vert_of_face, edge_of_face
-    integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing neighbours
+    integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
     real, dimension(3) :: A1, A2, A, vec, ej, ejp1, buffer1, x1s, x2s, dx1s, dx2s,nhat
     real, dimension(3,nv) :: xyz
-    real :: omega, h, target_DV, dv_inc
+    real :: omega, h, target_DV, dv_inc, drift
     integer :: INFO
     !real, allocatable, dimension(:) :: bx ! rhs vector
     !real, allocatable, dimension(:) :: by ! rhs vector
@@ -42,27 +43,26 @@ subroutine main_smooth(target_DV,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFac
     ! Here, the edges we have flagged for relaxations are determined by whether they have been modified by the
     ! mesh-coarsening algorithm
 
-    ! The initial smoothing (before applying the volume-correction) is done through a simple uniform Laplacian smooth
-    ! x_smooth = L * x where L is the uniform Laplacian matrix
-    ! See eqn. (9.2) in Baerentzen et al. (2012) for instance
-
     omega = 1.0d0 ! Relaxation factor for smoothing
 
     ! Pre-compute incremental volume change
     !dv_inc = target_DV / real( count(flagged_edge(:) .eqv. .true.) , kind=8)
 
     !if (ismaster) then
-    !    write(*,*) "No. of erels: ", real( count(flagged_edge(:) .eqv. .true.) , kind=8)
+    !    write(*,*) "Target vol. change: ", target_DV
     !endif
 
-    cnt2 = 0 ! When this is one, the edge-relaxation will be applied to correct for the mesh-coarsening volume change
+    ! When this is false, the edge-relaxation will be applied to correct for the mesh-coarsening volume change
+    vol_corrected = .false.
 
-    num_iter = 1
+    ! Track maximum vertex drift
+    drift = 1.0d-18
+
+    num_iter = 10
 
     do cnt = 1,num_iter ! Number of smoothing operations, typically 1 should suffice
         do i = 1,ne
             if ( (flagged_edge(i) .eqv. .true.) .and. (.not. isGhostEdge(i) ) ) then
-                cnt2 = cnt2 + 1
                 !write(*,*) "Relaxing edge", i
 
                 v1 = vert_of_edge(1,i)
@@ -135,14 +135,18 @@ subroutine main_smooth(target_DV,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFac
                 h = - (dot_product(dx1s, A1) + dot_product(dx2s,A2) + dot_product(dx2s, buffer1 ) ) !+ dv_inc*6.0d0
 
                 ! Restoring volume from coarsening: do this with the first e-relaxation
-                if (cnt2 .eq. 1) then
-                    h = h + target_DV*6.0d0
+                if (vol_corrected .eqv. .false.) then
+                    ! It seems the sign(h) correction is necessary
+                    h = h + sign(1.0, h) * target_DV*6.0d0
+                    vol_corrected = .true.
                 endif
+
                 h = h / norm2(A)
 
-
+                ! Track maximum drift
+                drift = max(drift, norm2(dx1s + h * nhat(1:3)), norm2(dx2s + h * nhat(1:3)) )
                 ! Final smoothed position update
-
+                
                 xyz(1:3,v1) = xyz(1:3,v1) + dx1s + h * nhat(1:3)
                 xyz(1:3,v2) = xyz(1:3,v2) + dx2s + h * nhat(1:3)
 

@@ -50,25 +50,28 @@ return
 end subroutine calculate_volume2
 !------------------------------------------------------
 
-subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,vol)
+subroutine calculate_volume (Volume,nv,nf,xyz,vert_of_face,isGhostFace)
 
 implicit none
 integer :: nv,nf,v1,v2,v3,i
 integer, dimension (3,nf) :: vert_of_face
+logical, dimension(nf) :: isGhostFace
 real, dimension (3,nv) ::xyz
-real, dimension (nf) :: vol
+real :: vol
 real :: Volume
 
 Volume=0.0
 do i=1,nf
+        if (.not. isGhostFace(i) ) then
         v1=vert_of_face(1,i)
         v2=vert_of_face(2,i)
         v3=vert_of_face(3,i)
 
-        vol(i) =           xyz(1,v1) * (xyz(2,v2)*xyz(3,v3) - xyz(3,v2)*xyz(2,v3)) &
+        vol =           xyz(1,v1) * (xyz(2,v2)*xyz(3,v3) - xyz(3,v2)*xyz(2,v3)) &
                         +  xyz(1,v2) * (xyz(2,v3)*xyz(3,v1) - xyz(3,v3)*xyz(2,v1)) &
                         +  xyz(1,v3) * (xyz(2,v1)*xyz(3,v2) - xyz(3,v1)*xyz(2,v2))
-        Volume=Volume+vol(i)
+        Volume=Volume+vol
+        endif
 enddo
  
 Volume=Volume/6.
@@ -211,6 +214,12 @@ subroutine update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
                         
                         ! flip if needed
                         sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
+
+                        if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
+                                !write(*,*) "tri_normal ", i, " flipped"
+                                vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
+                        endif
+                        
                         sgn = sign(1.0, sgn)
                         
                         tri_nor(1:3,i) = tri_nor(1:3,i)*sgn
