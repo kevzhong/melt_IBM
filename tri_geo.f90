@@ -6,6 +6,7 @@ subroutine tri_geo
   implicit none
 
   integer :: inp
+  real, dimension(3) :: I_princ
 
   ! Set maxnv, maxne and maxnf
   call set_particle_array_sizes
@@ -35,6 +36,9 @@ subroutine tri_geo
       call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
             vert_of_face(:,:,inp),isGhostFace(:,inp),isGhostVert(:,inp))
       call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+
+      call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),I_princ,maxnv,maxnf,&
+                                xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
     enddo
 
   else if(pread.eq.1)then ! Otherwise, read from continuation files

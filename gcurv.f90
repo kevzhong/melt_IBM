@@ -57,7 +57,11 @@ character(70) namfile
 
        if(ismaster) write(6,*)' nread=1 ---> Read initial conditions'
          call inirea
-      endif                                                             
+      endif   
+      
+      if (temp_restart .eq. 1) then
+        call restart_temperature
+      endif
 
        call update_both_ghosts(n1,n2,pr,kstart,kend)
        call update_both_ghosts(n1,n2,vx,kstart,kend)

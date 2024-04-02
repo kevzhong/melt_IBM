@@ -7,7 +7,7 @@
 !       read from input file bou.in
 !==========================================================
         integer   :: n2, n3,n1
-        integer   :: nsst, nwrit, nread,pread, ntst, ireset
+        integer   :: nsst, nwrit, nread,pread, ntst, ireset, temp_restart
         real      :: tframe,tpin,tmax,walltimemax
         real      :: xlen, ylen, zlen
         real      :: pra,dt,resid,cflmax,tsta

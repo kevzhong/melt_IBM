@@ -32,7 +32,7 @@
         read(15,301) dummy
         read(15,*) n1m,n2m,n3m
         read(15,301) dummy
-        read(15,*) ntst,nsst,tframe,tpin,ireset
+        read(15,*) ntst,nsst,tframe,tpin,ireset,temp_restart
         read(15,301) dummy
         read(15,*) nwrit, nread, pread 
         read(15,301) dummy

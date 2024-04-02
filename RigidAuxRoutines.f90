@@ -453,3 +453,139 @@ subroutine calc_rot_matrix(quat,AA)
   AA(3,3) = quat(1)**2 - quat(2)**2 - quat(3)**2 + quat(4)**2
 
 end subroutine calc_rot_matrix
+
+
+subroutine calc_rigidBody_params (COM,Vol,I_princ,nv,nf,xyz,vert_of_face,isGhostFace)
+
+  ! Numerically compute "rigid"-body properties required for advancing Newton--Euler eqns.
+  ! Moment of inertia tensor, centre of mass, volume, etc.
+  ! The quantities are volume integrals, computed as surface integrals (sum over triangles)
+  ! by way of the divergence theorem.
+  ! Following:
+  !   Computing the Moment of Inertia of a Solid Defined by a Triangle Mesh (Kallay 2006)
+  !   https://github.com/erich666/jgt-code/blob/master/Volume_11/Number_2/Kallay2006/Moment_of_Inertia.cpp
+  ! This is a Fortran port of the above C++ code
+  ! For underlying theory, see also D. H. Eberly (2015, pp. 74) and Kallay (2006)
+
+  implicit none
+
+  integer :: i, nf, nv
+  real,dimension(3,3) :: I_ij,evec       ! Inertia tensor
+  logical, dimension(nf) :: isGhostFace
+  integer, dimension(3,nf) :: vert_of_face
+  real, dimension(3,nv) :: xyz
+
+  real :: Cx, Cy, Cz
+  real :: Ixx, Iyy, Izz, Ixy, Ixz, Iyz
+  real :: Vol
+  real, dimension(3) :: I_princ, COM
+  real :: x1,x2,x3,x4, y1,y2,y3,y4, z1,z2,z3,z4, v, r
+  real :: xx, yy, zz
+
+  ! For LAPACK eigenvalue routines
+  integer :: INFO
+  integer :: LWORK = 8
+  real, dimension(8) :: WORK
+
+
+  ! COM coordinates in world coordinates
+  Cx = 0.0d0
+  Cy = 0.0d0
+  Cz = 0.0d0
+  
+  !Inertia tensor components
+  Ixx = 0.0d0
+  Iyy = 0.0d0
+  Izz = 0.0d0
+  
+  Ixy = 0.0d0
+  Ixz = 0.0d0
+  Iyz = 0.0d0
+
+  Vol = 0.0d0
+  
+  do i = 1,nf
+    if (.not. isGhostFace(i) ) then
+       x1 = xyz(1, vert_of_face(1,i) ) 
+       y1 = xyz(2, vert_of_face(1,i) ) 
+       z1 = xyz(3, vert_of_face(1,i) ) 
+  
+       x2 = xyz(1, vert_of_face(2,i) ) 
+       y2 = xyz(2, vert_of_face(2,i) ) 
+       z2 = xyz(3, vert_of_face(2,i) )  
+ 
+       x3 = xyz(1, vert_of_face(3,i) ) 
+       y3 = xyz(2, vert_of_face(3,i) ) 
+       z3 = xyz(3, vert_of_face(3,i) ) 
+  
+  
+      ! Signed volume of this tetrahedron.
+       v = x1*y2*z3 + y1*z2*x3 + x2*y3*z1 - (x3*y2*z1 + x2*y1*z3 + y3*z2*x1) 
+  
+       ! Accumulate volume
+       Vol = Vol + v
+  
+      ! Contribution to the centroid
+       x4 = x1 + x2 + x3 ;    Cx = Cx + (v * x4)
+       y4 = y1 + y2 + y3 ;    Cy = Cy + (v * y4)
+       z4 = z1 + z2 + z3 ;    Cz = Cz + (v * z4)
+  
+  
+       ! Contribution to moment of inertia monomials
+       ! Relative to world axis
+       Ixx = Ixx + v * (x1*x1 + x2*x2 + x3*x3 + x4*x4)
+       Iyy = Iyy + v * (y1*y1 + y2*y2 + y3*y3 + y4*y4)
+       Izz = Izz + v * (z1*z1 + z2*z2 + z3*z3 + z4*z4)
+       Ixy = Ixy + v * (y1*x1 + y2*x2 + y3*x3 + y4*x4)
+       Ixz = Ixz + v * (z1*x1 + z2*x2 + z3*x3 + z4*x4)
+       Iyz = Iyz + v * (z1*y1 + z2*y2 + z3*y3 + z4*y4)
+    endif
+  enddo
+  
+  
+  !  "Post-process" step
+  !  Centroid.
+  !  The case _m = 0 needs to be addressed here.
+   r = 1.0 / (4.0 * Vol)
+   Cx = Cx * r
+   Cy = Cy * r
+   Cz = Cz * r
+  
+  !  Mass/volume: tetrahedral 1/6 correction
+   Vol = Vol / 6.0
+  
+  !  Moment of inertia about the centroid
+  !  Application of parallel axis theorem
+  r = 1.0 / 120.0
+  Ixy = Ixy * r - Vol * Cy*Cx
+  Ixz = Ixz * r - Vol * Cz*Cx
+  Iyz = Iyz * r - Vol * Cz*Cy
+  
+  xx = Ixx * r - Vol * Cx*Cx
+  yy = Iyy * r - Vol * Cy*Cy
+  zz = Izz * r - Vol * Cz*Cz
+  
+  Ixx = yy + zz
+  Iyy = zz + xx
+  Izz = xx + yy
+  
+  ! ------- Store -------------------------
+  COM(1) = Cx ; COM(2) = Cy; COM(3) = Cz
+  ! I = [ Ixx, -Ixy, -Ixz ;
+  !      -Ixy,  Iyy, -Iyz ;
+  !      -Ixz, -Iyz,  Izz ];
+  I_ij(1,1) =  Ixx ;   I_ij(1,2) = -Ixy ;    I_ij(1,3) = -Ixz
+  I_ij(2,1) = -Ixy ;   I_ij(2,2) =  Iyy ;    I_ij(2,3) = -Iyz
+  I_ij(3,1) = -Ixz ;   I_ij(3,2) = -Iyz ;    I_ij(3,3) =  Izz
+
+  ! Solve for principal values: 3x3 symmetric eigenproblem
+  ! Eigenvalues I_princ(1:3), in ascending order by default
+  ! Eigenvectors (principal axes) overwritten in I_ij(3,3)
+  call dsyev('V', 'U', 3, I_ij, 3, I_princ, WORK, LWORK, INFO)
+
+  !write(*,*) "I_princ", I_princ
+  write(*,*) "I_ij(1,:)", I_ij(1,:)
+  write(*,*) "I_ij(2,:)", I_ij(2,:)
+  write(*,*) "I_ij(3,:)", I_ij(3,:)
+
+end subroutine calc_rigidBody_params
