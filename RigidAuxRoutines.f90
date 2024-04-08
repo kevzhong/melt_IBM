@@ -685,7 +685,7 @@ subroutine update_xyz
         
         ! Add Urot = omega x r contribution to local surface velocity
         call cross(om_dCM(:), omega_c(:,inp), tri_bar(:,i,inp)  -  pos_CM(:,inp)  )
-        vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:) 
+        vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:) ! KZ: melt velocity could also be added
 
       endif
 

@@ -143,7 +143,9 @@ do inp = 1,Nparticle
         call main_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
         face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
-
+        
+        call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+        vol_smooth = Volume(1)
     endif
     
 enddo
@@ -188,9 +190,6 @@ if (Volume(1) .lt. V_thresh ) then
     call MPI_Finalize(ierr)
 endif
 !--------------------------------------------------------------------------------------------
-
-! KZ: update dxyz_CM_s when centroids are updated as well
-
 
 
 ! if (imelt .eq. 1) then
