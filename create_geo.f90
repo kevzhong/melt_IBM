@@ -11,82 +11,47 @@ subroutine setup_particles
   real :: angle
   real :: I1, I2, I3
 
+  ! Assign COMs for each particle and initialise rigid-body parameters (vel_COM, orientation, etc)
+
   Npx = 1; Npy = 1; Npz = 1
 
   angle = 0.0
-  pos_CM(:,1)=0.5*xlen
-!  pos_CM(3,1)=0.8*zlen
-!  pos_CM(1,2)=0.7*xlen
-!  pos_CM(2:3,:)=0.5*xlen
-!  pos_CM(1,1)=0.3*xlen
-!  if(Nparticle.gt.1)then
-!  do inp=1,Nparticle
-!     if(inp.eq.1)then
-   
-!     call random_number(x1)
-!     call random_number(x2)
-!     call random_number(x3)
 
-!     pos_CM(1,inp) = x1*xlen
-!     pos_CM(2,inp) = x2*ylen
-!     pos_CM(3,inp) = x3*zlen
-!     else
-!     count=inp
-     
-!     call random_number(x1)
-!     call random_number(x2)
-!     call random_number(x3)
+  call calc_rigidBody_params(pos_CM(:,1),Volume(1),InertTensor(:,:,1),maxnv,maxnf,&
+  xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
 
-!     pos_CM(1,count) = x1*xlen
-!     pos_CM(2,count) = x2*ylen
-!     pos_CM(3,count) = x3*zlen
-!     end if
+  ! KZ: note the hard-coded single particle for now
+  pos_CM(1,1) = 0.5*xlen
+  pos_CM(2,1) = 0.5*ylen
+  pos_CM(3,1) = 0.5*zlen
 
-!40 continue
-!     do j=1,count
-!     if((count.ne.j).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
-!                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
-!                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2.5))then
-
-!     call random_number(x1)
-!     call random_number(x2)
-!     call random_number(x3)
-
-!     pos_CM(1,count) = x1*xlen
-!     pos_CM(2,count) = x2*ylen
-!     pos_CM(3,count) = x3*zlen
-!     endif
-!     enddo
-
-!     do j=1,count
-!     if((j.ne.count).and.(sqrt((pos_CM(1,count)-pos_CM(1,j))**2+ &
-!                               (pos_CM(2,count)-pos_CM(2,j))**2+  &
-!                               (pos_CM(3,count)-pos_CM(3,j))**2).le.2))then
-!     go to 40
-!     end if
-!     enddo
-
-!     end if !inp.ne.1
-!     enddo  !!
-!     end if !Nparticle
-
+  !write(*,*), "Volume is", Volume(1)
+  
      do inp=1,Nparticle
      ! Initialise rigid body variables
-      call random_number(a)
-       b=a ; c=a
+      !call random_number(a)
+      ! b=a ; c=a
       
 !      a=pi/4  ; b=0.0 ; c=0.0
-      quat(1,inp) = cos(0.5*(a))*cos(0.5*(b+c))
-      quat(2,inp) = sin(0.5*(a))*cos(0.5*(b-c))
-      quat(3,inp) = sin(0.5*(a))*sin(0.5*(b-c))
-      quat(4,inp) = cos(0.5*(a))*sin(0.5*(b+c))
+      !quat(1,inp) = cos(0.5*(a))*cos(0.5*(b+c))
+      !quat(2,inp) = sin(0.5*(a))*cos(0.5*(b-c))
+      !quat(3,inp) = sin(0.5*(a))*sin(0.5*(b-c))
+      !quat(4,inp) = cos(0.5*(a))*sin(0.5*(b+c))
+
+      ! Identity quaternion
+      quat(1,inp) = 1.0
+      quat(2,inp) = 0.0
+      quat(3,inp) = 0.0
+      quat(4,inp) = 0.0
 
 
-      omega_b(:,inp) = 0.0
+      omega_c(:,inp) = 0.0
       alpha_b(:,inp) = 0.0
       omega_dot_b = 0.0
 
       quat_dot = 0.0
+      quat_dot_m1 = 0.0
+      
       om_b_sqr = 0.0
 
       u_tot_m1 = 0.
@@ -97,6 +62,9 @@ subroutine setup_particles
       u_tot     = 0.
       r_x_u_tot = 0.
 
+      !KZ : for initialising stationary
+      vel_tri(:,:,inp) = 0.
+
      do j=1,Nparticle
      if((j.ne.inp).and.ismaster)then
      write(*,*)'dist part N',inp,'from part N',j, sqrt((pos_CM(1,inp)-pos_CM(1,j))**2+ &
@@ -106,100 +74,35 @@ subroutine setup_particles
      enddo
    end do
 
-     ! particle moment of intertia
-  I1 = 0.0261201133
-  I2 = 0.0261201133
-  I3 = 0.0261201133
-
-  I_inv = 0.
-  I_inv(1,1) = 1. / I1 
-  I_inv(2,2) = 1. / I2 
-  I_inv(3,3) = 1. / I3 
-
-  I_inv2 = 0.
-  I_inv2(1,1) = (I2-I3) / I1
-  I_inv2(2,2) = (I3-I1) / I2
-  I_inv2(3,3) = (I1-I2) / I3
-
 end subroutine
 
-subroutine set_particle_rad
+subroutine init_geomCoords
   use param
   use mls_param
   use geom
   use mpih
   implicit none
-  integer :: inp,i
-  integer :: v1,v2,v3
-  real    :: AAT_P(3,3)
+  integer :: inp
 
-  AAT_P = princ_axis_rotm()
 
-  !if(myid.eq.0) print *, AAT_P
+  ! Set the vertex coordinates of the geometry based on assigned COM
+
   do inp = 1,Nparticle
-    ! This is r
-    do i=1,maxnf
+    ! KZ store vertex coordinates
+    xyzv(1:3,:,inp) = xyz0(1:3,:) !+ pos_CM(:,inp)
 
-      v1=vert_of_face(1,i,1)
-      v2=vert_of_face(2,i,1)
-      v3=vert_of_face(3,i,1)
+    ! COM-relative assignment
+    xyzv(1,:,inp) = xyzv(1,:,inp) + pos_CM(1,inp)
+    xyzv(2,:,inp) = xyzv(2,:,inp) + pos_CM(2,inp)
+    xyzv(3,:,inp) = xyzv(3,:,inp) + pos_CM(3,inp)
 
-      dxyz_CM_b(:,i,inp) = matmul(AAT_P, (xyz0(:,v1) + xyz0(:,v2) + xyz0(:,v3)) / 3.d0)
-    end do
-
+    call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
   enddo
 
-end subroutine
- 
 
-subroutine set_xyz
-  use param
-  use mls_param
-  implicit none
-  real,dimension(3)  :: om_dCM, pos, vel
-  integer :: i,inp
-  real,dimension(3,3):: AA,AAT,AAR
-  real, dimension(2,2) :: Rot
-  real :: radius,angle, om,tp
-  real ::zmin,zmax
-
-    ! KZ store vertex coordinates
-    ! Eventually should be superceded by a COM-relative formulation
-    xyzv(1:3,:,1)= xyz0(1:3,:)
-    xyzv(1,:,1) = xyzv(1,:,1) + 0.5d0*xlen
-    xyzv(2,:,1) = xyzv(2,:,1) + 0.5d0*ylen
-    xyzv(3,:,1) = xyzv(3,:,1) + 0.5d0*zlen
-
-   do inp = 1,Nparticle
-
-
-
-      call calc_rot_matrix(quat(:,inp),AA)
-
-      !  compute tranpose
-      AAT = transpose(AA)
-      ! x-rot pi/2
-      tail_head(:,inp) = AAT(:,3)
-
-      do i=1,maxnf
-         !-- position
-         dxyz_CM_s(:,i,inp) = matmul(AAT,dxyz_CM_b(:,i,inp))
-!         dxyz_CM_s(:,i,inp) = matmul(AAT,dxyz_CM_s(:,i,inp))
-
-         !tri_bar(:,i,inp) = pos_cm(:,inp) + dxyz_CM_s(:,i,inp) 
-            ! KZ: above commented: don't store tri_centroids as COM-relative for now due to loss of sig figs.
-         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
-
-          !-- velocity
-         omega_s(:,inp) = matmul(AAT,omega_b(:,inp))
-         call cross(om_dCM(:), omega_s(:,inp), dxyz_CM_s(:,i,inp))
-         vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:) 
-      end do
-   end do
 
 
 end subroutine
-
 
 
  subroutine import_particles
@@ -218,8 +121,8 @@ end subroutine
     call hdf_read_2d(quat,shape(quat),dname)
     dname = trim("quat_dot")
     call hdf_read_2d(quat_dot,shape(quat_dot),dname)
-    dname = trim("omega_b")
-    call hdf_read_2d(omega_b,shape(omega_b),dname)
+    dname = trim("omega_c")
+    call hdf_read_2d(omega_c,shape(omega_c),dname)
     dname = trim("om_b_sqr")
     call hdf_read_2d(om_b_sqr,shape(om_b_sqr),dname)
 
@@ -313,7 +216,7 @@ end subroutine
 
     call mpi_bcast(quat,     size(quat),     mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(quat_dot, size(quat_dot), mpi_double,0,mpi_comm_world,ierr)
-    call mpi_bcast(omega_b,  size(omega_b),  mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(omega_c,  size(omega_c),  mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(om_b_sqr, size(om_b_sqr), mpi_double,0,mpi_comm_world,ierr)
 
     call mpi_bcast(u_tot,    size(u_tot),    mpi_double,0,mpi_comm_world,ierr)
@@ -373,8 +276,8 @@ end subroutine
     call hdf_write_2d(quat,(/4,Nparticle/),dataset)
     dataset = trim("quat_dot")
     call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
-    dataset = trim("omega_b")
-    call hdf_write_2d(omega_b,(/3,Nparticle/),dataset)
+    dataset = trim("omega_c")
+    call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
     dataset = trim("om_b_sqr")
     call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
 
@@ -527,8 +430,8 @@ subroutine write_h5_geo
     call hdf_write_2d(quat,(/4,Nparticle/),dataset)
     dataset = trim("quat_dot")
     call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
-    dataset = trim("omega_b")
-    call hdf_write_2d(omega_b,(/3,Nparticle/),dataset)
+    dataset = trim("omega_c")
+    call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
     dataset = trim("om_b_sqr")
     call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
 

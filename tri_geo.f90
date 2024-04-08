@@ -6,7 +6,6 @@ subroutine tri_geo
   implicit none
 
   integer :: inp
-  real, dimension(3) :: I_princ
 
   ! Set maxnv, maxne and maxnf
   call set_particle_array_sizes
@@ -19,11 +18,12 @@ subroutine tri_geo
 
   if(pread.eq.0) then ! Read in initial geometry
     call set_connectivity ! Read xyz vertex coordinates and triangle connectivity arrays
+
     ! Reposition particles and set physical quantities
     call setup_particles
 
-    call set_particle_rad !KZ: hard-coded AAT matrix influences tri_bar (centroid) calculations
-    call set_xyz ! KZ: Setting COM-relative xyz
+    call init_geomCoords !KZ: Set vertex and centroid coordinates in xyz space
+    !call set_xyz 
   
     do inp=1,Nparticle
       call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:,inp),isGhostEdge(:,inp))
@@ -35,10 +35,10 @@ subroutine tri_geo
       call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp))
       call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
             vert_of_face(:,:,inp),isGhostFace(:,inp),isGhostVert(:,inp))
-      call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
 
-      call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),I_princ,maxnv,maxnf,&
-                                xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
+      ! Volume is pre-computed by rigidBody_calcs
+      !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
+
     enddo
 
   else if(pread.eq.1)then ! Otherwise, read from continuation files

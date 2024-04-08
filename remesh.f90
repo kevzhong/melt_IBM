@@ -1,5 +1,5 @@
 !------------------------------------------------------
-subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,skew_thresh,&
+subroutine main_remesh (ecol_cnt,Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thresh,skew_thresh,&
                         vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
                         isGhostFace,isGhostEdge,isGhostVert,rm_flag,anchorVert,flagged_edge)
 
@@ -149,7 +149,7 @@ subroutine main_remesh (Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_nor,A_thr
                 call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
                 call MPI_Finalize(ierr)
             endif
-
+            
             ecol_cnt = ecol_cnt + 1
 
         endif
@@ -284,7 +284,10 @@ end subroutine calc_errorQuadric_of_v
         ! Solve 
         call  dgesv	(4,1,Q1,4,IPIV,b,4,INFO)
 
-        ! ToDo: some exception-handling if INFO .ne. 0 (unsuccessful)
+        if (info /= 0) then
+            print *, "Error in QEM system solve"
+            stop
+          end if
 
         xyz_new(1:3) = b(1:3)
     end subroutine solve_QEM_system

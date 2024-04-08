@@ -1,6 +1,6 @@
 !------------------------------------------------------
 !!!!!!!!!!! Volume-preserving smoothing !!!!!!!!!!!!!!!!!!!!!
-subroutine main_smooth(target_DV,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
+subroutine main_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
                        vert_of_edge,vert_of_face,face_of_edge,edge_of_face)
 
     use mpih
@@ -9,7 +9,7 @@ subroutine main_smooth(target_DV,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGh
     implicit none
     integer :: nv,ne,nf
     integer ::  cnt, v1, v2, v1val, v2val, cnt2
-    integer :: i,j, jp1, num_iter
+    integer :: i,j, jp1, num_iter, n_erel
     logical :: vol_corrected
     logical, dimension(ne) :: isGhostEdge, flagged_edge
     logical, dimension(nf) :: isGhostFace
@@ -60,9 +60,14 @@ subroutine main_smooth(target_DV,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGh
 
     num_iter = 10
 
+    n_erel = 0
+
     do cnt = 1,num_iter ! Number of smoothing operations, typically 1 should suffice
         do i = 1,ne
             if ( (flagged_edge(i) .eqv. .true.) .and. (.not. isGhostEdge(i) ) ) then
+                
+                n_erel = n_erel + 1
+
                 !write(*,*) "Relaxing edge", i
 
                 v1 = vert_of_edge(1,i)

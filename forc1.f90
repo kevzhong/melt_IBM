@@ -67,7 +67,19 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
 
   ! =========
+
+  ! RHS IBM terms for Newton--Euler, see eqn (8) in Breugem (2012, JCP)
   ! particle force
+
+!                  Ntri
+!                  ____
+!     rho_p   1    \    _
+!  -  ----  -----       F * dt * Atri * dx
+!     rho_f   V    /      
+!                  ----  
+      
+! The variable "for" contains everything to the right of the summation symbol above
+
   for = (Vel-Um) * sur(ntr,inp) * invdx1dt
   force = force + for
 

@@ -20,7 +20,7 @@ subroutine calculate_volume2 (Volume,nf,tri_nor,sur,tri_bar,isGhostFace)
 ! Nfaces
 ! ____
 ! \
-!      |   nx_i  * x_i * A_i   |
+!         nx_i  * x_i * A_i   
 ! /
 ! ----  
 ! i=1
@@ -371,13 +371,13 @@ end subroutine sub
 
 !     ----------------------------------------------------------------
 
-subroutine  cross(xcy,x,y)
+subroutine  cross(result,x,y)
 implicit none
-real x(3),y(3),xcy(3)
+real x(3),y(3),result(3)
 
-xcy(1) = x(2)*y(3)-y(2)*x(3)
-xcy(2) = x(3)*y(1)-y(3)*x(1)
-xcy(3) = x(1)*y(2)-y(1)*x(2)
+result(1) = x(2)*y(3)-y(2)*x(3)
+result(2) = x(3)*y(1)-y(3)*x(1)
+result(3) = x(1)*y(2)-y(1)*x(2)
 return
 end subroutine cross
 

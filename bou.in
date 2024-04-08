@@ -17,4 +17,4 @@ NWRIT         NREAD         PREAD
 FORCING
    1 
 TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID
-  0.0d0   1.0d0      0.0d0      2.0d0       1.0d0
+  0.0d0   1.0d0      0.0d0      1.0d0       1.0d0

@@ -128,7 +128,7 @@ subroutine write_partrot
     namfile='flowmov/part_rot.txt'
 
     open(unit=43,file=namfile,Access = 'append', Status='unknown')
-    write(43,'(100E15.7)')time,dt, omega_b 
+    write(43,'(100E15.7)')time,dt, omega_c 
    
     close(43)
   end if
@@ -549,28 +549,28 @@ subroutine write_tecplot_geom
       return
       end subroutine write_VertGeom
 
-subroutine writeRemeshResiduals(DV, drift)
+subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift)
   use param
   use mls_param
   use mpih
 
   IMPLICIT none
 
-  real :: DV, drift
-
+  real :: DV_residual, maxdrift
+  integer :: n_ecol, n_erel
   character(70) namfile
 
 
   if (myid.eq.0) then
 
-  namfile='flowmov/remeshResiduals.txt'
+  namfile='flowmov/remeshStats.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  write(43,'(100E15.7)')DV, drift*dx1
+  write(43,'(2I6, 2E15.7)')n_ecol, n_erel ,DV_residual, maxdrift*dx1
   close(43)
   end if
-end subroutine writeRemeshResiduals
+end subroutine writeRemeshStats
 
 
 !       subroutine debug_write(suffix)

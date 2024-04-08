@@ -2,14 +2,13 @@
   ! Using level-set scheme of Kempe & Frohlich (2012) eqns 32-33
   ! The signed distance function, phi, is evaluated as the distance from the Eulerian-cell-corner point to the plane of the closest triangle centroid
 
-  subroutine convex_hull_q12(AA,ind,inp)
+  subroutine convex_hull_q12(ind,inp)
   use mls_param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vx,vy,vz
   use param
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -34,7 +33,7 @@
 
 
            if (k.ge.kstart.and.k.le.kend) then 
-             call level_set12(i,j,k,AA,inp,x_gc,alpha)
+             call level_set12(i,j,k,inp,x_gc,alpha)
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
@@ -51,7 +50,7 @@
 
 end subroutine
 
-subroutine level_set12(ic,jc,kc,AA,inp,x_gc,alpha)
+subroutine level_set12(ic,jc,kc,inp,x_gc,alpha)
   use param, only: xm,yc,zc
   use geom
   implicit none
@@ -62,7 +61,6 @@ subroutine level_set12(ic,jc,kc,AA,inp,x_gc,alpha)
   real, dimension(3)   :: x_GC
   real, dimension(3)   :: r, v, x_grid
   !real, dimension(3,nf) :: tri_bar, tri_nor
-  real, dimension(3,3) :: AA
   integer :: inp, tri_ind
 
   ! Compute alpha over cell, see Kempe 2012 (JCP)
@@ -109,14 +107,13 @@ end subroutine
 !    q2
 !=================================
 
-subroutine convex_hull_q22(AA,ind,inp)
+subroutine convex_hull_q22(ind,inp)
   use mls_param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vy
   use geom
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -138,7 +135,7 @@ subroutine convex_hull_q22(AA,ind,inp)
 
 
            if (k.ge.kstart.and.k.le.kend) then 
-           call level_set22(i,j,k,AA,x_GC,inp,alpha)
+           call level_set22(i,j,k,x_GC,inp,alpha)
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
@@ -157,7 +154,7 @@ subroutine convex_hull_q22(AA,ind,inp)
 
 end subroutine
 
-subroutine level_set22(ic,jc,kc,AA,x_GC,inp,alpha)
+subroutine level_set22(ic,jc,kc,x_GC,inp,alpha)
   use param, only: xc,ym,zc
   use geom
   implicit none
@@ -166,7 +163,6 @@ subroutine level_set22(ic,jc,kc,AA,x_GC,inp,alpha)
   real :: phi,alpha,phi_tot,inva,invb,invc
   real, dimension(3)   :: x_GC
   real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
   integer :: inp, tri_ind
   ! Compute alpha over cell, see Kempe 2012 (JCP)
   ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
@@ -209,14 +205,13 @@ end subroutine
 !    q3
 !=================================
 
-subroutine convex_hull_q32(AA,ind,inp)
+subroutine convex_hull_q32(ind,inp)
   use mls_param
   use param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vz
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -238,7 +233,7 @@ subroutine convex_hull_q32(AA,ind,inp)
 
            if (k.ge.kstart.and.k.le.kend) then 
 
-             call level_set32(i,j,k,AA,x_GC,inp,alpha)
+             call level_set32(i,j,k,x_GC,inp,alpha)
              ! compute int u over V 
 
              ii = modulo(i-1,n1m) + 1
@@ -258,7 +253,7 @@ subroutine convex_hull_q32(AA,ind,inp)
 end subroutine
 
 
-subroutine level_set32(ic,jc,kc,AA,x_GC,inp,alpha)
+subroutine level_set32(ic,jc,kc,x_GC,inp,alpha)
   use param, only: xc,yc,zm
   use geom
   implicit none
@@ -267,7 +262,6 @@ subroutine level_set32(ic,jc,kc,AA,x_GC,inp,alpha)
   real :: phi,alpha,phi_tot,inva,invb,invc
   real, dimension(3)   :: x_GC
   real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
   integer :: inp, tri_ind
 
   ! Compute alpha over cell, see Kempe 2012 (JCP)
@@ -306,14 +300,13 @@ subroutine level_set32(ic,jc,kc,AA,x_GC,inp,alpha)
 alpha = alpha / phi_tot
 end subroutine
 
-subroutine convex_hull_qc2(AA,ind,inp)
+subroutine convex_hull_qc2(ind,inp)
   use mls_param
   use param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vz
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -335,7 +328,7 @@ subroutine convex_hull_qc2(AA,ind,inp)
 
            if (k.ge.kstart.and.k.le.kend) then 
 
-             call level_setc2(i,j,k,AA,x_GC,inp,alpha)
+             call level_setc2(i,j,k,x_GC,inp,alpha)
              ! compute int u over V 
 
              ii = modulo(i-1,n1m) + 1
@@ -355,7 +348,7 @@ subroutine convex_hull_qc2(AA,ind,inp)
 end subroutine
 
 
-subroutine level_setc2(ic,jc,kc,AA,x_GC,inp,alpha)
+subroutine level_setc2(ic,jc,kc,x_GC,inp,alpha)
   use param, only: xc,yc,zc
   use geom
   implicit none
@@ -364,7 +357,6 @@ subroutine level_setc2(ic,jc,kc,AA,x_GC,inp,alpha)
   real :: phi,alpha,phi_tot,inva,invb,invc
   real, dimension(3)   :: x_GC
   real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
   integer :: inp, tri_ind
 
   ! Compute alpha over cell, see Kempe 2012 (JCP)

@@ -161,10 +161,10 @@
 
 
 !     --------variables for structural solver------------------------
-      integer  :: max_n_edge_of_vert
+      !integer  :: max_n_edge_of_vert
       integer, parameter :: nel=27
 
-      integer, dimension(:),   allocatable :: n_edge_of_vert
+      !integer, dimension(:),   allocatable :: n_edge_of_vert
       integer, dimension(:,:,:), allocatable :: vert_of_edge
       integer, dimension(:,:,:), allocatable :: vert_of_face
       integer, dimension(:,:,:), allocatable :: edge_of_face
@@ -184,7 +184,7 @@
       integer, dimension(:,:,:), allocatable :: pind
       !integer, dimension(:,:,:), allocatable :: pindv
       integer, dimension(:,:), allocatable :: pind1
-      real,dimension(:,:,:),     allocatable :: dismax
+      !real,dimension(:,:,:),     allocatable :: dismax
 
       real, dimension(:,:,:), allocatable :: tri_ver, vel_tri
       real, dimension(:,:,:), allocatable :: tri_bar, tri_nor
@@ -194,12 +194,18 @@
       real, dimension(:,:), allocatable :: sur, vol
 
       real :: celvol
-      real :: chi, I11, I22, I33
+      !real :: chi, I11, I22, I33
 
       real, dimension(:,:),   allocatable :: xyz0
       real, dimension(:,:,:), allocatable :: xyzv
+
+      !COM-relative centroid coordinates
       real, dimension(:,:,:), allocatable :: dxyz_CM_b
       real, dimension(:,:,:), allocatable :: dxyz_CM_s
+
+      !COM-relative vertex coordinates
+      real, dimension(:,:,:), allocatable :: dxyzv_s
+      real, dimension(:,:,:), allocatable :: dxyzv_b
 
 
 
@@ -208,13 +214,15 @@
       !-- Particle vars
       real, dimension(:,:), allocatable :: fpxyz,     ftxyz
       real, dimension(:,:), allocatable :: pos_CM,    vel_CM, a_CM
-      real, dimension(:,:), allocatable :: omega_b,   omega_dot_b, alpha_b
+      real, dimension(:,:), allocatable :: omega_c,   omega_dot_b, alpha_b
       real, dimension(:,:), allocatable :: om_b_sqr,  om_b_sqr_m1
       real, dimension(:,:), allocatable :: u_tot,     u_tot_m1
       real, dimension(:,:), allocatable :: r_x_u_tot, r_x_u_tot_m1
       real, dimension(:,:), allocatable :: omega_s
       real, dimension(:,:), allocatable :: tail_head
-      real, dimension(:,:), allocatable :: quat, quat_m1, quat_dot
+      real, dimension(:,:), allocatable :: quat, quat_m1, quat_dot, quat_dot_m1
+
+      real, dimension(3,3,Nparticle) :: InertTensor
 
       real, dimension(:),allocatable :: Surface
       real, dimension(:),allocatable :: Volume

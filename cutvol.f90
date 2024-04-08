@@ -1,11 +1,26 @@
-subroutine convex_hull_q1(AA,inp)
+! Numerical integration scheme for equivalent viscous stresses based on volume-integrated impulses and IBM force
+! Underlying equation in Breugem (2012)
+! The volume-integration VOF, level-set scheme is as in Kempe & Frohlich (2012)
+!
+! Variable definitions follow as:
+!
+!
+!           1     /// _
+!u_tot =  -----  ///  u dV 
+!           V   ///
+!
+!
+!             1     /// _     _
+!r_x_u_1 =  -----  ///  r  x  u  dV 
+!             V   ///
+
+subroutine convex_hull_q1(ind,inp)
   use mls_param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vx,vy,vz
   use param
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -15,16 +30,6 @@ subroutine convex_hull_q1(AA,inp)
   integer :: inp, i,j,k, ii,jj,kk
   integer, dimension(3,2) :: ind
   real tot_vol_1, r_x_u_1(3)
-
-  ! get bounding box
-  do i = 1,3
-    lim(i,1) = minval(tri_bar(i,:,inp))
-    lim(i,2) = maxval(tri_bar(i,:,inp))
-  end do
-
-  ind = floor(lim*dx1) + 1 ! compute indices cell centered
-  ! expanding bounding box to be extra safe
-  ind(:,1) = ind(:,1) - 7; ind(:,2) = ind(:,2) + 7;
 
   tot_vol_1    = 0.
   r_x_u_1(1:3) = 0.
@@ -49,7 +54,7 @@ subroutine convex_hull_q1(AA,inp)
              x_grid(3) = zm(k)
              r = x_grid - x_GC ! relative distance 
 
-             call level_set1(i,j,k,AA,inp,x_gc,alpha) 
+             call level_set12(i,j,k,inp,x_gc,alpha)
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
@@ -78,8 +83,9 @@ subroutine convex_hull_q1(AA,inp)
   call mpi_globalsum_double_var(u_tot(1,inp))
   call mpi_globalsum_double_arr(r_x_u_1,3)
 
+
   u_tot(1,inp)       = u_tot(1,inp) / tot_vol_1
-  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_1 / tot_vol_1
+  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_1 ! / tot_vol_1  ! KZ: volume normalisation not needed
 
  !volp = (4./3.)*pi*0.5**3
  !if (myid.eq.0) print*, "volume fraction", tot_vol_1/ volp
@@ -91,59 +97,58 @@ subroutine convex_hull_q1(AA,inp)
 ! end if
 end subroutine
 
-subroutine level_set1(ic,jc,kc,AA,inp,x_gc,alpha)
-  use param, only: xm,yc,zc
-  use geom
-  implicit none
-  integer :: i,j,k    ! int running over corners
-  integer :: ic,jc,kc ! center position 
-  real :: phi,alpha,phi_tot,inva,invb,invc
-  real, dimension(3)   :: x_GC
-  real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
-  integer :: inp
+! subroutine level_set1(ic,jc,kc,AA,inp,x_gc,alpha)
+!   use param, only: xm,yc,zc
+!   use geom
+!   implicit none
+!   integer :: i,j,k    ! int running over corners
+!   integer :: ic,jc,kc ! center position 
+!   real :: phi,alpha,phi_tot,inva,invb,invc
+!   real, dimension(3)   :: x_GC
+!   real, dimension(3)   :: r, v, x_grid
+!   real, dimension(3,3) :: AA
+!   integer :: inp
 
-  ! Compute alpha over cell, see Kempe 2012 (JCP)
-  ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
-  ! alpha in [0,1]
+!   ! Compute alpha over cell, see Kempe 2012 (JCP)
+!   ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
+!   ! alpha in [0,1]
   
-  phi_tot = 0.
-  alpha = 0.
+!   phi_tot = 0.
+!   alpha = 0.
 
-  ! run over 8 corners of cell
-  do i = ic-1,ic
-    do j = jc,jc+1
-      do k = kc,kc+1
+!   ! run over 8 corners of cell
+!   do i = ic-1,ic
+!     do j = jc,jc+1
+!       do k = kc,kc+1
 
-        x_grid(1) = xm(i)
-        x_grid(2) = yc(j)
-        x_grid(3) = zc(k)
+!         x_grid(1) = xm(i)
+!         x_grid(2) = yc(j)
+!         x_grid(3) = zc(k)
 
-        phi = loopoverbeams(x_grid,x_gc,AA,inp) 
+!         phi = loopoverbeams(x_grid,x_gc,AA,inp) 
 
-        if (phi.gt.0.) alpha = alpha + phi
-        phi_tot = phi_tot + abs(phi) 
+!         if (phi.gt.0.) alpha = alpha + phi
+!         phi_tot = phi_tot + abs(phi) 
 
-      end do
-    end do
-  end do
+!       end do
+!     end do
+!   end do
 
-alpha = alpha / phi_tot
-end subroutine
+! alpha = alpha / phi_tot
+! end subroutine
 
 
 !=================================
 !    q2
 !=================================
 
-subroutine convex_hull_q2(AA,inp)
+subroutine convex_hull_q2(ind,inp)
   use mls_param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vy
   use geom
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -152,16 +157,6 @@ subroutine convex_hull_q2(AA,inp)
   integer :: inp, i,j,k, ii,jj,kk
   integer, dimension(3,2) :: ind
   real tot_vol_2, r_x_u_2(3)
-
-  ! get bounding box
-  do i = 1,3
-    lim(i,1) = minval(tri_bar(i,:,inp))
-    lim(i,2) = maxval(tri_bar(i,:,inp))
-  end do
-
-  ind = floor(lim*dx1) + 1 ! compute indices cell centered
-  ! expanding bounding box to be extra safe
-  ind(:,1) = ind(:,1) - 7; ind(:,2) = ind(:,2) + 7;
 
   tot_vol_2 = 0.
   r_x_u_2   = 0.
@@ -185,7 +180,7 @@ subroutine convex_hull_q2(AA,inp)
              x_grid(3) = zm(k)
              r = x_grid - x_GC ! relative distance 
 
-             call level_set2(i,j,k,AA,x_GC,inp,alpha) 
+             call level_set22(i,j,k,x_GC,inp,alpha)
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
@@ -218,7 +213,7 @@ subroutine convex_hull_q2(AA,inp)
   call mpi_globalsum_double_arr(r_x_u_2,3)
 
   u_tot(2,inp)       =  u_tot(2,inp) / tot_vol_2
-  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_2  / tot_vol_2
+  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_2  !/ tot_vol_2 ! KZ: volume normalisation not needed
 
 
 ! volp = (4./3.)*pi*0.5**3
@@ -230,59 +225,58 @@ subroutine convex_hull_q2(AA,inp)
 ! end if
 end subroutine
 
-subroutine level_set2(ic,jc,kc,AA,x_GC,inp,alpha)
-  use param, only: xc,ym,zc
-  use geom
-  implicit none
-  integer :: i,j,k    ! int running over corners
-  integer :: ic,jc,kc ! center position 
-  real :: phi,alpha,phi_tot,inva,invb,invc
-  real, dimension(3)   :: x_GC
-  real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
-  integer :: inp
-  ! Compute alpha over cell, see Kempe 2012 (JCP)
-  ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
-  ! alpha in [0,1]
+! subroutine level_set2(ic,jc,kc,AA,x_GC,inp,alpha)
+!   use param, only: xc,ym,zc
+!   use geom
+!   implicit none
+!   integer :: i,j,k    ! int running over corners
+!   integer :: ic,jc,kc ! center position 
+!   real :: phi,alpha,phi_tot,inva,invb,invc
+!   real, dimension(3)   :: x_GC
+!   real, dimension(3)   :: r, v, x_grid
+!   real, dimension(3,3) :: AA
+!   integer :: inp
+!   ! Compute alpha over cell, see Kempe 2012 (JCP)
+!   ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
+!   ! alpha in [0,1]
   
-  phi_tot = 0.
-  alpha  =  0.
-  ! run over 8 corners of cell
-  do i = ic,ic+1
-    do j = jc-1,jc
-      do k = kc,kc+1
+!   phi_tot = 0.
+!   alpha  =  0.
+!   ! run over 8 corners of cell
+!   do i = ic,ic+1
+!     do j = jc-1,jc
+!       do k = kc,kc+1
 
-        ! set location of cell corner
-        x_grid(1) = xc(i)
-        x_grid(2) = ym(j)
-        x_grid(3) = zc(k)
+!         ! set location of cell corner
+!         x_grid(1) = xc(i)
+!         x_grid(2) = ym(j)
+!         x_grid(3) = zc(k)
 
 
-        phi = loopoverbeams(x_grid,x_gc,AA,inp) 
+!         phi = loopoverbeams(x_grid,x_gc,AA,inp) 
 
-        if (phi.gt.0.) alpha = alpha + phi
-        phi_tot = phi_tot + abs(phi) 
+!         if (phi.gt.0.) alpha = alpha + phi
+!         phi_tot = phi_tot + abs(phi) 
 
-      end do
-    end do
-  end do
+!       end do
+!     end do
+!   end do
 
-  alpha = alpha / phi_tot
+!   alpha = alpha / phi_tot
 
-end subroutine
+! end subroutine
 
 !=================================
 !    q3
 !=================================
 
-subroutine convex_hull_q3(AA,inp)
+subroutine convex_hull_q3(ind,inp)
   use mls_param
   use param
   use mpih
   use mpi_param, only: kstart,kend
   use local_arrays, only: vz
   implicit none
-  real, dimension(3,3) :: AA
   real, dimension(3)   :: x_grid
   real, dimension(3)   :: r, x_GC
   real, dimension(3,2) :: lim
@@ -292,19 +286,8 @@ subroutine convex_hull_q3(AA,inp)
   integer, dimension(3,2) :: ind
   real tot_vol_3, r_x_u_3(3)
 
-  ! get bounding box
-  do i = 1,3
-    lim(i,1) = minval(tri_bar(i,:,inp))
-    lim(i,2) = maxval(tri_bar(i,:,inp))
-  end do
-
-  ind = floor(lim*dx1) + 1 ! compute indices cell centered
-  ! expanding bounding box to be extra safe
-  ind(:,1) = ind(:,1) - 7; ind(:,2) = ind(:,2) + 7;
-
   tot_vol_3 = 0.
   r_x_u_3   = 0.
-
 
   ! run over cell centered grid and find int(u)dV and int(r x u)dV 
   do i = ind(1,1),ind(1,2)
@@ -323,7 +306,8 @@ subroutine convex_hull_q3(AA,inp)
              x_grid(3) = zc(k)
              r = x_grid - x_GC ! relative distance 
 
-             call level_set3(i,j,k,AA,x_GC,inp,alpha) 
+             !call level_set3(i,j,k,AA,x_GC,inp,alpha)
+             call level_set32(i,j,k,x_GC,inp,alpha) 
              ! compute int u over V 
 
              ii = modulo(i-1,n1m) + 1
@@ -356,7 +340,7 @@ subroutine convex_hull_q3(AA,inp)
   call mpi_globalsum_double_arr(r_x_u_3,3)
 
   u_tot(3,inp)       = u_tot(3,inp) / tot_vol_3
-  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_3  / tot_vol_3
+  r_x_u_tot(1:3,inp) = r_x_u_tot(1:3,inp) + r_x_u_3  !/ tot_vol_3 ! KZ: volume normalisation not needed
 
 !volp = (4./3.)*pi*0.5**3
 !if (myid.eq.0) print*, "volume fraction", tot_vol_3/ volp
@@ -368,47 +352,47 @@ subroutine convex_hull_q3(AA,inp)
 ! end if
 end subroutine
 
-subroutine level_set3(ic,jc,kc,AA,x_GC,inp,alpha)
-  use param, only: xc,yc,zm
-  use geom
-  implicit none
-  integer :: i,j,k    ! int running over corners
-  integer :: ic,jc,kc ! center position 
-  real :: phi,alpha,phi_tot,inva,invb,invc
-  real, dimension(3)   :: x_GC
-  real, dimension(3)   :: r, v, x_grid
-  real, dimension(3,3) :: AA
-  integer :: inp
+! subroutine level_set3(ic,jc,kc,AA,x_GC,inp,alpha)
+!   use param, only: xc,yc,zm
+!   use geom
+!   implicit none
+!   integer :: i,j,k    ! int running over corners
+!   integer :: ic,jc,kc ! center position 
+!   real :: phi,alpha,phi_tot,inva,invb,invc
+!   real, dimension(3)   :: x_GC
+!   real, dimension(3)   :: r, v, x_grid
+!   real, dimension(3,3) :: AA
+!   integer :: inp
 
-  ! Compute alpha over cell, see Kempe 2012 (JCP)
-  ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
-  ! alpha in [0,1]
+!   ! Compute alpha over cell, see Kempe 2012 (JCP)
+!   ! alpha = sum(-phi(m) * H(-phi(m))) / sum(|phi(m)|)
+!   ! alpha in [0,1]
   
-  phi_tot = 0.
-  alpha  =  0.
-  ! run over 8 corners of cell
-  do i = ic,ic+1
-    do j = jc,jc+1
-      do k = kc-1,kc
+!   phi_tot = 0.
+!   alpha  =  0.
+!   ! run over 8 corners of cell
+!   do i = ic,ic+1
+!     do j = jc,jc+1
+!       do k = kc-1,kc
 
-        ! set location of cell corner
-        x_grid(1) = xc(i)
-        x_grid(2) = yc(j)
-        x_grid(3) = zm(k)
+!         ! set location of cell corner
+!         x_grid(1) = xc(i)
+!         x_grid(2) = yc(j)
+!         x_grid(3) = zm(k)
 
-        phi = loopoverbeams(x_grid,x_gc,AA,inp) 
+!         phi = loopoverbeams(x_grid,x_gc,AA,inp) 
 
-        if (phi.gt.0.) alpha = alpha + phi
-        phi_tot = phi_tot + abs(phi) 
+!         if (phi.gt.0.) alpha = alpha + phi
+!         phi_tot = phi_tot + abs(phi) 
 
 
 
-      end do
-    end do
-  end do
+!       end do
+!     end do
+!   end do
 
-alpha = alpha / phi_tot
-end subroutine
+! alpha = alpha / phi_tot
+! end subroutine
 
 subroutine get_periodic_indices(k,x)
   use param
