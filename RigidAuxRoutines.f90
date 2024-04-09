@@ -185,7 +185,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
 
 
   vel_CM = vel_CMm1 - dt * pre_fac * For_tot           & ! IBM force term
-                   + dt * al * (1.0 - ( dens_ratio**1 ) ) * e_z       & ! Gravity term
+                   + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
                    + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
 
 
@@ -222,7 +222,7 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
 
   omega_c = omega_c_m1 + matmul(I_inv, &
                               - (dt/dens_ratio)*torq_surf  &   ! IBM force term
-                              + dr_x_u_b                &   ! Torque impulse term
+                              + (1.0 / dens_ratio) * dr_x_u_b                &   ! Torque impulse term
                               - dt*al*omega_x_Iomega_m1 )  ! Non-inertial reference frame correction
 
 !omega_b=0.0d0 ! KZ: should not be commented out?
@@ -667,7 +667,7 @@ subroutine update_xyz
 
     do i = 1,maxnv
       if ( .not. isGhostVert(i,inp) ) then
-        xyzv(:,i,inp) =  matmul( AA, dxyzv_s(:,i,inp) ) + pos_CM(:,inp)
+        xyzv(:,i,inp) =  matmul( AAT, dxyzv_s(:,i,inp) ) + pos_CM(:,inp)
       endif
     enddo
 

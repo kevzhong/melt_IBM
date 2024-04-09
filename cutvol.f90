@@ -10,9 +10,9 @@
 !           V   ///
 !
 !
-!             1     /// _     _
-!r_x_u_1 =  -----  ///  r  x  u  dV 
-!             V   ///
+!             /// _     _
+!r_x_u_1 =   ///  r  x  u  dV 
+!           ///
 
 subroutine convex_hull_q1(ind,inp)
   use mls_param

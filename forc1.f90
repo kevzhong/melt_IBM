@@ -74,7 +74,7 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 !                  Ntri
 !                  ____
 !     rho_p   1    \    _
-!  -  ----  -----       F * dt * Atri * dx
+!  -  ----  -----       F * Atri * dx
 !     rho_f   V    /      
 !                  ----  
       

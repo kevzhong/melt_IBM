@@ -10,13 +10,25 @@ subroutine setup_particles
   real :: alpha
   real :: angle
   real :: I1, I2, I3
+  real, dimension(4) :: Q_buffer
 
   ! Assign COMs for each particle and initialise rigid-body parameters (vel_COM, orientation, etc)
 
   Npx = 1; Npy = 1; Npz = 1
 
-  angle = 0.0
+  !--------Pre-rotate geometry------------------
+  angle = 30.0
+  Q_buffer(1) = cosd(angle / 2.0)
+  Q_buffer(2) = 0.0
+  Q_buffer(3) = sind(angle / 2.0)
+  Q_buffer(4) = 0.0
 
+  call calc_rot_matrix(Q_buffer,AA)
+  do i = 1,maxnv
+    xyz0(:,i) = matmul(AA, xyz0(:,i) )
+  enddo
+ !----------------------------------------------
+  
   call calc_rigidBody_params(pos_CM(:,1),Volume(1),InertTensor(:,:,1),maxnv,maxnf,&
   xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
 
