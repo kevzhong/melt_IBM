@@ -239,7 +239,7 @@
       real, dimension(:,:), allocatable :: qw_o, qw_i ! Normal gradients at interface faces (outward and inward dirn)
       real, dimension(:,:), allocatable :: qw_oVert, qw_iVert ! Normal gradients at interface VERTICES (outward and inward dirn)
       real, dimension(:,:), allocatable :: Avert ! Area of each vertex
-      real, dimension(:,:), allocatable :: vmelt ! local melting velocity at vertices
+      real, dimension(:,:,:), allocatable :: vmelt ! local melting velocity at vertices
 
       !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
 

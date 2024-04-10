@@ -12,7 +12,7 @@ is_coll = .false.
 
 ! check for collision
 coll_check = .false.
-call collision
+!call collision
 coll_check = .false.
 
 
@@ -168,9 +168,6 @@ subroutine newton_euler(For_tot,  torq_surf,   &
 ! alpha(2) = 1/15      alpha(2) = 2/15    a(2)+b(2) = 2/15
 ! alpha(3) = 1/6       alpha(3) = 2/6     a(3)+b(3) = 2/6
 
-
-  ! KZ: re-compute new _m1 vectors for new pricipal axes bases
-
 ! -------------------------------------
 !              Translation
 ! -------------------------------------
@@ -224,8 +221,6 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
                               - (dt/dens_ratio)*torq_surf  &   ! IBM force term
                               + (1.0 / dens_ratio) * dr_x_u_b                &   ! Torque impulse term
                               - dt*al*omega_x_Iomega_m1 )  ! Non-inertial reference frame correction
-
-!omega_b=0.0d0 ! KZ: should not be commented out?
 
 ! Evolution equation for quaternions
 ! Allen & Tildesley (2017), Eberly (2010), for example

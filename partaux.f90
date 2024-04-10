@@ -478,7 +478,7 @@ subroutine write_tecplot_geom
         namfi2='flowmov/geom_'//ibod//'_'//ipfi
   
         !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-        call write_VertGeom (inp,maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
+        call write_VertGeom (inp,maxnv,maxnf,xyzv(:,:,inp),vmelt(:,:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
         vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
 
       end do
@@ -494,7 +494,8 @@ subroutine write_tecplot_geom
     character(70) filename,geotecfile
     integer i,nv,nf,inp
     real, dimension (3,nv) :: xyz , vert_nor 
-    real, dimension (nv) :: vmelt, qw_o, qw_i
+    real, dimension (nv) :: qw_o, qw_i
+    real, dimension(3,nv) :: vmelt
     logical, dimension(nv) :: isGhostVert
     logical, dimension(nf) :: isGhostFace
     integer, dimension(nv) :: vert_mask
@@ -530,7 +531,7 @@ subroutine write_tecplot_geom
 
       do i=1,nv
         if (isGhostVert(i) .eqv. .false.) then
-        write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), vmelt(i), qw_o(i), qw_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
+        write(11,*)xyz(1,i), xyz(2,i), xyz(3,i), norm2(vmelt(1:3,i)), qw_o(i), qw_i(i), vert_nor(1,i), vert_nor(2,i), vert_nor(3,i)
 
         ! For tracking of cumulative non-ghost vertices
         vert_mask(i) = vcnt
@@ -572,6 +573,30 @@ subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift)
   end if
 end subroutine writeRemeshStats
 
+subroutine write_triDebug
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real :: DV_residual, maxdrift
+  integer :: n_ecol, n_erel,i
+  character(70) namfile
+
+
+  if (myid.eq.0) then
+
+  namfile='flowmov/tribar_debug.txt'
+ !KZ: note hard-coded single particle for now
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
+  do i = 1,maxnf
+    write(43,'(3E15.7)') tri_bar(1,i,1), tri_bar(2,i,1), tri_bar(3,i,1)
+  enddo
+  close(43)
+  end if
+end subroutine write_triDebug
 
 !       subroutine debug_write(suffix)
 !         use mpih

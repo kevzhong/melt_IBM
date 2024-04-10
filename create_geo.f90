@@ -16,6 +16,9 @@ subroutine setup_particles
 
   Npx = 1; Npy = 1; Npz = 1
 
+  ! KZ: for future with multiple particles, can transform the inertia tensor with just
+  ! I' = A * I * A^T
+
   !--------Pre-rotate geometry------------------
   angle = 30.0
   Q_buffer(1) = cosd(angle / 2.0)
@@ -24,8 +27,9 @@ subroutine setup_particles
   Q_buffer(4) = 0.0
 
   call calc_rot_matrix(Q_buffer,AA)
+  AAT = transpose(AA)
   do i = 1,maxnv
-    xyz0(:,i) = matmul(AA, xyz0(:,i) )
+    xyz0(:,i) = matmul(AAT, xyz0(:,i) )
   enddo
  !----------------------------------------------
   

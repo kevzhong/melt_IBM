@@ -104,7 +104,12 @@ character(70) namfile
       allocate(VOFz(n1,n2,kstart-1:kend+1))
       allocate(VOFp(n1,n2,kstart-1:kend+1))
 
-!
+      ! Check IC correctness
+      call write_tecplot_geom
+      call mkmov_hdf_ycut
+      call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+      call MPI_Finalize(ierr)
+! 
 !  ********* starts the time dependent calculation ***
 
       do ntime=1,ntst
