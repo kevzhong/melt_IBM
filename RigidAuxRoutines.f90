@@ -186,7 +186,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
                    + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
 
 
-vel_CM=0.0d0
+!vel_CM=0.0d0
 pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
 
 
