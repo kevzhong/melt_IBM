@@ -51,7 +51,9 @@ character(70) namfile
        time=0.d0
        cflm=0.d0
          
-       call inqpr 
+       !call inqpr_rotated
+       call inqpr
+
 
       else
 
@@ -160,8 +162,12 @@ character(70) namfile
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            call findCMindices
+           !call mkmov_hdf_xcut
            call mkmov_hdf_ycut
+           !call mkmov_hdf_zcut
            call write_tecplot_geom
+           !call writePrincAxes(pos_CM(:,1),GLOBAL_IBIJ)
+
 !              call writePind            
 !              call writePPpartpos
 !              call writePPquat

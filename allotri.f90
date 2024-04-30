@@ -82,8 +82,8 @@ implicit none
   allocate( omega_s(3, Nparticle) )
   allocate( om_b_sqr(3, Nparticle), om_b_sqr_m1(3, Nparticle) )
   allocate( tail_head(3, Nparticle) )
-  allocate( quat(4, Nparticle), quat_m1(4, Nparticle), quat_dot(4, Nparticle)  )
-  
+ allocate( quat(4, Nparticle), quat_m1(4, Nparticle), quat_dot(4, Nparticle)  )
+
   allocate(  quat_dot_m1(4, Nparticle)  ) !KZ: needed?
 
   allocate(Surface(Nparticle))

@@ -1,6 +1,6 @@
 
 #FC = h5pfc -r8 -O3 -fpp -module $(OBJDIR) # FOR INTEL
-FC = h5pfc -cpp -fdefault-real-8 -fdefault-double-8 -fallow-argument-mismatch -J $(OBJDIR)# -KZ: FOR GNU (PERSONAL MACHINE)
+FC = h5pfc -cpp -fdefault-real-8 -fdefault-double-8 -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR)# -KZ: FOR GNU (PERSONAL MACHINE)
 
 #uncomment the following 2 lines for discoverer
 #FC+=${FFTW3_FFLAGS}

@@ -428,6 +428,8 @@ subroutine find_closestTri_ind(tri_ind,x_grid,tri_bar,isGhostFace,nf)
   mindist = 1.0e6
   tri_ind = 0
 
+  ! This needs a periodicity correction as well
+
   do i = 1,nf
     if (isGhostFace(i) .eqv. .false.) then
       dist = norm2( x_grid - tri_bar(:,i) )
@@ -470,5 +472,14 @@ subroutine get_bbox_inds(bbox_inds,inp)
   ! expanding bounding box to be extra safe
   bbox_inds(:,1) = bbox_inds(:,1) - padSize
   bbox_inds(:,2) = bbox_inds(:,2) + padSize
+
+  ! Hard code vertical for testing free-fall
+  !bbox_inds(3,1) = 1
+  !bbox_inds(3,2) = n3m
+
+
+  !! Hard-code the full domain for testing
+  !bbox_inds(:,1) = [1, 1, 1] 
+  !bbox_inds(:,2) = [n1m, n2m, n3m]
 
 end subroutine

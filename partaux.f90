@@ -384,7 +384,7 @@ subroutine writePPpartVol
   namfile='flowmov/partPPVol.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
-  write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) 
+  write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , norm2( vel_CM(:,1) )
 
   close(43)
   end if
@@ -598,131 +598,46 @@ subroutine write_triDebug
   end if
 end subroutine write_triDebug
 
-!       subroutine debug_write(suffix)
-!         use mpih
-!         use mpi_param
-!         use param
-!         use mls_param
-        
-!         character(70) namfile,namfi2
-!         character(7) ipfi
-!         character*2 ibod
-!         real tprfi
-!         integer itime, suffix
-!         tprfi = 1/tframe
-!         itime=nint(time*tprfi)
-!         write(ipfi,82)itime
-!         82 format(i7.7)
-!         98 format(i2.2)
-        
-!         if(ismaster)then
-!             do inp=1,Nparticle
-        
-!               write(ibod,98) inp
-!               write(ipfi,82) suffix !KZ: hard-coded
 
-!               namfi2='flowmov/FlipGeom_'//ibod//'_'//ipfi
-        
-!               call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
-!               vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
-!             end do
-!         end if
-        
-!         end subroutine debug_write
+subroutine writePrincAxes(xCOM,Ib_ij)
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(3) :: xCOM
+  real, dimension(3,3) :: Ib_ij
+  character(70) namfile,namfi2
+  character(7) ipfi
+  character*2 ibod
+  real tprfi
+  integer itime, inp
 
 
+  if(ismaster)then
 
-! subroutine debug_writeSingle
-!         use mpih
-!         use mpi_param
-!         use param
-!         use mls_param
-        
-!         character(70) namfile,namfi2
-!         character(7) ipfi
-!         character*2 ibod
-!         real tprfi
-!         integer itime
-!         tprfi = 1/tframe
-!         itime=nint(time*tprfi)
-!         write(ipfi,82)itime
-!         82 format(i7.7)
-!         98 format(i2.2)
-        
-!         if(ismaster)then
-!             do inp=1,Nparticle
-        
-!               write(ibod,98) inp
-        
-!               !namfi2='flowmov/geom_'//ibod//'_'//ipfi
-        
-!               !call write_geom (maxnv,maxnf,xyzv(:,:,inp),sur(:,inp),namfi2)
-!               !call write_VertGeom (maxnv,maxnf,xyzv(:,:,inp),vmelt(:,inp),qw_oVert(:,inp),qw_iVert(:,inp),&
-!               !vert_nor(:,:,inp),namfi2,isGhostFace(:,inp),isGhostVert(:,inp))
+  inp = 1
 
-!               write(ipfi,82) 3471 !KZ: hard-coded
-!               namfi2='flowmov/tri_' // ipfi
-!               call write_singleTri (3471,maxnv,maxnf,xyzv(:,:,inp),namfi2)
+  tprfi = 1/tframe
+  itime=nint(time*tprfi)
+  write(ipfi,82)itime
+  82 format(i7.7)
+  98 format(i2.2)
 
-!               write(ipfi,82) 4477 !KZ: hard-coded
-!               namfi2='flowmov/tri_' // ipfi
-!               call write_singleTri (4477,maxnv,maxnf,xyzv(:,:,inp),namfi2)
-
-!               write(ipfi,82) 2270 !KZ: hard-coded
-!               namfi2='flowmov/tri_' // ipfi
-!               call write_singleTri (2270,maxnv,maxnf,xyzv(:,:,inp),namfi2)
-!             end do
-!         end if
-        
-!         end subroutine debug_writeSingle
-
-! !---------------------------------------------------------------------------------------------
+  write(ibod,98) inp
+  write(ipfi,82) itime
   
-!         subroutine write_singleTri (ntri,nv,nf,xyz,filename)
-!           use param
-!           use mpih
-!           use mls_param, only: vert_of_face!, isGhostFace, isGhostVert
-!           implicit none
-!           character(70) filename,geotecfile
-!           integer i,nv,nf, ntri
-!           real, dimension (3,nv) :: xyz
-!           integer :: vcnt
-!           real tprfi
-!           integer itime
-!           character(7) ipfi
-      
-      
-!           tprfi = 1/tframe
-!           itime=nint(time*tprfi)
-!           write(ipfi,82)itime
-!        82 format(i7.7)
-      
-         
-      
-!             geotecfile=trim(filename)//'.dat'
-!       !        write(*,*)' Write file ',trim(geotecfile)
-      
-!             open(11,file=geotecfile)
-      
-!             write(11,*)'TITLE = "Geo"'
-!             !write(11,*)'VARIABLES = X Y Z Vx Vy Vz'
-!             write(11,*)'VARIABLES = X Y Z'
-!         !    write(11,*)'ZONE T="DOMAIN 0", N=',nv,' E=',nf,' F=FEBLOCK, ET=TRIANGLE'
-!             write(11,*)'ZONE T="FETri" N=',3,' E=',1,' ZONETYPE=FETriangle'
-!             ! write(11,*)'ZONE T=FETri N=',nvc,' E=',ntri,' ZONETYPE=FETriangle'
-!             write(11,*)'DATAPACKING=POINT                                       '
-!             !write(11,*)'VARLOCATION=([4-6]=CELLCENTERED)' ! KZ: lists 4-6 are centroid data, can specify as nodal for vertices
-!             !write(11,*)'VARLOCATION=([4-9]=NODAL)' 
-      
-!             vcnt = 1
-      
-!             do i=1,3
-!               write(11,*) xyz(1,vert_of_face(i,ntri)), xyz(2,vert_of_face(i,ntri)), xyz(3,vert_of_face(i,ntri))
-!             end do
-      
+  namfi2='flowmov/partAxes_'//ibod//'_'//ipfi
+  namfi2=trim(namfi2)//'.txt'
 
-!               write(11,*) 1,2,3
-
-!             close(11)
-!             return
-!             end subroutine write_singleTri
+ !KZ: note hard-coded single particle for now
+  open(unit=43,file=namfi2,Access = 'append', Status='unknown')
+  !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
+  write(43,*)'X  Y  Z  e11  e21  e31  e12  e22  e32  e13  e23  e33'
+  write(43,'(12E15.7)')xCOM(1), xCOM(2), xCOM(3), Ib_ij(1,1) , Ib_ij(2,1), Ib_ij(3,1) , &
+                                                 Ib_ij(1,2) , Ib_ij(2,2), Ib_ij(3,2) , &
+                                                 Ib_ij(1,3) , Ib_ij(2,3), Ib_ij(3,3) 
+  close(43)
+  end if
+end subroutine writePrincAxes

@@ -4,7 +4,7 @@
       use mpih
       use mls_param
       use mpi_param, only: kstart,kend
-      use local_arrays, only: vx,vy,vz,pr,forcx,forcy,forcz
+      use local_arrays, only: vx,vy,vz,pr,temp,forcx,forcy,forcz
 
       IMPLICIT none
 
@@ -20,6 +20,8 @@
       integer(HID_T) :: dset_q2v
       integer(HID_T) :: dset_q3v
       integer(HID_T) :: dset_prv
+      integer(HID_T) :: dset_tempv
+
 
       integer(HSIZE_T) :: dims(2)
 
@@ -32,7 +34,7 @@
       integer :: ndims
 
       real tprfi
-      real prx(n2m,n3m),v1(n2m,n3m),v2(n2m,n3m),v3(n2m,n3m)
+      real prx(n2m,n3m),v1(n2m,n3m),v2(n2m,n3m),v3(n2m,n3m), tempx(n2m,n3m)
       integer itime
 
       character(70) namfile,xdmnam
@@ -40,7 +42,8 @@
 
 
       ndims=2
-      ic = pind1(1,1) 
+      !ic = pind1(1,1) 
+      ic = n1m / 2
       ip=ic+1
       
       do kc=kstart,kend
@@ -53,6 +56,7 @@
         v2(jc,kc) = (vy(ic,jc,kc)+vy(ic,jp,kc))*0.5
         v3(jc,kc) = (vz(ic,jc,kc)+vz(ic,jc,kp))*0.5
         prx(jc,kc)= pr(ic,jc,kc)
+        tempx(jc,kc) = temp(ic,jc,kc)
        end do
       end do
 
@@ -97,6 +101,7 @@
 
       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, filespace, dset_prv, hdf_error)
 
+      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, filespace, dset_prv, hdf_error)
 
 !RO   Set offsets and element counts
 
@@ -153,12 +158,25 @@
          prx(1:n2m,kstart:kend), dims, & 
          hdf_error, file_space_id = filespace, mem_space_id = memspace, & 
          xfer_prp = plist_id)
+
+
+      call h5dget_space_f(dset_tempv, filespace, hdf_error)
+      call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+      call h5dwrite_f(dset_tempv, H5T_NATIVE_DOUBLE, & 
+         tempx(1:n2m,kstart:kend), dims, & 
+         hdf_error, file_space_id = filespace, mem_space_id = memspace, & 
+         xfer_prp = plist_id)
+
 !RO   Close properties and file
 
       call h5dclose_f(dset_q1v, hdf_error)
       call h5dclose_f(dset_q2v, hdf_error)
       call h5dclose_f(dset_q3v, hdf_error)
       call h5dclose_f(dset_prv, hdf_error)
+      call h5dclose_f(dset_tempv, hdf_error)
 
       call h5sclose_f(memspace, hdf_error)
       call h5sclose_f(filespace, hdf_error)
@@ -177,7 +195,7 @@
       write(45,'("<Topology TopologyType=""2DCORECTMESH"" NumberOfElements=""",i4," ",i4,"""/>")') n3m,n2m
       write(45,'("<Geometry GeometryType=""ORIGIN_DXDY"">")')
       write(45,'("<DataItem Name=""Origin"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
-      write(45,'(2E15.7)') 0,0.0
+      write(45,'(2E15.7)') 0.0,0.0
       write(45,'("</DataItem>")')
       write(45,'("<DataItem Name=""Spacing"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
       write(45,'(2E15.7)') 1./dx3,1./dx2
@@ -201,6 +219,11 @@
       write(45,'("<Attribute Name=""Pressure"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2m
       write(45,'("frame_x_",i5.5,".h5:/Pr")') itime
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
+      write(45,'("<Attribute Name=""Temperature"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2m
+      write(45,'("frame_x_",i5.5,".h5:/Temp")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
       !write(45,'("<Time Value=""",e12.5,"""/>")')time
@@ -230,7 +253,7 @@
       integer ic,jc,kc
       integer ip,jp,kp
       integer inp
-      real, allocatable, dimension(:,:) :: prx,v1,v2,v3,tempx
+      real, allocatable, dimension(:,:) :: prx,v1,v2,v3,tempx,vof
       real, allocatable, dimension(:,:) :: vor1,vor2,vor3,hel
       integer hdf_error
       integer(HID_T) :: file_id
@@ -242,6 +265,7 @@
       integer(HID_T) :: dset_q3v
       integer(HID_T) :: dset_prv
       integer(HID_T) :: dset_tempv
+      integer(HID_T) :: dset_vof
       integer(HID_T) :: dset_vor1
       integer(HID_T) :: dset_vor2
       integer(HID_T) :: dset_vor3
@@ -262,7 +286,7 @@
       character(70) namfile,xdmnam
       character(5) ipfi
 
-      allocate(prx(n1m,n3m),v1(n1m,n3m),v2(n1m,n3m),v3(n1m,n3m), tempx(n1m,n3m))
+      allocate(prx(n1m,n3m),v1(n1m,n3m),v2(n1m,n3m),v3(n1m,n3m), tempx(n1m,n3m), vof(n1m,n3m) )
       allocate(vor1(n1m,n3m),vor2(n1m,n3m),vor3(n1m,n3m),hel(n1m,n3m))
 
       ndims=2
@@ -283,6 +307,7 @@
         v3(ic,kc) = (vz(ic,jc,kc)+vz(ic,jc,kp))*0.5
         prx(ic,kc)= pr(ic,jc,kc)
         tempx(ic,kc) = temp(ic,jc,kc)
+        vof(ic,kc) = VOFp(ic,jc,kc)
         vor1(ic,kc) = (vorx(ic,jc,kc)+vorx(ip,jc,kc))*0.5
         vor2(ic,kc) = (vory(ic,jc,kc)+vory(ic,jp,kc))*0.5
         vor3(ic,kc) = (vorz(ic,jc,kc)+vorz(ic,jc,kp))*0.5
@@ -335,6 +360,8 @@
       call h5dcreate_f(file_id, 'Vz', H5T_NATIVE_DOUBLE, filespace, dset_q3v, hdf_error)
 
       call h5dcreate_f(file_id, 'temperature', H5T_NATIVE_DOUBLE, filespace, dset_tempv, hdf_error)
+
+      call h5dcreate_f(file_id, 'VOFp', H5T_NATIVE_DOUBLE, filespace, dset_vof, hdf_error)
 
       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, filespace, dset_prv, hdf_error)
 
@@ -414,6 +441,19 @@
 
       ! END TEMPERATURE
 
+      ! VOF
+         call h5dget_space_f(dset_vof, filespace, hdf_error)
+         call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+         call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+         call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+   
+         call h5dwrite_f(dset_vof, H5T_NATIVE_DOUBLE, & 
+            vof(1:n1m,kstart:kend), dims, & 
+            hdf_error, file_space_id = filespace, mem_space_id = memspace, & 
+            xfer_prp = plist_id)
+
+      ! END VOF
+
       call h5dget_space_f(dset_vor1, filespace, hdf_error)
       call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
@@ -460,6 +500,7 @@
       call h5dclose_f(dset_q3v, hdf_error)
       call h5dclose_f(dset_tempv, hdf_error)
       call h5dclose_f(dset_prv, hdf_error)
+      call h5dclose_f(dset_vof, hdf_error)
       call h5dclose_f(dset_vor1, hdf_error)
       call h5dclose_f(dset_vor2, hdf_error)
       call h5dclose_f(dset_vor3, hdf_error)
@@ -514,6 +555,12 @@
 
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
+      write(45,'("<Attribute Name=""VOFp"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n1m
+      write(45,'("frame_y_",i5.5,".h5:/VOFp")') itime
+
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
       write(45,'("<Attribute Name=""Pressure"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n1m
       write(45,'("frame_y_",i5.5,".h5:/Pr")') itime
@@ -561,7 +608,7 @@
       use mpih
       use mls_param
       use mpi_param, only: kstart,kend
-      use local_arrays, only: vx,vy,vz,pr
+      use local_arrays, only: vx,vy,vz,pr,temp
       use local_aux, only: vorx,vory,vorz
 
       IMPLICIT none
@@ -569,7 +616,7 @@
       integer ic,jc,kc
       integer ip,jp,kp
       integer inp
-      real, allocatable, dimension(:,:) :: prx,v1,v2,v3
+      real, allocatable, dimension(:,:) :: prx,v1,v2,v3,tempx
       real, allocatable, dimension(:,:) :: vor1,vor2,vor3
       integer hdf_error
       integer(HID_T) :: file_id
@@ -580,6 +627,7 @@
       integer(HID_T) :: dset_q2v
       integer(HID_T) :: dset_q3v
       integer(HID_T) :: dset_prv
+      integer(HID_T) :: dset_tempv
       integer(HID_T) :: dset_vor1
       integer(HID_T) :: dset_vor2
       integer(HID_T) :: dset_vor3
@@ -602,17 +650,17 @@
       character(70) namfile,xdmnam
       character(5) ipfi
      
-      allocate(prx(n1m,n2m),v1(n1m,n2m),v2(n1m,n2m),v3(n1m,n2m))
+      allocate(prx(n1m,n2m),v1(n1m,n2m),v2(n1m,n2m),v3(n1m,n2m),tempx(n1m,n2m) )
       allocate(vor1(n1m,n2m),vor2(n1m,n2m),vor3(n1m,n2m))
       
       ndims=2
-      if(imlsfor.eq.1)then
+      !if(imlsfor.eq.1)then
 
-            kc = pind1(3,1)
+      !      kc = pind1(3,1)
 
-      else
+      !else
       kc = n3m/2
-      end if
+      !end if
       kp=kc+1
       if (kc.ge.kstart .and. kc.le.kend) then
       
@@ -626,6 +674,7 @@
         v2(ic,jc) = (vy(ic,jc,kc)+vy(ic,jp,kc))*0.5
         v3(ic,jc) = (vz(ic,jc,kc)+vz(ic,jc,kp))*0.5
         prx(ic,jc)= pr(ic,jc,kc)
+        tempx(ic,jc) = temp(ic,jc,kc)
         vor1(ic,jc) = (vorx(ic,jc,kc)+vorx(ip,jc,kc))*0.5
         vor2(ic,jc) = (vory(ic,jc,kc)+vory(ic,jp,kc))*0.5
         vor3(ic,jc) = (vorz(ic,jc,kc)+vorz(ic,jc,kp))*0.5
@@ -678,6 +727,10 @@
                       dset_prv, hdf_error)
       call h5dwrite_f(dset_prv, H5T_NATIVE_DOUBLE, prx, dims, hdf_error)
 
+      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, filespace, &
+      dset_tempv, hdf_error)
+      call h5dwrite_f(dset_tempv, H5T_NATIVE_DOUBLE, tempx, dims, hdf_error)
+
       call h5dcreate_f(file_id, 'vorx', H5T_NATIVE_DOUBLE, filespace, &
                       dset_vor1, hdf_error)
       call h5dwrite_f(dset_vor1, H5T_NATIVE_DOUBLE, vor1, dims, hdf_error)
@@ -699,6 +752,7 @@
       call h5dclose_f(dset_q2v, hdf_error)
       call h5dclose_f(dset_q3v, hdf_error)
       call h5dclose_f(dset_prv, hdf_error)
+      call h5dclose_f(dset_tempv, hdf_error)
       call h5dclose_f(dset_vor1, hdf_error)
       call h5dclose_f(dset_vor2, hdf_error)
       call h5dclose_f(dset_vor3, hdf_error)
@@ -717,7 +771,7 @@
       write(45,'("<Topology TopologyType=""2DCORECTMESH"" NumberOfElements=""",i4," ",i4,"""/>")') n1m,n2m
       write(45,'("<Geometry GeometryType=""ORIGIN_DXDY"">")')
       write(45,'("<DataItem Name=""Origin"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
-      write(45,'(2E15.7)') 0,0.0
+      write(45,'(2E15.7)') 0.0,0.0
       write(45,'("</DataItem>")')
       write(45,'("<DataItem Name=""Spacing"" Dimensions=""2"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
       write(45,'(2E15.7)') 1./dx1,1./dx2
@@ -741,6 +795,11 @@
       write(45,'("<Attribute Name=""Pressure"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n1m,n2m
       write(45,'("frame_z_",i5.5,".h5:/Pr")') itime
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
+      write(45,'("<Attribute Name=""Temperature"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n1m,n2m
+      write(45,'("frame_z_",i5.5,".h5:/Temp")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
       write(45,'("<Attribute Name=""vorx"" AttributeType=""Scalar"" Center=""Node"">")')

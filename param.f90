@@ -230,7 +230,7 @@
       real    invdx1dt
       real, dimension(:,:), allocatable :: cfac
       real :: h_eulerian, A_eulerian
-      real, dimension (3,3) :: i_inv, i_inv2
+      real, dimension (3,3) :: i_inv, i_inv2, GLOBAL_IBIJ
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3

@@ -50,10 +50,11 @@ for_z_mean = for_z_mean / dble(n1m*n2m*n3m)
   end do
  end do
 
- if (forcing .eq. 1) then ! Only subtract mean IBM force if simulating HIT
+ ! To obtain a statistically steady state, mean must be subtracted
+ !if (forcing .eq. 1) then 
    vx(:,:,:) = vx(:,:,:) - for_x_mean
    vy(:,:,:) = vy(:,:,:) - for_y_mean
    vz(:,:,:) = vz(:,:,:) - for_z_mean
- endif
+ !endif
 
 end

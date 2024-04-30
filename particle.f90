@@ -107,6 +107,10 @@ if (imlsstr.eq.1) then
         xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
     enddo
 
+    !if (ismaster) then
+    !    write(*,*) "Volume fraction is ", Volume(1)*100.0
+    !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
+    !endif    
     !KZ: check if anything else needs to be updated
 
     ! Move / rotate object by solving Newton--Euler
@@ -116,6 +120,7 @@ endif
 
 
 !-------------------------------- (4)  BEGIN REMESHING  -------------------------------------------------
+if (iremesh .eq. 1 ) then
 do inp = 1,Nparticle
     ! First, evaluate triangle areas and skewnesses -> scan for whether remeshing is needed
     call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
@@ -125,7 +130,7 @@ do inp = 1,Nparticle
     call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp),&
      rm_flag(inp), skew_thresh )
 
-     if ( (rm_flag(inp) .eqv. .true.) .and. (iremesh .eq. 1 ) ) then
+     if ( (rm_flag(inp) .eqv. .true.) ) then
         did_remesh = .true.
         !----------Mesh coarsening----------
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
@@ -149,6 +154,8 @@ do inp = 1,Nparticle
     endif
     
 enddo
+endif
+
 !-------------------------------- (4)  END REMESHING  --------------------------------------------------
 
 !--------------------------  PRIMITIVE GEOMETRY INFO  --------------------------------------------------
@@ -166,10 +173,17 @@ do inp = 1,Nparticle
     call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
     call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),vert_of_face(:,:,inp),&
                                     isGhostFace(:,inp), isGhostVert(:,inp) )    
+
+
+    call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
+    xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
 enddo
 
 ! Update Eulerian < -- > Lagrangian forcing transfer coefficient
-cfac(:,:) = ( sur(:,:) * h_eulerian ) / celvol ! Note the hard-coded single-particle for cfac
+if (imelt .eq. 1) then
+    ! Tri area only changes if melting
+    cfac(:,:) = ( sur(:,:) * h_eulerian ) / celvol ! Note the hard-coded single-particle for cfac
+endif
 
 !-------------------------- END PRIMITIVE GEOMETRY INFO  ---------------------------------------------
 

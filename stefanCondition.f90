@@ -34,9 +34,16 @@ do inp=1,Nparticle
             v3 = vert_of_face(3,nf,inp)
 
             ! Equal load distribution (1/3) for each vertex on each triangle
-            vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v1,inp)
-            vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v2,inp)
-            vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v3,inp)
+            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v1,inp)
+            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v2,inp)
+            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v3,inp)
+
+            ! Equal load distribution (1/3) for each vertex on each triangle
+            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v1,inp)
+            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v2,inp)
+            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v3,inp)
+
+            !Reset at end
 
         endif
     enddo

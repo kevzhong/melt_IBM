@@ -4,7 +4,7 @@ subroutine inqpr
       use local_arrays, only: vy,vz,vx,temp
       use param, only: xm, ym, zm, n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1
       use mpi_param
-      use mls_param, only: rad_p
+      use mls_param, only: rad_p, pos_CM
       implicit none
       integer :: ic,jc,kc
       real :: rr
@@ -19,7 +19,8 @@ subroutine inqpr
       do kc = kstart, kend
             do ic = 1, n1m
                   do jc = 1, n2m
-                        rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
+                        !rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
+                        rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - pos_CM(:,1)  )
                         ! Sigmoid fit
                         ! temp(ic,jc,kc) = Tliq - (Tliq - Tsol) / ( 1 + exp(2.0d0 / dx1 * (rr - rad_p)  )
 
@@ -46,7 +47,7 @@ subroutine inqpr_rotated
       use local_arrays, only: vy,vz,vx,temp
       use param, only: xm, ym, zm, n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1
       use mpi_param
-      use mls_param, only: rad_p
+      use mls_param, only: rad_p, pos_CM
       implicit none
       integer :: ic,jc,kc
       real :: rr, angle
@@ -77,7 +78,7 @@ subroutine inqpr_rotated
                   do jc = 1, n2m
                         !rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
 
-                        r = [ xm(ic) , ym(jc), zm(kc) ] - [0.5d0*xlen,  0.5d0*ylen, 0.5d0*zlen]
+                        r = [ xm(ic) , ym(jc), zm(kc) ] - pos_CM(:,1)
                         rprime = matmul(rotmat, r)
 
                         rr = (rprime(1) / 0.2)**2  + (rprime(2)/0.1)**2  + ( rprime(3) / 0.1)**2
