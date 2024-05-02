@@ -808,7 +808,7 @@ subroutine calc_rigidBody_params (COM,Vol,I_ij,nv,nf,xyz,vert_of_face,isGhostFac
   ! This is a Fortran port of the above C++ code
   ! For underlying theory, see also D. H. Eberly (2015, pp. 74) and Kallay (2006)
 
-  use mls_param, only: I_INV, I_INV2
+  use mls_param, only: I_INV, I_INV2, dens_ratio
 
   implicit none
 
@@ -920,6 +920,9 @@ subroutine calc_rigidBody_params (COM,Vol,I_ij,nv,nf,xyz,vert_of_face,isGhostFac
   I_ij(1,1) =  Ixx ;   I_ij(1,2) = -Ixy ;    I_ij(1,3) = -Ixz
   I_ij(2,1) = -Ixy ;   I_ij(2,2) =  Iyy ;    I_ij(2,3) = -Iyz
   I_ij(3,1) = -Ixz ;   I_ij(3,2) = -Iyz ;    I_ij(3,3) =  Izz
+
+  ! Density pre-factor
+  I_ij = I_ij * dens_ratio
 
   ! Solve for principal values: 3x3 symmetric eigenproblem
   ! Eigenvalues I_princ(1:3), in ascending order by default

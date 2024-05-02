@@ -39,7 +39,7 @@ subroutine setup_particles
   ! KZ: note the hard-coded single particle for now
   pos_CM(1,1) = 0.5*xlen
   pos_CM(2,1) = 0.5*ylen
-  pos_CM(3,1) = 0.5*zlen
+  pos_CM(3,1) = 0.9*zlen
 
   !write(*,*), "Volume is", Volume(1)
   

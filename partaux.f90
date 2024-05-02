@@ -384,7 +384,7 @@ subroutine writePPpartVol
   namfile='flowmov/partPPVol.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
-  write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , norm2( vel_CM(:,1) )
+  write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , vel_CM(3,1) 
 
   close(43)
   end if
