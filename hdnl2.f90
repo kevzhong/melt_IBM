@@ -66,8 +66,11 @@
       !dph(ic,jc,kc)=-(h21+h22+h23)+ay(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
       !             (1.0-ay(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
 
-      dph(ic,jc,kc)=-(h21+h22+h23)*VOFy(ic,jc,kc) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
-      (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
+      ! dph(ic,jc,kc)=-(h21+h22+h23)*VOFy(ic,jc,kc) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
+      ! (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
+          
+      dph(ic,jc,kc)=-(h21+h22+h23) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
+          (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
       enddo
       enddo
       enddo

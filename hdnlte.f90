@@ -82,7 +82,8 @@ subroutine hdnlte
     !    !htemp(ic,jc,kc)=-(h31+h32+h33)+atemp(ic,jc,kc)*forcz(ic,jc,kc)/zlen
     !    htemp(ic,jc,kc)=-(h31+h32+h33)
     !endif
-    htemp(ic,jc,kc)=-(h31+h32+h33)*VOFp(ic,jc,kc)
+    !htemp(ic,jc,kc)=-(h31+h32+h33)*VOFp(ic,jc,kc)
+    htemp(ic,jc,kc)=-(h31+h32+h33)
 
 
     enddo

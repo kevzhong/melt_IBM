@@ -147,6 +147,7 @@
       !re_lam = sqrt(15.d0*(vxvyvz_rms_vol/sqrt(3.d0))**4/(nute*nu))
       re_lam = sqrt(20.0 / 3.0 * kenerg**2 / (nute * nu) ) ! cf. eqn (6.59--6.65), Pope (2000)
       if(ismaster) then
+            write(6,*) "Re_lambda", re_lam 
       namfile='flowmov/diss.txt'
       
       open(unit=92,file=namfile, Access='append', Status='unknown')

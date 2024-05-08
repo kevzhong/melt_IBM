@@ -122,7 +122,19 @@ function signed_distance(x0,x1,nhat) result(phi)
   ! Compute the SIGNED distance of a point x0 to a PLANE defined by its normal nhat and a point on the plane, x1
 
   phi = dot_product( nhat , x0 - x1   )
-end function signed_distance
+end 
 
+
+
+function heaviside(x) result(answer)
+  implicit none
+  real :: x, answer
+  if (x .ge. 0) then
+    answer = 1.0d0
+  else
+    answer = 0.0
+  endif
+
+end 
 
 end

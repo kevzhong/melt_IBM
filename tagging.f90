@@ -131,7 +131,7 @@ subroutine convex_hull_q22(ind,inp)
            ! periodic BC
            x_gc = pos_cm(1:3,inp) 
            k = kk
-           call get_periodic_indices2(k,x_gc)
+           call get_periodic_indices(k,x_gc)
 
 
            if (k.ge.kstart.and.k.le.kend) then 
@@ -229,7 +229,7 @@ subroutine convex_hull_q32(ind,inp)
            ! periodic BC
            x_gc = pos_cm(1:3,inp) 
            k = kk
-           call get_periodic_indices2(k,x_gc)
+           call get_periodic_indices(k,x_gc)
 
            if (k.ge.kstart.and.k.le.kend) then 
 
@@ -324,7 +324,7 @@ subroutine convex_hull_qc2(ind,inp)
            ! periodic BC
            x_gc = pos_cm(1:3,inp) 
            k = kk
-           call get_periodic_indices2(k,x_gc)
+           call get_periodic_indices(k,x_gc)
 
            if (k.ge.kstart.and.k.le.kend) then 
 
@@ -393,23 +393,6 @@ subroutine level_setc2(ic,jc,kc,x_GC,inp,alpha)
   end do
 
 alpha = alpha / phi_tot
-end subroutine
-
-subroutine get_periodic_indices2(k,x)
-  use param
-  implicit none
-  integer :: k
-  real    :: x(3)
-
-  if (k .ge. n3) then
-     k = k - n3m
-     x(3) = x(3) - zlen
-  end if
-
-  if (k .lt. 1) then
-     k = k + n3m
-     x(3) = x(3) + zlen
-  end if
 end subroutine
 
 subroutine find_closestTri_ind(tri_ind,x_grid,tri_bar,isGhostFace,nf)

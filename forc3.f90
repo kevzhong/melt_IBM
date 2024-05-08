@@ -22,7 +22,8 @@ else
  kstartp = kstart
 endif
 
-if (pind(6,ntr,inp).ge.kstartp .and. pind(6,ntr,inp).le.kend) then
+!if (pind(6,ntr,inp).ge.kstartp .and. pind(6,ntr,inp).le.kend) then
+if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
 
   pind_i(1)=pind(1,ntr,inp)-1;  pind_o(1)=pind(1,ntr,inp)+1
   pind_i(2)=pind(2,ntr,inp)-1;  pind_o(2)=pind(2,ntr,inp)+1

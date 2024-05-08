@@ -161,7 +161,7 @@ character(70) namfile
 
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           call findCMindices
+           !call findCMindices
            !call mkmov_hdf_xcut
            call mkmov_hdf_ycut
            !call mkmov_hdf_zcut
@@ -184,7 +184,7 @@ character(70) namfile
           call writeClock
 
        time=time+dt
-      if((ntime.eq.ntst).or.(mod(ntime,10).eq.0)) then          !to perform when needed not only at the end
+      if((ntime.eq.ntst).or.(mod(ntime,100).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field
       call WriteRandForcCoef

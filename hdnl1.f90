@@ -64,9 +64,11 @@
       !             (1.0-ax(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
 
       ! KZ: volume-penalty for advection terms
-      dq(ic,jc,kc)=-(h11+h12+h13)*VOFx(ic,jc,kc)+VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
-                   (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
-
+      ! dq(ic,jc,kc)=-(h11+h12+h13)*VOFx(ic,jc,kc)+VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
+      !              (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+          
+          dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
+          (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
       enddo
       enddo
       enddo

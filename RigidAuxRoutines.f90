@@ -43,7 +43,6 @@ do inp=1,nParticle
  if (pos_cm(3,inp).gt.zlen) pos_cm(3,inp) = pos_cm(3,inp) - zlen
 enddo
 
-! KZ replace this, and make use of updated xyzv_b above
 call update_xyz
 
 end subroutine
@@ -86,6 +85,10 @@ do inp=1,Nparticle
    call convex_hull_q2(bbox_inds,inp)
    call convex_hull_q3(bbox_inds,inp)
 
+   ! KZ: Delete once ray-tagging debugged
+   !call convex_hull_q12(bbox_inds,inp)
+   !call convex_hull_q22(bbox_inds,inp)
+   !call convex_hull_q32(bbox_inds,inp)
 
     ! update vel, pos, omega and quat
     call newton_euler(fpxyz(:,inp),       ftxyz(:,inp),                  &
@@ -318,7 +321,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(3) :: a_CM          ! acceleration of the center of mass
   real,dimension(3) :: vel_CM        ! velocity of the center of mass
   real,dimension(3) :: pos_CM        ! position of the center of mass
-  real              :: pre_fac       ! prefactor
+  real              :: pre_fac, pre_fac2       ! prefactor
   real              :: six_pi        ! prefactor
   real,dimension(3) :: torq_b        ! torque actin on the rigid body
   real,dimension(3) :: dr_x_u_b      ! torque actin on the rigid body
@@ -369,16 +372,28 @@ subroutine newton_euler(For_tot,  torq_surf,   &
 
   e_z = 0.; e_z(3) = -1.0
   
+  !Pre-factor for F_ibm term
   pre_fac = 1.0 / Volume / dens_ratio
+
+
+  !Pre-factor for impulse term
+  pre_fac2 = 1.0 / Volume / dens_ratio
+
+
 ! translation
   !a_CM = - pre_fac * for_tot &
    !      + e_z / dens_ratio &
    !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
+  ! vel_CM = vel_CMm1 - dt * pre_fac * For_tot           & ! IBM force term
+  !                  + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
+  !                  + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
+
   vel_CM = vel_CMm1 - dt * pre_fac * For_tot           & ! IBM force term
-                   + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
-                   + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
+  + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
+  + (u_tot - u_tot_m1) * pre_fac2    ! Impulse term, already normalised on VOF-computed particle volume
+
 
 
 !vel_CM=0.0d0
@@ -505,11 +520,11 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
   enddo
 
 
-  !if (ismaster) then
-    !write(*,*) "omega_c: ", omega_c
+  if (ismaster) then
+    write(*,*) "omega_c: ", omega_c
     !write(*,*) "quat: ", quat
-    !write(*,*) "I_residual:", Iresidual
-  !endif
+    write(*,*) "I_residual:", Iresidual
+  endif
 
 end subroutine newton_euler
 
