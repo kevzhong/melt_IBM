@@ -205,7 +205,7 @@
 
       !COM-relative vertex coordinates
       real, dimension(:,:,:), allocatable :: dxyzv_s
-      real, dimension(:,:,:), allocatable :: dxyzv_b
+      real, dimension(:,:,:), allocatable :: dxyz_s
 
 
 

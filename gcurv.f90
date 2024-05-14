@@ -178,6 +178,10 @@ character(70) namfile
          
         ! ASCII write
           call writePPpartVol
+          call write_partrot
+          call write_partpos
+          call write_partvel
+          
           call writeTriMeshStats
           call CalcInjection
           call CalcDissipation

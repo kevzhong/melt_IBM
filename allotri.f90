@@ -60,8 +60,7 @@ implicit none
 
   ! Vertex coordinates relative to COM
   allocate(dxyzv_s(3,maxnv,Nparticle))
-  !allocate(dxyzv_b(3,maxnv,Nparticle))
-
+  allocate(dxyz_s(3,maxnf,Nparticle))
 
   allocate(ptxAB_q1(nel,maxnf,Nparticle),ptxAB_q2(nel,maxnf,Nparticle),ptxAB_q3(nel,maxnf,Nparticle))
   allocate(  ptxAB_temp(nel,maxnf,Nparticle)  )
