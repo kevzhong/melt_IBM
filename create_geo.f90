@@ -19,22 +19,26 @@ subroutine setup_particles
   ! KZ: for future with multiple particles, can transform the inertia tensor with just
   ! I' = A * I * A^T
 
-!  !   !--------Pre-rotate geometry------------------
-!     angle = 30.0
-!     Q_buffer(1) = cosd(angle / 2.0)
-!     Q_buffer(2) = 0.0
-!     Q_buffer(3) = sind(angle / 2.0)
-!     Q_buffer(4) = 0.0
-! ! !
-!     call calc_rot_matrix(Q_buffer,AA)
-!     AAT = transpose(AA)
-!     do i = 1,maxnv
-!       xyz0(:,i) = matmul(AAT, xyz0(:,i) )
-!     enddo
-!    !----------------------------------------------
+ !   !--------Pre-rotate geometry------------------
+    angle = 30.0
+    Q_buffer(1) = cosd(angle / 2.0)
+    Q_buffer(2) = 0.0
+    Q_buffer(3) = sind(angle / 2.0)
+    Q_buffer(4) = 0.0
+! !
+    call calc_rot_matrix(Q_buffer,AA)
+    AAT = transpose(AA)
+    do i = 1,maxnv
+      xyz0(:,i) = matmul(AAT, xyz0(:,i) )
+    enddo
+   !----------------------------------------------
   
   call calc_rigidBody_params(pos_CM(:,1),Volume(1),InertTensor(:,:,1),maxnv,maxnf,&
   xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
+
+  if (ismaster) then
+    write(*,*) "InertTensor(:,:,1)", InertTensor(:,:,1)
+  endif
 
   ! KZ: note the hard-coded single particle for now
   pos_CM(1,1) = 0.5*xlen

@@ -116,192 +116,6 @@ enddo
 end subroutine
 
 
-! subroutine newton_euler(For_tot,  torq_surf,   &
-!   vel_CM,   vel_cmm1,    &
-!   pos_CM,   pos_cmm1,    &
-!   omega_c,  omega_c_m1,  &
-!   quat,     quat_m1,     &
-!   quat_dot, quat_dot_m1, &
-!   I_ij,                  &
-!   u_tot,    u_tot_m1,    &
-!   r_x_u,    r_x_u_m1,    &
-!   inp,      a_CM,        &
-!   alpha_b,  acm_m1,      &
-!   Volume)
-
-! ! Given total force and total torque acting on the body, it evolves
-! ! the newton equation for center of mass and
-! ! the Euler equation for rotation (quaternion notation Allen Tildesley pag 103)
-! ! Breugem 2012 (JCP)
-! use param, only: pi,ntime,al,ga,ro,dt, ismaster
-! use mls_param,only: dens_ratio, i_inv, GLOBAL_IBIJ
-! use mpih
-! implicit none
-
-! real,dimension(3) :: For_tot       ! total force actin on the rigid body
-! real,dimension(3) :: a_CM          ! acceleration of the center of mass
-! real,dimension(3) :: vel_CM        ! velocity of the center of mass
-! real,dimension(3) :: pos_CM        ! position of the center of mass
-! real              :: pre_fac       ! prefactor
-! real              :: six_pi        ! prefactor
-! real,dimension(3) :: torq_b        ! torque actin on the rigid body
-! real,dimension(3) :: dr_x_u_b      ! torque actin on the rigid body
-!                ! (with respect to mass center and represented
-!                !  in space frame)
-! real,dimension(4)   :: quat        ! quaternions
-! real,dimension(3)   :: alpha_b     ! angular acc body frame
-! real,dimension(3)   :: omega_c     ! angular vel body frame
-! real,dimension(4)   :: quat_dot    ! first derivative quaternions
-! real,dimension(3,3) :: I_ij,AA_m1,AAT    ! rotation matrix "body  = AA  space "
-! real,dimension(3)   :: u_tot       ! <u>_V over the particle
-! real,dimension(3)   :: torq_surf, r_x_u, r_x_u_m1
-! real,dimension(3)   :: r_x_ub, r_x_u_m1b
-! real ,dimension(3)  :: e_z
-! ! local variables
-! real,dimension(3) :: acm_m1            ! velocity of the center of mass
-! real,dimension(3) :: vel_CMm1            ! velocity of the center of mass
-! real,dimension(3) :: pos_CMm1            ! position of the center of mass
-! real,dimension(3) :: omega_c_m1          ! angular vel body frame
-! real,dimension(3) :: u_tot_m1            ! <u>_V over the particle
-! real,dimension(4) :: quat_m1             ! quaternions previous time step
-! real,dimension(4) :: quat_dot_m1         ! derivative quaternions previous time step
-! real,dimension(3) :: omega_x_Iomega_m1  ! angular vel body frame
-! real,dimension(3) :: Iomega_m1
-
-! integer :: inp
-! real :: Volume
-
-! ! Iterative inertia tensor update (Ardekani et al. 2016)
-! real :: tolerance, Iresidual ! Iteration tolerance for the lhs inertia tensor
-! integer :: n_iter
-! real, dimension(3,3) :: Ib_ij, Ib_inv, AA
-! real, dimension(3)  :: om_buffer, I_princ
-
-! ! For LAPACK
-! integer :: LWORK = 8
-! real, dimension(8) :: WORK
-! integer ::  INFO
-
-
-! ! Coefficienti
-! ! RK3 coeff here, alm(ns), are two times alpha(k) in Rai & Moin (JCP) 1991
-! ! In Rai and moin:     HERE               BREUGEM 2012 (JCP)
-! ! alpha(1) = 4/15      alpha(1) = 8/15    a(1)+b(1) = 8/15
-! ! alpha(2) = 1/15      alpha(2) = 2/15    a(2)+b(2) = 2/15
-! ! alpha(3) = 1/6       alpha(3) = 2/6     a(3)+b(3) = 2/6
-
-! ! -------------------------------------
-! !              Translation
-! ! -------------------------------------
-
-! e_z = 0.; e_z(3) = -1.0
-
-! pre_fac = 1.0 / Volume / dens_ratio
-! ! translation
-! !a_CM = - pre_fac * for_tot &
-! !      + e_z / dens_ratio &
-! !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
-
-
-! vel_CM = vel_CMm1 - dt * pre_fac * For_tot           & ! IBM force term
-! + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
-! + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
-
-
-! !vel_CM=0.0d0
-! pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
-
-
-
-! ! ------------------------------------- 
-! !               Rotation
-! ! ------------------------------------- 
-
-!   ! Solve for principal values: 3x3 symmetric eigenproblem
-!   ! Eigenvalues I_princ(1:3), in ascending order by default
-!   ! Eigenvectors (principal axes) stored in AA(3,3)
-!   ! Then 
-!   Ib_ij(:,:) = 0.0
-!   Ib_inv(:,:) = 0.0
-
-!   AA = I_ij
-!   call dsyev('V', 'U', 3, AA, 3, I_princ, WORK, LWORK, INFO)
-!   Ib_ij(1,1) = I_princ(1)
-!   Ib_ij(2,2) = I_princ(2)
-!   Ib_ij(3,3) = I_princ(3)
-
-!   Ib_inv(1,1) = 1.0 / I_princ(1)
-!   Ib_inv(2,2) = 1.0 / I_princ(2)
-!   Ib_inv(3,3) = 1.0 / I_princ(3)
-
-!   AAT = transpose(AA)
-
-! ! torques in body frame of reference
-! torq_b   = matmul(AAT, torq_surf)  ! torque acting on boundary 
-! r_x_ub    = matmul(AAT, r_x_u)
-! r_x_u_m1b = matmul(AAT, r_x_u_m1)
-
-! dr_x_u_b = r_x_ub - r_x_u_m1b
-
-! ! Non-inertial reference frame correction: cross product term
-! ! _          _
-! ! w  x ( [I] w)
-! !
-! omega_c_m1 = matmul(AAT, omega_c_m1)
-! Iomega_m1 = matmul(Ib_ij, omega_c_m1 )
-! call cross(omega_x_Iomega_m1, omega_c_m1, Iomega_m1)
-
-! !pre_fac = pi / 6.0 ! cutvol already divided by tot_vol
-! ! Note: Inertia tensor variable is the inertia tensor divided by the constant solid density
-
-! ! omega_c = omega_c_m1 + matmul(I_inv, &
-! !                             - (dt/dens_ratio)*torq_surf  &   ! IBM force term
-! !                             + (1.0 / dens_ratio) * dr_x_u_b                &   ! Torque impulse term
-! !                             - dt*al*omega_x_Iomega_m1 )  ! Non-inertial reference frame correction
-
-! omega_c =  omega_c_m1 + matmul(Ib_inv, &
-!             - (dt/dens_ratio)*torq_b  &   ! IBM force term
-!             + (1.0 / dens_ratio) * dr_x_u_b   &   ! Torque impulse term
-!             - dt*al*omega_x_Iomega_m1 )  ! Non-inertial reference frame correction
-
-! ! Evolution equation for quaternions
-! ! Allen & Tildesley (2017), Eberly (2010), for example
-! !      _
-! !    d q(t)     1   _____    _
-! !  --------- = ---  omega(t) q(t)  
-! !     d t       2
-! !
-! !om_buffer = 0.5* (omega_c + omega_c_m1 )
-! !call quatMul2(quat,om_buffer,quat_dot) ! Compute quat_dot = dq/dt
-
-! !quat = [1.0, 0.0, 0.0, 0.0]
-! call quatMul(quat,omega_c,quat_dot) ! Compute quat_dot = dq/dt
-
-! !quat = quat_m1 + 0.25*dt*al*( quat_dot  )
-
-! !quat = quat_m1 + 0.5*dt*al*( quat_dot )
-! !quat = quat_m1 + 0.5*dt*al*( quat_dot   )
-
-! quat = quat_m1 + 0.25 * dt *( quat_dot + quat_dot_m1 )
-
-! ! Newly rotated principle axes
-! call calc_rot_matrix(quat,AA_m1)
-! !AAT = transpose(AA_m1)
-! Ib_ij = matmul(AA, AA_m1)
-! Ib_ij = matmul(AA_m1,Ib_ij) !rotated pricipal axes
-
-! AAT = transpose(Ib_ij)
-! ! Convert now
-! omega_c = matmul(AAT,omega_c)
-
-! ! Back transform terms form previous timestep as well
-! ! Store copy in global variable
-! GLOBAL_IBIJ = Ib_ij
-
-
-
-! end subroutine newton_euler
-
 subroutine newton_euler(For_tot,  torq_surf,   &
                         vel_CM,   vel_cmm1,    &
                         pos_CM,   pos_cmm1,    &
@@ -354,7 +168,7 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(3) :: Iomega_m1
   real, dimension(4) :: quat_old
   integer :: inp
-  real :: Volume, angle_buffer
+  real :: Volume, angle_buffer, magOM
 
   ! Iterative inertia tensor update (Ardekani et al. 2016)
   real :: tolerance, Iresidual ! Iteration tolerance for the lhs inertia tensor
@@ -402,6 +216,7 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
   !               Rotation
   ! ------------------------------------- 
   
+
   dr_x_u_b = r_x_u - r_x_u_m1
 
   !omega_b = omega_b_m1 + matmul(I_inv, -(dt/dens_ratio)*torq_b + & ! IBM force term
@@ -425,53 +240,45 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
   !Iresidual = 1.0
   !n_iter = 1
   !do while(  (n_iter .le. 10000 ) .or.  (Iresidual .gt. tolerance)   )
+
+
   do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
 
-  !  omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  !                           - (dt/dens_ratio)*torq_surf  &   ! IBM force term
-  !                           + (1.0 / dens_ratio) * dr_x_u_b   &   ! Torque impulse term
-  !                           - dt*al*omega_x_Iomega_m1 )  ! Non-inertial reference frame correction
-
     omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-    - (dt/dens_ratio)*torq_surf  &   ! IBM force term
-    + (1.0 / dens_ratio) * dr_x_u_b  )   ! Torque impulse term
-                               ! No rotation
+    - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
+    +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
+  
+  
+  ! No rotation
   !omega_c = 0.0
 
-  !omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  !- (dt/dens_ratio)*torq_surf  &   ! IBM force term
-  !+ (1.0 / dens_ratio) * dr_x_u_b  )  ! Non-inertial reference frame correction
-
-
-! Evolution equation for quaternions
-! Allen & Tildesley (2017), Eberly (2010), for example
-!      _
-!    d q(t)     1   _____    _
-!  --------- = ---  omega(t) q(t)  
-!     d t       2
-!
+ ! Ardekani et al. (2016) iterative update method
   om_buffer = 0.5* (omega_c + omega_c_m1 )
-  angle_buffer = norm2(om_buffer) * al* dt
+  magOM = norm2(om_buffer)
+
+  angle_buffer = magOM * al* dt
+
+  if (magOM .lt. 1.0e-16 ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
+    om_buffer(1:3) = 0.0
+    if (ismaster) then
+      write(*,*) "Div. by zero avoided for rotation axis!"
+    endif
+  else
+    om_buffer(1:3) = om_buffer(1:3) / magOM
+  endif
 
   ! Set provisional quarternion from this new axis-angle representation
-  om_buffer = om_buffer / norm2(om_buffer) !unit axis of rotation vector
   quat(1) = cos( 0.5 * angle_buffer )
   quat(2) = sin( 0.5 * angle_buffer ) * om_buffer(1)
   quat(3) = sin( 0.5 * angle_buffer ) * om_buffer(2)
   quat(4) = sin( 0.5 * angle_buffer ) * om_buffer(3)
   quat = quat / norm2(quat)
 
-  !call quatMul2(quat,om_buffer,quat_dot) ! Compute quat_dot = dq/dt
- 
-  !quat = quat_m1 + 0.25*al*dt*( quat_dot + quat_dot_m1 )
-  !quat = quat_m1 + 0.5*al*dt*( quat_dot  )
-
   call calc_rot_matrix(quat,AA)
-  !call calc_quat_from_rotMatrix(quat,AA)
 
+  !----- New iteratively-updated estimate of inertia tensor -------
   I_prev = I_LHS
 
-  ! New estimate of inertia tensor
   buffer_3x3 = matmul(I_ij,transpose(AA))
   I_LHS = matmul(AA, buffer_3x3)
 
@@ -973,16 +780,13 @@ subroutine calc_rigidBody_params (COM,Vol,I_ij,nv,nf,xyz,vert_of_face,isGhostFac
   I_ij(2,1) = -Ixy ;   I_ij(2,2) =  Iyy ;    I_ij(2,3) = -Iyz
   I_ij(3,1) = -Ixz ;   I_ij(3,2) = -Iyz ;    I_ij(3,3) =  Izz
 
-  ! Density prefactor
+  ! Density prefactor: I_ij now stores the inertia matrix normalised on the (unit) fluid density
   I_ij = I_ij * dens_ratio
 
   ! Solve for principal values: 3x3 symmetric eigenproblem
   ! Eigenvalues I_princ(1:3), in ascending order by default
   ! Eigenvectors (principal axes) overwritten in I_ij(3,3)
   !call dsyev('V', 'U', 3, I_ij, 3, I_princ, WORK, LWORK, INFO)
-
-
-
 
   !Iij_buffer = I_ij
 
