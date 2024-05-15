@@ -53,31 +53,31 @@ subroutine write_partvel
 
 end subroutine write_partvel 
 
-subroutine write_shortdist 
-  use param
-  use mls_param
-  use mpih
-  use coll_mod
+! subroutine write_shortdist 
+!   use param
+!   use mls_param
+!   use mpih
+!   use coll_mod
 
-  IMPLICIT none
+!   IMPLICIT none
 
-  integer i,idx,inp
+!   integer i,idx,inp
 
-  character(70) namfile
+!   character(70) namfile
 
 
-  ! first of all, fill up velocity arrays
+!   ! first of all, fill up velocity arrays
 
-  if (myid.eq.0) then
+!   if (myid.eq.0) then
 
-    namfile='flowmov/shortdist.txt'
+!     namfile='flowmov/shortdist.txt'
 
-    open(unit=43,file=namfile,Access = 'append', Status='unknown')
-      write(43,'(100E15.7)') time,dt, short_dist 
-    close(43)
-  end if
+!     open(unit=43,file=namfile,Access = 'append', Status='unknown')
+!       write(43,'(100E15.7)') time,dt, short_dist 
+!     close(43)
+!   end if
 
-end subroutine 
+! end subroutine 
 
 
 

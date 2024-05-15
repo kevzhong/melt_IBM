@@ -101,7 +101,7 @@
 
       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, filespace, dset_prv, hdf_error)
 
-      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, filespace, dset_prv, hdf_error)
+      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, filespace, dset_tempv, hdf_error)
 
 !RO   Set offsets and element counts
 

@@ -220,7 +220,8 @@
       real, dimension(:,:), allocatable :: r_x_u_tot, r_x_u_tot_m1
       real, dimension(:,:), allocatable :: omega_s
       real, dimension(:,:), allocatable :: tail_head
-      real, dimension(:,:), allocatable :: quat, quat_m1, quat_dot, quat_dot_m1
+      real, dimension(:,:), allocatable :: quat
+      !quat_m1, quat_dot, quat_dot_m1
 
       real, dimension(3,3,Nparticle) :: InertTensor
 
@@ -230,7 +231,7 @@
       real    invdx1dt
       real, dimension(:,:), allocatable :: cfac
       real :: h_eulerian, A_eulerian
-      real, dimension (3,3) :: i_inv, i_inv2, GLOBAL_IBIJ
+      !real, dimension (3,3) :: i_inv, i_inv2, GLOBAL_IBIJ
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3

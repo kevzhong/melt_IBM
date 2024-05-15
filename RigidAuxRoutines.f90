@@ -2,18 +2,18 @@ subroutine update_part_pos()
 use param
 use mls_param
 use mpih
-use coll_mod
+!use coll_mod ! KZ: no collisions for now
 implicit none
 integer :: inp,i
 real,dimension(3,3) :: AA, AAT
 
 ! set flag to false
-is_coll = .false.
+!is_coll = .false.
 
 ! check for collision
-coll_check = .false.
+!coll_check = .false.
 !call collision
-coll_check = .false.
+!coll_check = .false.
 
 
 ! KZ: ---- pre-compute COM-relative, world-aligned coordinates
@@ -71,8 +71,8 @@ real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1,acm_m1
 
 do inp=1,Nparticle
 
-    quat_m1(:,inp)      = quat(:,inp)
-    quat_dot_m1(:,inp)  = quat_dot(:,inp)
+    !quat_m1(:,inp)      = quat(:,inp)
+    !quat_dot_m1(:,inp)  = quat_dot(:,inp)
     vel_m1(:,inp)       = vel_cm(:,inp)
     pos_m1(:,inp)       = pos_cm(:,inp)
     om_m1(:,inp)        = omega_c(:,inp)
@@ -91,6 +91,10 @@ do inp=1,Nparticle
     u_tot(:,inp)     = 0.
     r_x_u_tot(:,inp) = 0.
 
+    VOFx(:,:,:) = 1.
+    VOFy(:,:,:) = 1.
+    VOFz(:,:,:) = 1.
+
    call get_bbox_inds(bbox_inds,inp)
    call convex_hull_q1(bbox_inds,inp)
    call convex_hull_q2(bbox_inds,inp)
@@ -98,36 +102,62 @@ do inp=1,Nparticle
 
 
     ! update vel, pos, omega and quat
+    ! call newton_euler(fpxyz(:,inp),       ftxyz(:,inp),                  &
+    !                   vel_CM(:,inp),      vel_m1(:,inp),                 &
+    !                   pos_CM(:,inp),      pos_m1(:,inp),                 &
+    !                   omega_c(:,inp),     om_m1(:,inp),                  &
+    !                   quat(:,inp),        quat_m1(:,inp),                &
+    !                   quat_dot(:,inp),    quat_dot_m1(:,inp),            &
+    !                   InertTensor(:,:,inp),                              &
+    !                   u_tot(:,inp),       u_tot_m1(:,inp),               &
+    !                   r_x_u_tot(:,inp),   r_x_u_tot_m1(:,inp),           &
+    !                   inp,                 a_CM(:,inp),                  &
+    !                   alpha_b(:,inp),      acm_m1(:,inp),                &
+    !                   Volume(inp) ) ! Volume pre-factor for IBM force term
+
     call newton_euler(fpxyz(:,inp),       ftxyz(:,inp),                  &
-                      vel_CM(:,inp),      vel_m1(:,inp),                 &
-                      pos_CM(:,inp),      pos_m1(:,inp),                 &
-                      omega_c(:,inp),     om_m1(:,inp),                  &
-                      quat(:,inp),        quat_m1(:,inp),                &
-                      quat_dot(:,inp),    quat_dot_m1(:,inp),            &
-                      InertTensor(:,:,inp),                              &
-                      u_tot(:,inp),       u_tot_m1(:,inp),               &
-                      r_x_u_tot(:,inp),   r_x_u_tot_m1(:,inp),           &
-                      inp,                 a_CM(:,inp),                  &
-                      alpha_b(:,inp),      acm_m1(:,inp),                &
-                      Volume(inp) ) ! Volume pre-factor for IBM force term
+    vel_CM(:,inp),      vel_m1(:,inp),                 &
+    pos_CM(:,inp),      pos_m1(:,inp),                 &
+    omega_c(:,inp),     om_m1(:,inp),                  &
+    quat(:,inp),                                       &
+    InertTensor(:,:,inp),                              &
+    u_tot(:,inp),       u_tot_m1(:,inp),               &
+    r_x_u_tot(:,inp),   r_x_u_tot_m1(:,inp),           &
+    inp,                 a_CM(:,inp),                  &
+    alpha_b(:,inp),      acm_m1(:,inp),                &
+    Volume(inp) ) ! Volume pre-factor for IBM force term
 
 enddo
 
 end subroutine
 
 
+! subroutine newton_euler(For_tot,  torq_surf,   &
+!                         vel_CM,   vel_cmm1,    &
+!                         pos_CM,   pos_cmm1,    &
+!                         omega_c,  omega_c_m1,  &
+!                         quat,     quat_m1,     &
+!                         quat_dot, quat_dot_m1, &
+!                         I_ij,                  &
+!                         u_tot,    u_tot_m1,    &
+!                         r_x_u,    r_x_u_m1,    &
+!                         inp,      a_CM,        &
+!                         alpha_b,  acm_m1,      &
+!                         Volume)
+
 subroutine newton_euler(For_tot,  torq_surf,   &
                         vel_CM,   vel_cmm1,    &
                         pos_CM,   pos_cmm1,    &
                         omega_c,  omega_c_m1,  &
-                        quat,     quat_m1,     &
-                        quat_dot, quat_dot_m1, &
+                        quat,                  &
                         I_ij,                  &
                         u_tot,    u_tot_m1,    &
                         r_x_u,    r_x_u_m1,    &
                         inp,      a_CM,        &
                         alpha_b,  acm_m1,      &
                         Volume)
+
+
 
 ! Given total force and total torque acting on the body, it evolves
 ! the newton equation for center of mass and
@@ -143,7 +173,6 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(3) :: vel_CM        ! velocity of the center of mass
   real,dimension(3) :: pos_CM        ! position of the center of mass
   real              :: pre_fac       ! prefactor
-  real              :: six_pi        ! prefactor
   real,dimension(3) :: torq_b        ! torque actin on the rigid body
   real,dimension(3) :: dr_x_u_b      ! torque actin on the rigid body
                                      ! (with respect to mass center and represented
@@ -151,7 +180,6 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(4)   :: quat        ! quaternions
   real,dimension(3)   :: alpha_b     ! angular acc body frame
   real,dimension(3)   :: omega_c     ! angular vel body frame
-  real,dimension(4)   :: quat_dot    ! first derivative quaternions
   real,dimension(3,3) :: I_ij    ! rotation matrix "body  = AA  space "
   real,dimension(3)   :: u_tot       ! <u>_V over the particle
   real,dimension(3)   :: torq_surf, r_x_u, r_x_u_m1
@@ -162,11 +190,6 @@ subroutine newton_euler(For_tot,  torq_surf,   &
   real,dimension(3) :: pos_CMm1            ! position of the center of mass
   real,dimension(3) :: omega_c_m1          ! angular vel body frame
   real,dimension(3) :: u_tot_m1            ! <u>_V over the particle
-  real,dimension(4) :: quat_m1             ! quaternions previous time step
-  real,dimension(4) :: quat_dot_m1         ! derivative quaternions previous time step
-  real,dimension(3) :: omega_x_Iomega_m1  ! angular vel body frame
-  real,dimension(3) :: Iomega_m1
-  real, dimension(4) :: quat_old
   integer :: inp
   real :: Volume, angle_buffer, magOM
 
@@ -302,7 +325,6 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
     print *, "Error in dgetri"
     stop
   end if
-
   
   !n_iter = n_iter + 1
   enddo

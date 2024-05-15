@@ -75,9 +75,13 @@
       !                   VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
       !                   (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
 
+      ! qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz )  + &
+      ! VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
+      ! (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+
       qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz )  + &
-      VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
-      (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+                  VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen 
+
 
       enddo
       enddo

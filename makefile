@@ -26,7 +26,7 @@ FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f9
 			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 rayCutVol.f90
 #KZ: cutvol.f90 removed for raytagging
 
-MFILES = param.f90 geom.f90 coll.f90
+MFILES = param.f90 geom.f90 #coll.f90 #KZ: no collisions
 OBJDIR = obj
 OBJS := $(FFILES:%.f90=$(OBJDIR)/%.o)
 MOBJS := $(MFILES:%.f90=$(OBJDIR)/%.o)

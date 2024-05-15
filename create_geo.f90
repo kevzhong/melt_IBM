@@ -9,7 +9,7 @@ subroutine setup_particles
   real,dimension(3,3):: AA,AAT
   real :: alpha
   real :: angle
-  real :: I1, I2, I3
+  !real :: I1, I2, I3
   real, dimension(4) :: Q_buffer
 
   ! Assign COMs for each particle and initialise rigid-body parameters (vel_COM, orientation, etc)
@@ -19,19 +19,19 @@ subroutine setup_particles
   ! KZ: for future with multiple particles, can transform the inertia tensor with just
   ! I' = A * I * A^T
 
- !   !--------Pre-rotate geometry------------------
-    angle = 30.0
-    Q_buffer(1) = cosd(angle / 2.0)
-    Q_buffer(2) = 0.0
-    Q_buffer(3) = sind(angle / 2.0)
-    Q_buffer(4) = 0.0
-! !
-    call calc_rot_matrix(Q_buffer,AA)
-    AAT = transpose(AA)
-    do i = 1,maxnv
-      xyz0(:,i) = matmul(AAT, xyz0(:,i) )
-    enddo
-   !----------------------------------------------
+!  !   !--------Pre-rotate geometry------------------
+!     angle = 30.0
+!     Q_buffer(1) = cosd(angle / 2.0)
+!     Q_buffer(2) = 0.0
+!     Q_buffer(3) = sind(angle / 2.0)
+!     Q_buffer(4) = 0.0
+! ! !
+!     call calc_rot_matrix(Q_buffer,AA)
+!     AAT = transpose(AA)
+!     do i = 1,maxnv
+!       xyz0(:,i) = matmul(AAT, xyz0(:,i) )
+!     enddo
+!    !----------------------------------------------
   
   call calc_rigidBody_params(pos_CM(:,1),Volume(1),InertTensor(:,:,1),maxnv,maxnf,&
   xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
@@ -41,9 +41,9 @@ subroutine setup_particles
   endif
 
   ! KZ: note the hard-coded single particle for now
-  pos_CM(1,1) = 0.5*xlen
-  pos_CM(2,1) = 0.5*ylen
-  pos_CM(3,1) = 0.5*zlen
+  pos_CM(1,1) = 0.2*xlen
+  pos_CM(2,1) = 0.2*ylen
+  pos_CM(3,1) = 0.2*zlen
 
   !write(*,*), "Volume is", Volume(1)
   
@@ -69,10 +69,10 @@ subroutine setup_particles
       alpha_b(:,inp) = 0.0
       omega_dot_b = 0.0
 
-      quat_dot = 0.0
-      quat_dot_m1 = 0.0
+      !quat_dot = 0.0
+      !quat_dot_m1 = 0.0
       
-      om_b_sqr = 0.0
+      !om_b_sqr = 0.0
 
       u_tot_m1 = 0.
       r_x_u_tot_m1 = 0.
@@ -139,12 +139,12 @@ end subroutine
     call hdf_read_2d(vel_CM,shape(vel_CM),dname)
     dname = trim("quat")
     call hdf_read_2d(quat,shape(quat),dname)
-    dname = trim("quat_dot")
-    call hdf_read_2d(quat_dot,shape(quat_dot),dname)
+    !dname = trim("quat_dot")
+    !call hdf_read_2d(quat_dot,shape(quat_dot),dname)
     dname = trim("omega_c")
     call hdf_read_2d(omega_c,shape(omega_c),dname)
-    dname = trim("om_b_sqr")
-    call hdf_read_2d(om_b_sqr,shape(om_b_sqr),dname)
+    !dname = trim("om_b_sqr")
+    !call hdf_read_2d(om_b_sqr,shape(om_b_sqr),dname)
 
 
     dname = trim("u_tot")
@@ -235,9 +235,9 @@ end subroutine
     call mpi_bcast(vel_CM,size(vel_cm),mpi_double,0,mpi_comm_world,ierr)
 
     call mpi_bcast(quat,     size(quat),     mpi_double,0,mpi_comm_world,ierr)
-    call mpi_bcast(quat_dot, size(quat_dot), mpi_double,0,mpi_comm_world,ierr)
-    call mpi_bcast(omega_c,  size(omega_c),  mpi_double,0,mpi_comm_world,ierr)
-    call mpi_bcast(om_b_sqr, size(om_b_sqr), mpi_double,0,mpi_comm_world,ierr)
+    !call mpi_bcast(quat_dot, size(quat_dot), mpi_double,0,mpi_comm_world,ierr)
+    !call mpi_bcast(omega_c,  size(omega_c),  mpi_double,0,mpi_comm_world,ierr)
+    !call mpi_bcast(om_b_sqr, size(om_b_sqr), mpi_double,0,mpi_comm_world,ierr)
 
     call mpi_bcast(u_tot,    size(u_tot),    mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(r_x_u_tot,size(r_x_u_tot),mpi_double,0,mpi_comm_world,ierr)
@@ -294,12 +294,12 @@ end subroutine
     call hdf_write_2d(vel_CM,(/3,Nparticle/),dataset)
     dataset = trim("quat")
     call hdf_write_2d(quat,(/4,Nparticle/),dataset)
-    dataset = trim("quat_dot")
-    call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
+    !dataset = trim("quat_dot")
+    !call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
     dataset = trim("omega_c")
     call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
-    dataset = trim("om_b_sqr")
-    call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
+    !dataset = trim("om_b_sqr")
+    !call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
 
     dataset = trim("u_tot")
     call hdf_write_2d(u_tot,(/3,Nparticle/),dataset)
@@ -448,12 +448,12 @@ subroutine write_h5_geo
     call hdf_write_2d(vel_CM,(/3,Nparticle/),dataset)
     dataset = trim("quat")
     call hdf_write_2d(quat,(/4,Nparticle/),dataset)
-    dataset = trim("quat_dot")
-    call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
+    !dataset = trim("quat_dot")
+    !call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
     dataset = trim("omega_c")
     call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
-    dataset = trim("om_b_sqr")
-    call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
+    !dataset = trim("om_b_sqr")
+    !call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
 
     dataset = trim("u_tot")
     call hdf_write_2d(u_tot,(/3,Nparticle/),dataset)

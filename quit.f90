@@ -12,7 +12,7 @@
       use hdf5
       use mpih
       use param
-      use coll_mod
+      !use coll_mod !KZ: no collisions for now
       implicit none
       logical, intent(in) :: normalexit
       integer :: errorcode
@@ -32,7 +32,7 @@
        call mpi_write_continua
        call WriteRandForcCoef
        call continua_particle
-       call continua_collision
+       !call continua_collision
       if(ismaster) write(6,'(a)') 'Continuation files written'
       else
        call MpiAbort

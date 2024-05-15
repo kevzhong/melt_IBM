@@ -67,8 +67,11 @@
       ! dq(ic,jc,kc)=-(h11+h12+h13)*VOFx(ic,jc,kc)+VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
       !              (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
           
-          dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
-          (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+          !dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
+          !(1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+
+      ! No HIT inside solid domain
+      dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen
       enddo
       enddo
       enddo

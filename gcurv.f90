@@ -7,7 +7,7 @@ use local_aux
 use mls_param
 use mls_local
 
-use coll_mod
+!use coll_mod ! KZ: no collision module for now
 implicit none
 real    :: ti(2), tin(3)
 real    :: dmax,tpc
@@ -155,6 +155,8 @@ character(70) namfile
           write(6,'(A,F10.6)') "Max tri skewness:", maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) 
           write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
           write(6,'(A,F10.6)') "min Atri/AE:", minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) )/A_eulerian 
+          write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
+
           endif
         !endif
 
@@ -162,9 +164,9 @@ character(70) namfile
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            !call findCMindices
-           !call mkmov_hdf_xcut
+           call mkmov_hdf_xcut
            call mkmov_hdf_ycut
-           !call mkmov_hdf_zcut
+           call mkmov_hdf_zcut
            call write_tecplot_geom
            !call writePrincAxes(pos_CM(:,1),GLOBAL_IBIJ)
 
@@ -193,7 +195,7 @@ character(70) namfile
       call mpi_write_field
       call WriteRandForcCoef
       call continua_particle
-      call continua_collision
+      !call continua_collision
      end if
 
      ti(2) = MPI_WTIME()

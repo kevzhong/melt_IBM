@@ -2,7 +2,7 @@ subroutine tri_geo
       
   use param
   use mls_param
-  use coll_mod
+  !use coll_mod KZ: no collisions for now
   implicit none
 
   integer :: inp
@@ -45,9 +45,9 @@ subroutine tri_geo
     ! read in particle data from file
     call import_particles
     
-    if (Nparticle .gt. 1 )then
-      call import_collision
-    endif
+    !if (Nparticle .gt. 1 )then
+    !  call import_collision
+    !endif
   end if
 
         if(ismaster)then
