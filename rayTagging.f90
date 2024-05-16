@@ -59,11 +59,13 @@
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
-             !if(VOFx(ii,jj,k).lt.1.0)then
-             !VOFx(ii,jj,k) = VOFx(ii,jj,k)
-             !else
+
+             if(VOFx(ii,jj,k).lt.1.0)then
+             VOFx(ii,jj,k) = VOFx(ii,jj,k)
+             else
               VOFx(ii,jj,k) = vof
-             !end if
+             end if
+
              endif
 
       end do
@@ -115,12 +117,14 @@ subroutine convex_hull_q22(ind,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
-               !if(VOFx(ii,jj,k).lt.1.0)then
-               !VOFy(ii,jj,k) = VOFy(ii,jj,k)
-               !else
+
+               if(VOFy(ii,jj,k).lt.1.0)then
+               VOFy(ii,jj,k) = VOFy(ii,jj,k)
+               else
                 VOFy(ii,jj,k) = vof
-               !end if
-               endif
+               end if
+
+            endif
   
         end do
       end do
@@ -171,11 +175,13 @@ subroutine convex_hull_q22(ind,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
-               !if(VOFz(ii,jj,k).lt.1.0)then
-               !VOFz(ii,jj,k) = VOFz(ii,jj,k)
-               !else
+              
+               if(VOFz(ii,jj,k).lt.1.0)then
+               VOFz(ii,jj,k) = VOFz(ii,jj,k)
+               else
                VOFz(ii,jj,k) = vof
-               !end if
+               end if
+
                endif
   
         end do
@@ -223,11 +229,13 @@ subroutine convex_hull_q22(ind,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
-               !if(VOFp(ii,jj,k).lt.1.0)then
-               !VOFp(ii,jj,k) = VOFp(ii,jj,k)
-               !else
+
+               if(VOFp(ii,jj,k).lt.1.0)then
+               VOFp(ii,jj,k) = VOFp(ii,jj,k)
+               else
                VOFp(ii,jj,k) = vof
-               !end if
+               end if
+               
                endif
   
         end do

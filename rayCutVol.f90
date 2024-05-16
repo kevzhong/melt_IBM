@@ -63,13 +63,15 @@ subroutine convex_hull_q1(ind,inp)
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
 
-               !if(VOFx(ii,jj,k).lt.1.0)then
-               !VOFx(ii,jj,k) = VOFx(ii,jj,k)
-               !else
+               alpha = 1.0 - vof ! alpha := volume of solid = 1 - vof
+               alpha_q = alpha*celvol*vx(ii,jj,k)
+
+               if(VOFx(ii,jj,k).lt.1.0)then
+               VOFx(ii,jj,k) = VOFx(ii,jj,k)
+               else
                 VOFx(ii,jj,k) = vof
-               !end if
-                alpha = 1.0 - vof ! alpha := volume of solid = 1 - vof
-                alpha_q = alpha*celvol*vx(ii,jj,k)
+               end if
+
 
                 ! compute int u over V
                 u_tot(1,inp) = u_tot(1,inp) + alpha_q
@@ -145,13 +147,15 @@ subroutine convex_hull_q1(ind,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
-               !if(VOFx(ii,jj,k).lt.1.0)then
-               !VOFy(ii,jj,k) = VOFy(ii,jj,k)
-               !else
-                VOFy(ii,jj,k) = vof
 
-                alpha = 1.0 - vof ! alpha := volume of solid = 1 - vof
-                alpha_q = alpha*celvol*vy(ii,jj,k)
+               alpha = 1.0 - vof ! alpha := volume of solid = 1 - vof
+               alpha_q = alpha*celvol*vy(ii,jj,k)
+
+               if(VOFy(ii,jj,k).lt.1.0)then
+               VOFy(ii,jj,k) = VOFy(ii,jj,k)
+               else
+                VOFy(ii,jj,k) = vof
+               endif
 
                 ! compute int u over V 
                 u_tot(2,inp) = u_tot(2,inp) + alpha_q 
@@ -229,13 +233,16 @@ subroutine convex_hull_q1(ind,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
-               !if(VOFz(ii,jj,k).lt.1.0)then
-               !VOFz(ii,jj,k) = VOFz(ii,jj,k)
-               !else
-               VOFz(ii,jj,k) = vof
-               !end if
+
                alpha = 1.0 - vof ! alpha := volume of solid = 1 - vof
                alpha_q = alpha*celvol*vz(ii,jj,k)
+
+               if(VOFz(ii,jj,k).lt.1.0)then
+               VOFz(ii,jj,k) = VOFz(ii,jj,k)
+               else
+               VOFz(ii,jj,k) = vof
+               end if
+
 
                 ! compute int u over V 
                 u_tot(3,inp) = u_tot(3,inp) + alpha_q 

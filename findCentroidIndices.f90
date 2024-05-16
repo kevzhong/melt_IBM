@@ -21,15 +21,15 @@ subroutine findCentroidIndices
        i1  = floor(pos(1)*dx1) + 1
        ist = nint(pos(1)*dx1)  + 1
 
-       i1  = modulo(i1-1,n1m)  + 1
-       ist = modulo(ist-1,n1m) + 1
+       !i1  = modulo(i1-1,n1m)  + 1
+       !ist = modulo(ist-1,n1m) + 1
 
        !     Y - indices
        j1  = floor(pos(2)*dx2) + 1
        jst = nint(pos(2)*dx2)  + 1
 
-       j1  = modulo(j1-1,n2m)  + 1
-       jst = modulo(jst-1,n2m) + 1
+       !j1  = modulo(j1-1,n2m)  + 1
+       !jst = modulo(jst-1,n2m) + 1
 
        !     Z - indices
        k1  = floor(pos(3)*dx3) + 1

@@ -1,8 +1,8 @@
  IMLSFOR     IMLSSTR       IMELT
     1           1            0
    WCON        WSCL      rhop/rhof
-   0.3         1.5          1.0 
+   0.3         1.5          16.0 
   GTSFX                    RAD       
- r01_icosphere_N4.gts      0.1
+ ellipsoid_64.gts      0.1
  IREMESH     PERCT_ATHRESH   SKEW_THRESH  V_ON_VE_THRESH
     0             0.2            0.6            27.0
