@@ -97,7 +97,9 @@ real :: Wtx, Wt23
 real :: dWx_dx, dWy_dy, dWz_dz
 real :: dWdx, dWdy, dWdz
 integer :: inp,inw,i,j,k,k1
-integer, dimension(3) :: pind_i, pind_o, probe_inds
+integer :: ii,jj,kk,nk
+
+integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
 
 !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
 
@@ -120,6 +122,14 @@ pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
 k1  = floor(pos(3)*dx3) + 1
 pind_i(3)=k1-1
 pind_o(3)=k1+1
+
+! For the spatial grid
+k_inds = [k1-1,k1,k1]
+
+! For the Eulerian field
+k1  = modulo(k1-1,n3m)  + 1
+keul_inds = [k1-1,k1,k1+1]
+
   
 pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
 dAdx(1:4,1:4)=0.0d0
@@ -131,8 +141,9 @@ inw = 1
   
 ! Accumulate A(4,4)   , B(4,27) linear system
 ! Likewise for derivatives of A, B
-do k=pind_i(3), pind_o(3)
-  
+!do k=pind_i(3), pind_o(3)
+ do nk = 1,3 ! Different to apply periodicty in z
+    k = k_inds(nk)
     norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
     Wt(3) = mls_gaussian( norp(3) , wcon )
     dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
@@ -177,7 +188,16 @@ do k=pind_i(3), pind_o(3)
             dBdy(1:4,inw)=dWdy * pxk(1:4)
             dBdz(1:4,inw)=dWdz * pxk(1:4)
 
-            Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
+            !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
+
+            ii = modulo(i-1,n1m) + 1
+            jj = modulo(j-1,n2m) + 1
+            !kk = modulo(k-1,n3m) + 1
+
+            kk = keul_inds(nk)
+
+            !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
+            Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
 
             inw = inw + 1
         enddo !end i

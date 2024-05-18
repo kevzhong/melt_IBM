@@ -21,6 +21,7 @@
  ! - "Real-time Rendering" (Akenine-Möller et al., 2018, §22.8)
 
   subroutine convex_hull_q12(ind,inp)
+    ! Tagging for x-staggered vx grid
   use mls_param
   use mpih
   use mpi_param, only: kstart,kend
@@ -79,6 +80,7 @@ end subroutine
 !=================================
 
 subroutine convex_hull_q22(ind,inp)
+      ! Tagging for y-staggered vy grid
     use mls_param
     use mpih
     use mpi_param, only: kstart,kend
@@ -137,6 +139,7 @@ subroutine convex_hull_q22(ind,inp)
 !=================================
 
   subroutine convex_hull_q32(ind,inp)
+    ! Tagging for z-staggered vz grid
     use mls_param
     use mpih
     use mpi_param, only: kstart,kend
@@ -191,6 +194,7 @@ subroutine convex_hull_q22(ind,inp)
   end subroutine
 
   subroutine convex_hull_qc2(ind,inp)
+    ! Tagging for cell-centred scalar grid
     use mls_param
     use mpih
     use mpi_param, only: kstart,kend
@@ -402,19 +406,6 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     endif
 
 end subroutine
-
-subroutine compute_interface_VOF(VOF)
-  !use param
-  !use mls_param
-  !use geom
-  implicit none
-
-  real :: VOF
-  VOF = 0.5
-
-end subroutine
-
-
 
 ! subroutine compute_interface_VOF(VOF,xx,yy,zz,nhat,V0)
 !     !use param

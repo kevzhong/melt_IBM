@@ -13,21 +13,30 @@ invdx1dt = 1.0d0/dx1/dt
 do inp=1,Nparticle
  do ntr = 1, maxnf
   if (isGhostFace(ntr,inp) .eqv. .false. ) then
-      if(pind(3,ntr,inp).ge.kstart-1 .and. pind(3,ntr,inp).le.kend+1) then
+      if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
     
          pos(1:3) = tri_bar(1:3,ntr,inp)
-
          ! initialise pre-factor matrix
          ptx(1)   = 1.d0; 
          ptx(2:4) = pos(1:3)
 
-
          call wght1(ntr,inp,pos,ptx,ptxAB_q1(1:nel,ntr,inp))
          call wght2(ntr,inp,pos,ptx,ptxAB_q2(1:nel,ntr,inp))
-         call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
+         !call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
          call wghttemp(ntr,inp,pos,ptx,ptxAB_temp(1:nel,ntr,inp))
 
       endif
+
+      if(pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
+
+        pos(1:3) = tri_bar(1:3,ntr,inp)
+        ! initialise pre-factor matrix
+        ptx(1)   = 1.d0; 
+        ptx(2:4) = pos(1:3)
+
+        call wght3(ntr,inp,pos,ptx,ptxAB_q3(1:nel,ntr,inp))
+      endif
+
     endif
 
  enddo

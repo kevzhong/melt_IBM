@@ -26,7 +26,9 @@ do inp = 1, Nparticle
          call forctemp(ntr,inp,ptxAB_temp(1:nel,ntr,inp))
       endif
 
-      if(pind(6,ntr,inp).ge.kstart-1 .and. pind(6,ntr,inp).le.kend+1) then
+      !if(pind(6,ntr,inp).ge.kstart-1 .and. pind(6,ntr,inp).le.kend+1) then
+      if(pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
+
          pos_vec(1:3) = tri_bar(1:3,ntr,inp) - pos_cm(1:3,inp)
          call forc3(ntr,inp,ptxAB_q3(1:nel,ntr,inp),vel_tri(3,ntr,inp),pos_vec,torque(1:3,inp),force(3,inp))
       endif
