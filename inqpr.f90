@@ -103,7 +103,7 @@ subroutine restart_temperature
       use local_arrays, only: temp
       use param, only: xm, ym, zm, n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1
       use mpi_param
-      use mls_param, only: rad_p
+      use mls_param, only: rad_p, pos_CM
       implicit none
       integer :: ic,jc,kc
       real :: rr
@@ -115,7 +115,9 @@ subroutine restart_temperature
       do kc = kstart, kend
             do ic = 1, n1m
                   do jc = 1, n2m
-                        rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
+                        !rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
+                        rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - pos_CM(:,1)  )
+
                         ! Sigmoid fit
                         ! temp(ic,jc,kc) = Tliq - (Tliq - Tsol) / ( 1 + exp(2.0d0 / dx1 * (rr - rad_p)  )
       
