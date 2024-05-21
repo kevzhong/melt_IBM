@@ -1215,7 +1215,7 @@ end subroutine mpi_globalsum_double_var
             write(45,'("</Geometry>")')
             write(45,'("<Attribute Name=""Temperature"" AttributeType=""Scalar"" Center=""Node"">")')
             write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
-            write(45,'("field_",i7.7,".h5:/Temp")') itime
+            write(45,'("tempfield_",i7.7,".h5:/Temp")') itime
             write(45,'("</DataItem>")')
             write(45,'("</Attribute>")')
             !write(45,'("<Time Value=""",e12.5,"""/>")')time
