@@ -65,10 +65,10 @@ character(70) namfile
         call restart_temperature
       endif
 
-       call update_both_ghosts(n1,n2,pr,kstart,kend)
-       call update_both_ghosts(n1,n2,vx,kstart,kend)
-       call update_both_ghosts(n1,n2,vy,kstart,kend)
-       call update_both_ghosts(n1,n2,vz,kstart,kend)
+       !call update_both_ghosts(n1,n2,pr,kstart,kend)
+       !call update_both_ghosts(n1,n2,vx,kstart,kend)
+       !call update_both_ghosts(n1,n2,vy,kstart,kend)
+       !call update_both_ghosts(n1,n2,vz,kstart,kend)
        call update_both_ghosts(n1,n2,temp,kstart,kend)
 
        call cfl 
@@ -168,7 +168,7 @@ character(70) namfile
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
-           call mpi_write_tempField
+           !call mpi_write_tempField
            !call writePrincAxes(pos_CM(:,1),GLOBAL_IBIJ)
 
 !              call writePind            

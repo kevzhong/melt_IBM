@@ -67,14 +67,14 @@ if(imlsfor.eq.1)then
 
         endif
 
-        call velforce
+        !call velforce
         call tempforce
     end do
 endif
 
-call update_both_ghosts(n1,n2,vx,kstart,kend)
-call update_both_ghosts(n1,n2,vy,kstart,kend)
-call update_both_ghosts(n1,n2,vz,kstart,kend)
+!call update_both_ghosts(n1,n2,vx,kstart,kend)
+!call update_both_ghosts(n1,n2,vy,kstart,kend)
+!call update_both_ghosts(n1,n2,vz,kstart,kend)
 call update_both_ghosts(n1,n2,temp,kstart,kend)
 
  !------------------------------------ (1) END IBM FORCING ----------------------------------------------
