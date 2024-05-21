@@ -168,6 +168,7 @@ character(70) namfile
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
+           call mpi_write_tempField
            !call writePrincAxes(pos_CM(:,1),GLOBAL_IBIJ)
 
 !              call writePind            

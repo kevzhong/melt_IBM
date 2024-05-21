@@ -1091,6 +1091,142 @@ end subroutine mpi_globalsum_double_var
       close(45)
       endif
       end subroutine mpi_write_field
+
+!================================================
+
+      subroutine mpi_write_tempField
+            use param
+            use mpih
+            use mpi_param, only: kstart,kend
+            use local_arrays, only: temp
+            use hdf5
+            implicit none
+            integer ic,jc,kc
+            integer hdf_error
+      
+            integer(HID_T) :: file_id
+            integer(HID_T) :: filespace
+            integer(HID_T) :: slabspace
+            integer(HID_T) :: memspace
+      
+            integer(HID_T) :: dset_temp
+            integer(HSIZE_T) :: dims(3)
+      
+            integer(HID_T) :: plist_id
+            integer(HSIZE_T), dimension(3) :: data_count
+            integer(HSSIZE_T), dimension(3) :: data_offset
+      
+            integer(HSIZE_T) :: dims_grid(1)
+            integer(HID_T) :: dset_grid
+            integer(HID_T) :: dspace_grid
+      
+            integer :: comm, info
+            integer :: ndims
+            real tprfi
+            integer itime
+            character(70) filnam2,filnam3,filnam4,xdmnam
+            character(70) filnamgrid,filnam5,filnam6
+            character(7) ipfi
+            tprfi = 1/tframe
+            itime=nint(time*tprfi)
+            write(ipfi,82)itime
+         82 format(i7.7)
+      
+      !RO   Sort out MPI definitions
+      
+            comm = MPI_COMM_WORLD
+            info = MPI_INFO_NULL
+      
+      !RO   Form the name of the file
+      
+      !       filnam2 = 'continuation/field.h5'
+             filnam2 = 'continuation/tempfield_'//ipfi//'.h5'
+             xdmnam  = 'continuation/tempfield_'//ipfi//'.xmf'
+      
+      !RO   Set offsets and element counts
+         
+            ndims = 3
+      
+            dims(1)=n1
+            dims(2)=n2
+            dims(3)=n3m
+       
+      
+            call h5screate_simple_f(ndims, dims, filespace, hdf_error)
+      
+            data_count(1) = n1
+            data_count(2) = n2
+            data_count(3) = kend-kstart+1
+      
+            data_offset(1) = 0
+            data_offset(2) = 0
+            data_offset(3) = kstart-1
+            
+            call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+      
+            call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+      
+            call h5fcreate_f(filnam2, H5F_ACC_TRUNC_F, file_id, &
+             hdf_error, access_prp=plist_id)
+      
+            call h5pclose_f(plist_id, hdf_error)
+      
+            call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
+            filespace, dset_temp, hdf_error)
+ 
+            call h5screate_simple_f(ndims, data_count, memspace, hdf_error)
+ 
+      !temp
+               call h5dget_space_f(dset_temp, slabspace, hdf_error)
+               call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+                                     data_offset, data_count, hdf_error)
+               call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+               call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+                                       hdf_error)
+                call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+                  temp(1:n1,1:n2,kstart:kend), dims,  &
+                  hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+                  xfer_prp = plist_id)
+      
+            call h5dclose_f(dset_temp, hdf_error)
+
+            call h5sclose_f(filespace, hdf_error)
+            call h5pclose_f(plist_id, hdf_error)
+            call h5sclose_f(memspace, hdf_error)
+            call h5fclose_f(file_id, hdf_error)
+      
+            if (myid.eq.0) then
+      
+            open(45,file=xdmnam,status='unknown')
+            rewind(45)
+            write(45,'("<?xml version=""1.0"" ?>")')
+            write(45,'("<!DOCTYPE Xdmf SYSTEM ""Xdmf.dtd"" []>")')
+            write(45,'("<Xdmf Version=""2.0"">")')
+            write(45,'("<Domain>")')
+            write(45,'("<Grid Name=""thetacut"" GridType=""Uniform"">")')
+            write(45,'("<Topology TopologyType=""3DRectMesh"" NumberOfElements=""",i4," ",i4," ",i4,"""/>")') n3m,n2,n1
+            write(45,'("<Geometry GeometryType=""ORIGIN_DXDYDZ"">")')
+            write(45,'("<DataItem Name=""Origin"" Dimensions=""3"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
+            write(45,'(2E15.7)') 0.0,0.0,0.0
+            write(45,'("</DataItem>")')
+            write(45,'("<DataItem Name=""Spacing"" Dimensions=""3"" NumberType=""Float"" Precision=""4"" Format=""XML"">")')
+            write(45,'(2E15.7)') 1./dx3,1./dx2,1./dx1
+            write(45,'("</DataItem>")')
+            write(45,'("</Geometry>")')
+            write(45,'("<Attribute Name=""Temperature"" AttributeType=""Scalar"" Center=""Node"">")')
+            write(45,'("<DataItem Dimensions=""",i4," ",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n2,n1
+            write(45,'("field_",i7.7,".h5:/Temp")') itime
+            write(45,'("</DataItem>")')
+            write(45,'("</Attribute>")')
+            !write(45,'("<Time Value=""",e12.5,"""/>")')time
+            write(45,'("</Grid>")')
+            write(45,'("</Domain>")')
+            write(45,'("</Xdmf>")')
+            close(45)
+            endif
+            end subroutine mpi_write_tempField
+
+
 !======================================================
 
       subroutine mpi_write_field_noParts

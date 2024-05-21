@@ -1,6 +1,5 @@
 ! Numerical integration scheme for equivalent viscous stresses based on volume-integrated impulses and IBM force
 ! Underlying equation in Breugem (2012)
-! The volume-integration VOF, level-set scheme is as in Kempe & Frohlich (2012)
 !
 ! Variable definitions follow as:
 !
