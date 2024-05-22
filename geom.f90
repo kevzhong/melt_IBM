@@ -9,7 +9,7 @@ function delta(r) result(phi)
 implicit none
 real :: r, phi
 
-   if (r.le.1.5 .and. r.ge.0.5) then
+   if (abs(r).le.1.5 .and. abs(r).ge.0.5) then
      phi = 5.0 - 3.0*abs(r) - sqrt(-3.0*(1.0 - abs(r))**2 + 1.0)
      phi = phi / 6.0
    elseif (r.le. 0.5 .and. r.ge.0.0) then
@@ -20,6 +20,21 @@ real :: r, phi
    endif
 
 end
+
+function delta_deriv(r) result(dphidr)
+  implicit none
+  real :: r, dphidr
+
+  if (abs(r).le.1.5 .and. abs(r).ge.0.5) then
+    dphidr = -3.0*r*( 1.0 - abs(r) ) / ( abs(r) * sqrt(1.0 - 3.0*(1.0 - abs(r) )**2 ) ) - 3.0*r / abs(r)
+    dphidr = dphidr / 6.0
+  elseif (abs(r).le. 0.5 .and. abs(r).ge.0.0) then
+    dphidr = -r / sqrt(1.0 - 3.0*r**2)
+  else 
+    dphidr = 0.0
+  endif
+
+  end
 
 function mls_gaussian(r,rcoef) result(phi)
   ! Gaussian weight function of MLS
