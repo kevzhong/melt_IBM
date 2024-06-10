@@ -138,7 +138,9 @@ character(70) namfile
 
        if (forcing.eq.1) then
         tstart = MPI_WTIME()
-       call CalcHITRandomForce
+       !call CalcHITRandomForce
+       call CalcABC_HITForce
+
        tend = MPI_WTIME()
        hit_wtime = tend - tstart
        endif

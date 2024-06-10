@@ -266,3 +266,33 @@ endif
 
 return                                    
 end      
+
+subroutine CalcABC_HITForce
+      use param
+      use local_arrays, only: forcx,forcy,forcz
+      use mpih
+      use mpi_param
+      use stat_arrays
+      implicit none
+      integer :: j,k,i
+      real :: C
+
+      C = 1.0
+
+      do k=kstart,kend
+            do j=1,n2m
+                  do i=1,n1m
+                        forcx(i,j,k) = C * sin(2.0 * pi * zm(k) / zlen ) + C * cos(2.0 * pi * ym(j) / ylen )
+                        forcy(i,j,k) = C * sin(2.0 * pi * xm(i) / xlen ) + C * cos(2.0 * pi * zm(k) / zlen )
+                        forcz(i,j,k) = C * sin(2.0 * pi * ym(j) / ylen ) + C * cos(2.0 * pi * xm(i) / xlen )
+
+                        !forcx(i,j,k) = C * sin(2.0 * pi * zm(k) / zlen ) + C * cos(2.0 * pi * ym(j) / ylen )
+                        !forcy(i,j,k) = C * sin(2.0 * pi * xm(i) / xlen ) + C * cos(2.0 * pi * zm(k) / zlen )
+                        !forcz(i,j,k) = C * sin(2.0 * pi * ym(j) / ylen ) + C * cos(2.0 * pi * xm(i) / xlen )
+                  enddo
+            enddo
+      enddo
+
+
+      return
+end
