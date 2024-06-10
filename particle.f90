@@ -145,9 +145,9 @@ do inp = 1,Nparticle
         vol_coarse = Volume(1)
     
         !----------Mesh smoothing----------
-        call main_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
-        isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
-        face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
+        !call main_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
+        !isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
+        !face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
         
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_smooth = Volume(1)

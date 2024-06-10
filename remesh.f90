@@ -102,11 +102,11 @@ subroutine main_remesh (ecol_cnt,Surface,sur,eLengths,skewness,nf,ne,nv,xyz,tri_
             !endif
 
             !do niter = 1,4
-                !call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
-                !call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh) ! Update sur
-                !call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
-                !call optimiseSkewness_1ring(cnt,v1,re1,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
-                !flip_cnt = flip_cnt + cnt
+            !    call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
+            !    call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh) ! Update sur
+            !    call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
+            !    call optimiseSkewness_1ring(cnt,v1,re1,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
+            !    flip_cnt = flip_cnt + cnt
             !enddo
 
             !flip_cnt = flip_cnt + cnt
