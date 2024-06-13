@@ -40,6 +40,7 @@ for_x_mean = for_x_mean / dble(n1m*n2m*n3m)
 for_y_mean = for_y_mean / dble(n1m*n2m*n3m)
 for_z_mean = for_z_mean / dble(n1m*n2m*n3m)
 
+! Subtract mean IBM force to obtain statistically steady, isotropic state
  do kc=kstart,kend
   do jc=1,n2m
    do ic=1,n1m
