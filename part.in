@@ -5,4 +5,4 @@
   GTSFX                    RAD       
  r01_icosphere_N4.gts      0.1
  IREMESH     PERCT_ATHRESH   SKEW_THRESH  V_ON_VE_THRESH
-    1             0.2            0.6            27.0
+    1             0.2            0.6            1.0e-15

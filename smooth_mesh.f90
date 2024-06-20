@@ -160,7 +160,7 @@ subroutine main_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhostEd
     enddo
 
     ! Result flags
-    flagged_edge(:) = .false.
+    !flagged_edge(:) = .false.
 
 end subroutine main_smooth
 

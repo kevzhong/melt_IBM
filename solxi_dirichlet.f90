@@ -1,4 +1,4 @@
-      subroutine solxi(betadx)
+      subroutine solxi_dirichlet(betadx)
 !EP   Solves tridiagonal system in i direction
       use param
       use local_arrays, only : rhs
@@ -26,17 +26,22 @@
 
       ! Here, G := betadx
 
-
+      ackl_b = 1.0/(1.0+2.0*betadx)
       do kc=kstart,kend
           do jc=1,n2m
              do ic=1,n1m
-                ackl_b = 1.0/(1.0+2.0*betadx)
-                apil(ic)=-betadx*ackl_b ! Super-diagonal elements
-                acil(ic)=1.0d0          ! Diagonal elements
+                if ( (ic .eq. 1) .or. (ic .eq. n1m) )then
+                    acil(ic)= ( 1.0d0 + 3.0d0*betadx ) * ackl_b     ! Diagonal elements
+                else
+                    acil(ic)=1.0d0          ! Diagonal elements
+                endif
                 amil(ic)=-betadx*ackl_b ! Sub-diagonal elements
+                apil(ic)=-betadx*ackl_b ! Super-diagonal elements
                 fil(ic)=rhs(ic,jc,kc)*ackl_b !RHS vector
+
              enddo
-                call tripvmyline(amil,acil,apil,fil,1,n1m,n1)
+                !call tripvmyline(amil,acil,apil,fil,1,n1m,n1)
+                call tridiag(amil,acil,apil,fil,n1m)
              do ic=1,n1m
                 rhs(ic,jc,kc) = fil(ic)  
              enddo

@@ -5,6 +5,14 @@
       real, dimension(m1) :: q,s,fei
       real    :: fn,p
       integer :: ia,ii,i,l
+
+      ! ami:      sub-diagonal elements
+      ! acil:     diagonal elements
+      ! api:      super-diagonal elements
+      ! rrr:      RHS vector
+      ! n1i:      no. of RHS vectors (?)
+      ! nl1f:     System size
+      ! n1:       System size + 1 (?)
 !                                                                       
 !     vectorized for right hand side and coefficients                   
 !                                                                                                                

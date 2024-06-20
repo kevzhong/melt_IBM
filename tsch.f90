@@ -61,7 +61,8 @@
         !call invtr1 
         !call invtr2      
         !call invtr3
-        call invtrte
+        !call invtrte
+        call invtrte_dirichlet
         tend = MPI_WTIME()
         eul_solve_wtime = eul_solve_wtime + (tend - tstart)
 

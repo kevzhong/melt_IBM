@@ -12,12 +12,21 @@ LINKS = -L/opt/homebrew/Cellar/fftw/3.3.10_1/lib -lfftw3 -lz -llapack -lblas -ld
 
 PROGRAM = a.out
 
+# FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
+#           hdnl1.f90 hdnl2.f90 hdnl3.f90 hdnlte.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
+#           interp.f90 invtr1.f90 invtr2.f90 invtr3.f90 invtrte.f90 matrix_transpose.f90     \
+#           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
+#           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \
+#           tripvmyline.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
+#           diss.f90 findCMindices.f90 vorticity.f90 injection.f90               \
+# 		  rayTagging.f90
+
 FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           hdnl1.f90 hdnl2.f90 hdnl3.f90 hdnlte.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
-          interp.f90 invtr1.f90 invtr2.f90 invtr3.f90 invtrte.f90 matrix_transpose.f90     \
+          interp.f90 invtrte_dirichlet.f90 matrix_transpose.f90     \
           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
-          prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \
-          tripvmyline.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
+          prcalc.f90 quit.f90 solxi_dirichlet.f90 solxj_dirichlet.f90 solxk_dirichlet.f90 stat.f90           \
+          tridiag.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
           diss.f90 findCMindices.f90 vorticity.f90 injection.f90               \
 		  rayTagging.f90
 
