@@ -6,6 +6,7 @@
       real    :: val
 
       ! Invert a standard tridiagonal system
+      ! KZ This is an implementation following Naoki's documentation
       ! https://naokihori.github.io/SimpleNSSolver/numerical_method/tdm.html
       ! See also the wikipedia page on tridiagonal matrix algorithms
 
