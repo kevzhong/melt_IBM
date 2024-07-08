@@ -26,12 +26,15 @@ subroutine tri_geo
     !call set_xyz 
   
     do inp=1,Nparticle
-      call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:,inp),isGhostEdge(:,inp))
-      call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),&
-                        isGhostFace(:,inp),rm_flag(inp),A_thresh)
+      call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
+                              rm_flag(inp), E_thresh)
+      ! call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),&
+      !                   isGhostFace(:,inp),rm_flag(inp),A_thresh)
+
+      call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp))
+
       call calculate_vert_area (Avert(:,inp),maxnv,maxnf,vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp))
-      call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp),&
-                              rm_flag(inp),skew_thresh)
+      call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
       call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp))
       call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
             vert_of_face(:,:,inp),isGhostFace(:,inp),isGhostVert(:,inp))

@@ -79,7 +79,7 @@ Volume=Volume/6.
 return
 end subroutine calculate_volume
 !------------------------------------------------------
-subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh)
+subroutine calculate_area (Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace)
 
 implicit none
 integer :: nv,nf,v1,v2,v3,i
@@ -111,9 +111,9 @@ do i=1,nf
                 sur(i)=sqrt(sp*(sp-d12)*(sp-d23)*(sp-d31))
                 Surface=Surface+sur(i)
 
-                if (sur(i) .le. A_thresh) then
-                        rm_flag = .true. ! set the remesh flag to true if any triangle less than the threshold area
-                endif
+                !if (sur(i) .le. A_thresh) then
+                !        rm_flag = .true. ! set the remesh flag to true if any triangle less than the threshold area
+                !endif
         endif
 enddo
 
@@ -273,7 +273,7 @@ return
 end subroutine calculate_areaWeighted_vert_normal
 !------------------------------------------------------
 
-subroutine calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
+subroutine calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge,rm_flag,edge_thresh)
 
 implicit none
 integer :: nv,ne,v1,v2,i
@@ -281,11 +281,18 @@ integer, dimension (2,ne) :: vert_of_edge
 logical, dimension(ne) :: isGhostEdge
 real, dimension (3,nv) ::xyz
 real, dimension (ne) :: eLengths
+logical :: rm_flag
+real :: edge_thresh
 do i=1,ne
         if ( isGhostEdge(i) .eqv. .false. ) then
                 v1=vert_of_edge(1,i)
                 v2=vert_of_edge(2,i)
                 eLengths(i)=sqrt( (xyz(1,v1)-xyz(1,v2))**2 + (xyz(2,v1)-xyz(2,v2))**2 + (xyz(3,v1)-xyz(3,v2))**2 ) 
+
+                                        
+                if (eLengths(i) .lt. edge_thresh) then
+                        rm_flag = .true. ! set the remesh flag to true if any edgeLength less than the threshold length
+                endif
 
         endif
 enddo
@@ -311,7 +318,7 @@ subroutine calc_centroids_from_vert(tri_cent,xyz,vert_of_face,nf,nv,isGhostFace)
         enddo
 end subroutine
 
-subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace,rm_flag,skew_thresh)
+subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
 
         implicit none
         integer :: ne,nf,e1,e2,e3,i
@@ -320,8 +327,8 @@ subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostF
         real, dimension (nf) :: skewness, sur
         real, dimension(ne) :: eLengths
         real :: perim, sur_opt
-        logical :: rm_flag
-        real :: skew_thresh
+        !logical :: rm_flag
+        !real :: skew_thresh
 
         do i=1,nf
                 if (isGhostFace(i) .eqv. .false. ) then
@@ -337,9 +344,9 @@ subroutine calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostF
 
                         skewness(i) = ( sur_opt - sur(i) ) / sur_opt
 
-                        if (skewness(i) .gt. skew_thresh) then
-                                rm_flag = .true. ! set the remesh flag to true if any edgeLength less than the threshold length
-                        endif
+                        !if (skewness(i) .gt. skew_thresh) then
+                        !        rm_flag = .true. ! set the remesh flag to true if any edgeLength less than the threshold length
+                        !endif
                 endif
         enddo
         
