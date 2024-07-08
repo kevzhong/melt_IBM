@@ -75,6 +75,9 @@
         tstart = MPI_WTIME()
         call particle
 
+        !write(*,*) "Finished particle"
+
+
         tend = MPI_WTIME()
         mls_wtime = mls_wtime + (tend - tstart)
 

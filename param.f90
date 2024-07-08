@@ -176,7 +176,9 @@
       logical, dimension(:,:), allocatable :: isGhostVert
       real, dimension(:,:), allocatable :: eLengths
       real, dimension(:,:), allocatable :: skewness
-      real :: PERC_Athresh, A_thresh, skew_thresh, V_ON_VE_PERC, V_thresh
+      !real :: PERC_Athresh, A_thresh, skew_thresh, V_ON_VE_PERC, V_thresh
+      real :: PERC_Ethresh, E_thresh, V_ON_VE_PERC, V_thresh
+      
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
       logical, dimension(:,:), allocatable :: anchorVert
       logical, dimension(:,:), allocatable :: flagged_edge
