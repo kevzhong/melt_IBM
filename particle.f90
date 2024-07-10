@@ -134,7 +134,7 @@ do inp = 1,Nparticle
         did_remesh = .true.
         !----------Mesh coarsening----------
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-        call main_remesh (n_ecol,Surface(inp),sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,&
+        call remesh_coarsen (n_ecol,Surface(inp),sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,&
         xyzv(:,:,inp),tri_nor(:,:,inp),&
         E_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
         face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
@@ -151,7 +151,7 @@ do inp = 1,Nparticle
         vol_coarse = Volume(1)
     
         !----------Mesh smoothing----------
-        call main_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
+        call remesh_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
         face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
         

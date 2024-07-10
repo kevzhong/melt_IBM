@@ -16,6 +16,11 @@ subroutine setup_particles
 
   Npx = 1; Npy = 1; Npz = 1
 
+
+  ! Rescale unit sphere to desired radius
+  xyz0(:,:) = xyz0(:,:) * rad_p ! / 1.0
+  
+
   ! KZ: for future with multiple particles, can transform the inertia tensor with just
   ! I' = A * I * A^T
 
