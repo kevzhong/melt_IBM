@@ -270,7 +270,10 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
     omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
     - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
     +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
-  
+
+   ! omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) ) &
+   !            - matmul(I_inv, - dt *torq_surf  ) &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
+   !            + matmul(I_inv,   dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
   
   ! No rotation
   !omega_c = 0.0
@@ -338,9 +341,14 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
 
   if (ismaster) then
     write(*,*) "Iresidual: ", Iresidual
-    write(*,*) "omega_c: ", omega_c
-    !write(*,*) "- (dt/dens_ratio)*torq_surf: ", - (dt/dens_ratio)*torq_surf
-    !write(*,*) "- (dt/dens_ratio)*torq_surf: ",     + (1.0 / dens_ratio) * dr_x_u_b 
+    !write(*,*) "-------------------------"
+    !write(*,*) -1.0*dt * pre_fac * For_tot, " IBM translation"
+    !write(*,*) (u_tot - u_tot_m1) / dens_ratio, " Impulse translation"
+    !write(*,*) "-------------------------"
+    !write(*,*) matmul(I_inv, matmul(I_ij,omega_c_m1) ), "I_ij x om_m1"
+    !rite(*,*) -1.0*matmul(I_inv, - dt *torq_surf  ), "IBM rotation"
+    !write(*,*) matmul(I_inv,   dr_x_u_b  ), "Rotation impulse"
+    !write(*,*) "-------------------------"
   endif
 
 

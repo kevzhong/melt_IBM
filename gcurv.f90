@@ -130,10 +130,10 @@ character(70) namfile
        endif
 
        ! Reset wall times
-       wtime_vof = 0.
-       eul_solve_wtime = 0.
-       mls_wtime = 0.
-       pressure_wtime = 0.
+       !wtime_vof = 0.
+       !eul_solve_wtime = 0.
+       !mls_wtime = 0.
+       !pressure_wtime = 0.
        hit_wtime = 0.
 
        if (forcing.eq.1) then
@@ -183,6 +183,7 @@ character(70) namfile
          
         ! ASCII write
           call writePPpartVol
+          call writeInertTens
           call write_partrot
           call write_partpos
           call write_partvel

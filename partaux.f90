@@ -366,6 +366,31 @@ subroutine writePPquat
 
 end subroutine writePPquat
 
+subroutine writeInertTens
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+
+  if (myid.eq.0) then
+
+  namfile='flowmov/inertTensor.txt'
+ !KZ: note hard-coded single particle for now
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)') InertTensor(1,1,1), InertTensor(1,2,1), InertTensor(1,3,1) , &
+                        InertTensor(2,2,1), InertTensor(2,3,1), InertTensor(3,3,1) 
+
+  close(43)
+  end if
+end subroutine writeInertTens
+
 subroutine writePPpartVol
   use param
   use mls_param
