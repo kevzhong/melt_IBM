@@ -32,7 +32,7 @@ subroutine main_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhostEd
     !       Kuprat et al. (2001), J. Comput. Phys.
     !
     ! We also follow:
-    !       Rohair et al. (2016), Chem. Eng. Sci.
+    !       Roghair et al. (2016), Chem. Eng. Sci.
     !
     ! who demonstrated how this algorithm can be reframed as smoothing towards a target volume change
     ! We set this volume change to be the negative volume change from mesh-coarsening
@@ -160,7 +160,7 @@ subroutine main_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhostEd
     enddo
 
     ! Result flags
-    flagged_edge(:) = .false.
+    !flagged_edge(:) = .false.
 
 end subroutine main_smooth
 
