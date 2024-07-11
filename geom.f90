@@ -53,7 +53,7 @@ function mls_gaussian(r,rcoef) result(phi)
     end
 
 
-function loopoverbeams(x0,x_cm,AA,inp) result(phi)
+function signDist_sphere(x0,x_cm,inp) result(phi)
 implicit none
 integer :: i,inp
 real    :: mindist,t,d,d1
@@ -61,19 +61,19 @@ real    :: y1(3), y2(3,3), AA(3,3), AAT(3,3), AAT_P(3,3)
 real, dimension(3) :: x0,x1,x2,x_cm
 real    :: phi
 
-mindist = 1.e6
+! mindist = 1.e6
 
-AAT   = transpose(AA)
-AAT_P = princ_axis_rotm()
 
-   x1 = matmul(AAT_P, y1)
-   x1 =  matmul(AAT,x1) + x_cm
+!    x1 = matmul(AAT_P, y1)
+!    x1 =  matmul(AAT,x1) + x_cm
 
-  ! spherical cap
-    d = norm2(x1-x0)
-    mindist = min(d, mindist)
+!   ! spherical cap
+!     d = norm2(x1-x0)
+!     mindist = min(d, mindist)
 
-  phi = 1 - mindist/(rad_p)
+!   phi = 1 - mindist/(rad_p)
+
+phi = sqrt( ( x0(1) - x_cm(1)  )**2 +  ( x0(2) - x_cm(2)  )**2 + ( x0(3) - x_cm(3)  )**2  ) - rad_p
 
 
 end

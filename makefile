@@ -19,11 +19,11 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \
           tripvmyline.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
           diss.f90 findCMindices.f90 vorticity.f90 injection.f90               \
-		  rayTagging.f90
+		  sphereTagging.f90
 
 FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f90 remesh_coarsen.f90 remesh_smooth.f90 findProbeIndices.f90 \
          	forc1.f90 forc2.f90 forc3.f90 forctemp.f90 mlsForce.f90 mlsWeight.f90 mls_heatFlux.f90 stefanCondition.f90 \
-			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 rayCutVol.f90
+			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 sphereCutVol.f90
 #KZ: cutvol.f90 removed for raytagging
 
 MFILES = param.f90 geom.f90 #coll.f90 #KZ: no collisions
