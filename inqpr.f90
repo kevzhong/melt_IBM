@@ -131,3 +131,41 @@ subroutine restart_temperature
       enddo !end k
       return                                                            
 end                      
+
+
+subroutine inqpr_taylorHIT
+      use local_arrays, only: vy,vz,vx,temp
+      use param, only: xm, ym, zm, xc,yc,zc,n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1, pi
+      use mpi_param
+      use mls_param, only: rad_p, pos_CM
+      implicit none
+      integer :: ic,jc,kc
+      real :: rr
+
+      temp= Tsol
+      
+      !For temperature: temp = Tsol in solid interior, otherwise Tliq in liquid exterior
+
+      do kc = kstart, kend
+            do ic = 1, n1m
+                  do jc = 1, n2m
+                        !rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
+                        rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - pos_CM(:,1)  )
+                        ! Sigmoid fit
+                        ! temp(ic,jc,kc) = Tliq - (Tliq - Tsol) / ( 1 + exp(2.0d0 / dx1 * (rr - rad_p)  )
+
+                        !Tanh
+                        temp(ic,jc,kc) = Tliq - (Tliq - Tsol)*0.5* (1.0d0 - tanh( (rr - rad_p) * dx1 / 2.0 )  )
+
+
+                        ! Taylor-green vortices IC
+
+                        vx(ic,jc,kc) = cos(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * ym(jc) / ylen ) * sin(2.0 * pi * zm(kc) / zlen )
+                        vy(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * yc(jc) / ylen ) * sin(2.0 * pi * zm(kc) / zlen )
+                        vz(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * ym(jc) / ylen ) * cos(2.0 * pi * zc(kc) / zlen )
+
+                  enddo !end j
+            enddo !end i
+      enddo !end k
+      return                                                            
+end   

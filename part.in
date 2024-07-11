@@ -1,8 +1,8 @@
  IMLSFOR     IMLSSTR       IMELT
-    1           1            1
+    0           0            0
    WCON        WSCL      rhop/rhof
    0.3         1.5          1.0 
   GTSFX                    RAD       
  unitSphere_N4.gts         0.1
  IREMESH     PERCT_ETHRESH   V_ON_VE_THRESH
-    1             0.7             27.0
+    0             0.7             27.0

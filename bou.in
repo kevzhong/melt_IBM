@@ -1,7 +1,7 @@
  N1M          N2M         N3M 
  192          192         192          
 NTST   NSST    TFRAME    TPIN      IRESET  TEMP_RESTART
- 10000     3      1e-2      5e-3       0        0
+ 1000     3      1e-2      5e-3       0        0
 NWRIT         NREAD         PREAD 
   1             0            0
  XLEN         YLEN          ZLEN
@@ -15,6 +15,6 @@ NWRIT         NREAD         PREAD
  IDTV         DTMAX          CFLLIM
    0           5e-3           1.0
 FORCING
-   0 
+   1 
 TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID
   0.0d0   1.0d0      0.0d0      1.0d0       1.0d0
