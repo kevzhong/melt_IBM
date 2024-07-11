@@ -50,8 +50,12 @@
 !
             dpx22=(pr(ic,jc,kc)-pr(ic,jm,kc))*udx2
 
+            if ( abs( usolid_y(ic,jc,kc) ) .gt. 0.0 ) then
+              rhs(ic,jc,kc) = ( usolid_y(ic,jc,kc) - vy(ic,jc,kc) ) / (al*dt)
+            else
             rhs(ic,jc,kc)=(ga*dph(ic,jc,kc)+ro*ru2(ic,jc,kc) &
                           +alre*dcvy-dpx22)*dt
+            endif
 
             ru2(ic,jc,kc)=dph(ic,jc,kc)
          enddo
@@ -59,11 +63,11 @@
       enddo
 
 
-      call solxi(beta*al*dx1q)
-      call solxj(beta*al*dx2q)
-      call solxk(vy(1:n1,1:n2,kstart:kend),beta*al*dx3q)
+      call solxi(beta*al*dx1q , usolid_y(1:n2,1:n2,kstart:kend ) )
+      call solxj(beta*al*dx2q , usolid_y(1:n2,1:n2,kstart:kend ) )
+      call solxk(vy(1:n1,1:n2,kstart:kend),beta*al*dx3q, usolid_y(1:n2,1:n2,kstart:kend ) )
       
-      vy(:,n2,:) = vy(:,1,:)
+      !vy(:,n2,:) = vy(:,1,:)
      
       return
       end

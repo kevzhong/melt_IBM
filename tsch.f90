@@ -27,6 +27,11 @@
         VOFy(:,:,:) = 1.
         VOFz(:,:,:) = 1.
         VOFp(:,:,:) = 1.
+
+        usolid_x(:,:,:) = 0.0
+        usolid_y(:,:,:) = 0.0
+        usolid_z(:,:,:) = 0.0
+
         if(imlsfor.eq.1)then
           do inp=1,Nparticle
             !call calc_rot_matrix(quat(:,inp),AA)

@@ -30,6 +30,8 @@
 
         ! volume integral
         real, allocatable, dimension(:,:,:) :: VOFx, VOFy, VOFz, VOFp
+        real, allocatable, dimension(:,:,:) :: usolid_x, usolid_y, usolid_z
+
 !==========================================================
 !******* Grid indices**************************************
         integer, allocatable, dimension(:) :: jmv,jpv

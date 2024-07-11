@@ -29,10 +29,15 @@
              ! periodic BC
              x_gc = pos_cm(1:3,inp) 
              k = kk
+             
              call get_periodic_indices(k,x_gc)
   
-  
              if (k.ge.kstart.and.k.le.kend) then 
+              x_grid(1) = xc(i)
+              x_grid(2) = ym(j)
+              x_grid(3) = zm(k)
+              r = x_grid - x_GC ! relative distance 
+
                call level_set12(i,j,k,inp,x_gc,alpha)
   
                ii = modulo(i-1,n1m) + 1
@@ -42,6 +47,12 @@
                else
               VOFx(ii,jj,k) = 1.0 - alpha
                end if
+
+               ! Solid cell velocity
+               if (VOFx(ii,jj,k).lt. 1.0e-14) then
+                usolid_x(ii,jj,k) = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
+               endif
+
                endif
   
         end do
@@ -136,6 +147,11 @@
   
   
              if (k.ge.kstart.and.k.le.kend) then 
+              x_grid(1) = xm(i)
+              x_grid(2) = yc(j)
+              x_grid(3) = zm(k)
+              r = x_grid - x_GC ! relative distance 
+
              call level_set22(i,j,k,x_GC,inp,alpha)
   
                ii = modulo(i-1,n1m) + 1
@@ -146,6 +162,11 @@
                else
                VOFy(ii,jj,k) = 1.0 - alpha
                end if
+
+              ! Solid cell velocity
+               if (VOFy(ii,jj,k).lt. 1.0e-14) then
+                usolid_y(ii,jj,k) = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
+               endif
   
              endif
   
@@ -237,6 +258,11 @@
              call get_periodic_indices(k,x_gc)
   
              if (k.ge.kstart.and.k.le.kend) then 
+              x_grid(1) = xm(i)
+              x_grid(2) = ym(j)
+              x_grid(3) = zc(k)
+              r = x_grid - x_GC ! relative distance 
+
   
                call level_set32(i,j,k,x_GC,inp,alpha)
                ! compute int u over V 
@@ -249,6 +275,13 @@
                else
                VOFz(ii,jj,k) = 1.0 - alpha
                end if
+
+
+                ! Solid cell velocity
+               if (VOFz(ii,jj,k).lt. 1.0e-14) then
+                usolid_z(ii,jj,k) = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
+               endif
+
                endif
   
         end do
