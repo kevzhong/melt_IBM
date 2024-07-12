@@ -50,10 +50,10 @@
         call hdnl3
         call hdnlte
 
-
         call invtr1 
         call invtr2      
         call invtr3
+        !write(*,*) "Starting invtrte"
         call invtrte
 
         VOFx(:,:,:) = 1.

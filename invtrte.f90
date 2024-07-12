@@ -58,9 +58,22 @@
        enddo
       enddo
 
-      call solxi(dt/pec*0.5d0*al*dx1q)
-      call solxj(dt/pec*0.5d0*al*dx2q)
-      call solxk(temp(1:n1,1:n2,kstart:kend),dt/pec*0.5d0*al*dx3q)
+      usolid_x(:,:,:) = 0.0
+
+      call solxi(dt/pec*0.5d0*al*dx1q )
+      call solxj(dt/pec*0.5d0*al*dx2q )
+      call solxk(temp(1:n1,1:n2,kstart:kend),dt/pec*0.5d0*al*dx3q )
+
+      !write(*,*) "Starting solxi"
+      ! call solxi(dt/pec*0.5d0*al*dx1q)
+      ! !write(*,*) "Finished solxi"
+      ! !write(*,*) "Starting solxj"
+      ! call solxj(dt/pec*0.5d0*al*dx2q)
+      ! !write(*,*) "Finished solxj"
+      ! !write(*,*) "Starting solxk"
+      ! call solxk(temp(1:n1,1:n2,kstart:kend),dt/pec*0.5d0*al*dx3q)
+      !write(*,*) "Finished solxk"
+
  
       return
       end

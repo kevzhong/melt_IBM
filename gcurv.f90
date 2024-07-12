@@ -158,6 +158,7 @@ character(70) namfile
           write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
           !write(6,'(A,F10.6)') "min Atri/AE:", minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) )/A_eulerian 
           write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
+          write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
 
           endif
         !endif

@@ -280,6 +280,7 @@
                 ! Solid cell velocity
                if (VOFz(ii,jj,k).lt. 1.0e-14) then
                 usolid_z(ii,jj,k) = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
+                write(*,*) "usolid_z:" ,usolid_z(ii,jj,k)
                endif
 
                endif

@@ -49,7 +49,7 @@
 
 
             if ( abs( usolid_z(ic,jc,kc) ) .gt. 0.0 ) then
-              rhs(ic,jc,kc) = ( usolid_z(ic,jc,kc) - vz(ic,jc,kc) ) / (al*dt)
+              rhs(ic,jc,kc) = ( usolid_z(ic,jc,kc) - vz(ic,jc,kc) ) !/ (al*dt)
             else
             rhs(ic,jc,kc)=(ga*qcap(ic,jc,kc)+ro*ru3(ic,jc,kc) &
                           +alre*dcvz-dpx33)*dt 
@@ -62,9 +62,9 @@
        enddo
       enddo
 
-      call solxi(beta*al*dx1q, usolid_z(1:n2,1:n2,kstart:kend ) )
-      call solxj(beta*al*dx2q, usolid_z(1:n2,1:n2,kstart:kend ) )
-      call solxk(vz(1:n1,1:n2,kstart:kend),beta*al*dx3q, usolid_z(1:n2,1:n2,kstart:kend ) )
+      call solxi(beta*al*dx1q)
+      call solxj(beta*al*dx2q)
+      call solxk(vz(1:n1,1:n2,kstart:kend),beta*al*dx3q)
  
       return
       end

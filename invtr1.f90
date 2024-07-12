@@ -55,12 +55,12 @@
             dpx11=(pr(ic,jc,kc)-pr(im,jc,kc))*udx1
 
  
-            if ( abs( usolid_x(ic,jc,kc) ) .gt. 0.0 ) then
-              rhs(ic,jc,kc) = ( usolid_x(ic,jc,kc) - vx(ic,jc,kc) ) / (al*dt)
-            else
+            !if ( abs( usolid_x(ic,jc,kc) ) .gt. 0.0 ) then
+            !  rhs(ic,jc,kc) = ( usolid_x(ic,jc,kc) - vx(ic,jc,kc) ) !/ (al*dt)
+            !else
             rhs(ic,jc,kc)=(ga*dq(ic,jc,kc)+ro*ru1(ic,jc,kc) &
                           +alre*dcvx-dpx11)*dt
-            endif
+            !endif
 
             ru1(ic,jc,kc)=dq(ic,jc,kc)
          enddo
@@ -68,10 +68,14 @@
 
       enddo
 
-      call solxi(beta*al*dx1q, usolid_x(1:n2,1:n2,kstart:kend ) )
-      call solxj(beta*al*dx2q, usolid_x(1:n2,1:n2,kstart:kend ) )
-      call solxk(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q, usolid_x(1:n2,1:n2,kstart:kend ) )
-      
+      call solxi(beta*al*dx1q )
+      call solxj(beta*al*dx2q )
+      call solxk(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q )
+
+      ! call solxi_FSI(beta*al*dx1q, usolid_x(1:n2,1:n2,kstart:kend ) )
+      ! call solxj_FSI(beta*al*dx2q, usolid_x(1:n2,1:n2,kstart:kend ) )
+      ! call solxk_FSI(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q, usolid_x(1:n2,1:n2,kstart:kend ) )
+
       !vx(n1,:,:) = vx(1,:,:)
      
       return

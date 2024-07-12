@@ -1,45 +1,40 @@
-      subroutine solxi(betadx,solid_mask)
+      subroutine solxi(betadx)
 !EP   Solves tridiagonal system in i direction
       use param
       use local_arrays, only : rhs
       use mpi_param, only: kstart,kend
       implicit none
-      integer :: jc,kc,ic, dirn
+      integer :: jc,kc,ic
       real,intent(in) :: betadx
       real, allocatable, dimension(:) :: amil,apil,acil,fil
       real :: ackl_b
-      real, dimension(3) :: x_grid
-      real, dimension(n1m, n2m, kstart:kend), optional, intent(in)  :: solid_mask
 
       allocate(amil(1:n1))
       allocate(apil(1:n1))
       allocate(acil(1:n1))
       allocate(fil(1:n1))
 
+
+      ! TRIDIAGONAL SYSTEM TO INVERT
+      ! For { u_i-1, u_i, u_i+1 }
+      !
+      !
+      ! [       G     ]           [     ]         [       G     ]           [       1     ]
+      ! | -  -------- | u      +  |  1  | u     + | -  -------- | u      =  |   --------- | RHS
+      ! [    1 + 2*G  ]  i-1      [     ]  i      [    1 + 2*G  ]  i+1      [    1 + 2*G  ]    i
+
+
+      ! Here, G := betadx
+
+
       do kc=kstart,kend
           do jc=1,n2m
              do ic=1,n1m
-               if ( present(solid_mask) ) then
-                  if ( abs( solid_mask(ic,jc,kc) ) .gt. 0.0 ) then
-                     ! Solid cell, force cell to translational + rotational component
-                     apil(ic) = 0.0d0
-                     acil(ic)=1.0d0
-                     amil(ic) = 0.0d0
-                     fil(ic)=rhs(ic,jc,kc)
-                  else
-                     ackl_b = 1.0/(1.0+2.0*betadx)
-                     apil(ic)=-betadx*ackl_b
-                     acil(ic)=1.0d0
-                     amil(ic)=-betadx*ackl_b
-                     fil(ic)=rhs(ic,jc,kc)*ackl_b
-                  endif
-               else
-                  ackl_b = 1.0/(1.0+2.0*betadx)
-                  apil(ic)=-betadx*ackl_b
-                  acil(ic)=1.0d0
-                  amil(ic)=-betadx*ackl_b
-                  fil(ic)=rhs(ic,jc,kc)*ackl_b
-               endif
+                ackl_b = 1.0/(1.0+2.0*betadx)
+                apil(ic)=-betadx*ackl_b ! Super-diagonal elements
+                acil(ic)=1.0d0          ! Diagonal elements
+                amil(ic)=-betadx*ackl_b ! Sub-diagonal elements
+                fil(ic)=rhs(ic,jc,kc)*ackl_b !RHS vector
              enddo
                 call tripvmyline(amil,acil,apil,fil,1,n1m,n1)
              do ic=1,n1m

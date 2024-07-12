@@ -1,4 +1,4 @@
-      subroutine solxk(q,betadx)
+      subroutine solxk(q,betadx,solid_mask)
       use param
       use local_arrays, only : rhs
       use mpi_param
@@ -9,6 +9,7 @@
       integer :: jc,kc,ic
       real :: betadx,ackl_b
       real,allocatable :: rhst(:,:,:)
+      real, dimension(n1m, n2m, kstart:kend), intent(in)  :: solid_mask
 
       allocate(rhst(1:n3,1:n1,jstart:jend))
 
@@ -17,16 +18,34 @@
       allocate(ackl(1:n3))
       allocate(fkl(1:n3))
 
+      !write(*,*) "solxk present(mask)" , present(solid_mask)
+
+
       call PackZ_UnpackR(rhs(:,:,kstart:kend),rhst(:,:,jstart:jend))
 
       do jc=jstart,jend
          do ic=1,n1m
           do kc=1,n3m
+          if ( present(solid_mask) ) then
+            if ( abs( solid_mask(ic,jc,kc) ) .gt. 0.0 ) then
+              amkl(kc)=0.0d0
+              ackl(kc)=1.0d0
+              apkl(kc)=0.0d0
+              fkl(kc)=rhst(kc,ic,jc)
+            else
+              ackl_b=1.0d0/(1.+2.0*betadx)
+              amkl(kc)=-betadx*ackl_b
+              ackl(kc)=1.0d0
+              apkl(kc)=-betadx*ackl_b
+              fkl(kc)=rhst(kc,ic,jc)*ackl_b
+            endif
+          else
             ackl_b=1.0d0/(1.+2.0*betadx)
             amkl(kc)=-betadx*ackl_b
             ackl(kc)=1.0d0
             apkl(kc)=-betadx*ackl_b
             fkl(kc)=rhst(kc,ic,jc)*ackl_b
+          endif
           end do
 
           call tripvmyline(amkl,ackl,apkl,fkl,1,n3m,n3)
