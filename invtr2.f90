@@ -50,12 +50,8 @@
 !
             dpx22=(pr(ic,jc,kc)-pr(ic,jm,kc))*udx2
 
-            if ( abs( usolid_y(ic,jc,kc) ) .gt. 0.0 ) then
-              rhs(ic,jc,kc) = ( usolid_y(ic,jc,kc) - vy(ic,jc,kc) ) !/ (al*dt)
-            else
             rhs(ic,jc,kc)=(ga*dph(ic,jc,kc)+ro*ru2(ic,jc,kc) &
                           +alre*dcvy-dpx22)*dt
-            endif
 
             ru2(ic,jc,kc)=dph(ic,jc,kc)
          enddo

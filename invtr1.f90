@@ -54,13 +54,8 @@
 !
             dpx11=(pr(ic,jc,kc)-pr(im,jc,kc))*udx1
 
- 
-            !if ( abs( usolid_x(ic,jc,kc) ) .gt. 0.0 ) then
-            !  rhs(ic,jc,kc) = ( usolid_x(ic,jc,kc) - vx(ic,jc,kc) ) !/ (al*dt)
-            !else
             rhs(ic,jc,kc)=(ga*dq(ic,jc,kc)+ro*ru1(ic,jc,kc) &
                           +alre*dcvx-dpx11)*dt
-            !endif
 
             ru1(ic,jc,kc)=dq(ic,jc,kc)
          enddo

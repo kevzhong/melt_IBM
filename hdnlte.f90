@@ -48,6 +48,7 @@ subroutine hdnlte
     ip=ipv(ic)
     im=imv(ic)
 
+    if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
 !                d  u T   |          1   [                              ]
 !             ----------- |  =     ----- |  uT |      -      uT |       |
 !                d   x    |i,j,k     dx  [     i+1/2            i-1/2   ]
@@ -77,13 +78,13 @@ subroutine hdnlte
                -vz(ic,jc,kc)*(temp(ic,jc,kc)+temp(ic,jc,km)) )*udx3
 
 
-    !if(ap(ic,jc,kc).eq.1.0) then
-    !    ! For HIT forcing
-    !    !htemp(ic,jc,kc)=-(h31+h32+h33)+atemp(ic,jc,kc)*forcz(ic,jc,kc)/zlen
-    !    htemp(ic,jc,kc)=-(h31+h32+h33)
-    !endif
-    !htemp(ic,jc,kc)=-(h31+h32+h33)*VOFp(ic,jc,kc)
+
     htemp(ic,jc,kc)=-(h31+h32+h33)
+
+    else ! solid_mask eqv. true 
+    htemp(ic,jc,kc) = -d_UsolidT_dxj(ic,jc,kc)
+
+    endif
 
 
     enddo

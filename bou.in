@@ -7,7 +7,7 @@ NWRIT         NREAD         PREAD
  XLEN         YLEN          ZLEN
  1.0          1.0           1.0
  REN     PRANDTL  BETA_GZ      DT           RESID
-0.05     1.0      1.0        1e-4          1.e-2
+1000.0     1.0      1.0        1e-4          1.e-2
  TSTA        STAREAD        CFLMAX
  0            0              1.7
  TL          EPSSTAR         KF / KMIN
@@ -17,4 +17,4 @@ NWRIT         NREAD         PREAD
 FORCING
    0 
 TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID
-  0.0d0   1.0d0      0.0d0      1.0d0       1.0d0
+  0.5d0   1.0d0      0.0d0      1.0d0       1.0d0

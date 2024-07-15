@@ -47,13 +47,8 @@
 !
             dpx33=(pr(ic,jc,kc)-pr(ic,jc,km))*udx3
 
-
-            if ( abs( usolid_z(ic,jc,kc) ) .gt. 0.0 ) then
-              rhs(ic,jc,kc) = ( usolid_z(ic,jc,kc) - vz(ic,jc,kc) ) !/ (al*dt)
-            else
             rhs(ic,jc,kc)=(ga*qcap(ic,jc,kc)+ro*ru3(ic,jc,kc) &
                           +alre*dcvz-dpx33)*dt 
-            endif
 
 !  updating of the explicit terms
 

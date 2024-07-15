@@ -45,9 +45,13 @@
       call AllocateReal3DArray(rut,1,n1,1,n2,kstart,kend)
 
       ! KZ: RHS vectors for tagged solid cells, lazy way to track
-      call AllocateReal3DArray(usolid_x,1,n1,1,n2,kstart,kend)
-      call AllocateReal3DArray(usolid_y,1,n1,1,n2,kstart,kend)
-      call AllocateReal3DArray(usolid_z,1,n1,1,n2,kstart,kend)
+      !call AllocateReal3DArray(usolid_x,1,n1,1,n2,kstart,kend)
+      !call AllocateReal3DArray(usolid_y,1,n1,1,n2,kstart,kend)
+      !call AllocateReal3DArray(usolid_z,1,n1,1,n2,kstart,kend)
+
+     call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
+
+      call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
 
 
 

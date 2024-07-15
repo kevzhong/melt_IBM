@@ -178,6 +178,31 @@
         return
         end subroutine AllocateReal3DArray
 
+        !===========================================================================
+
+        subroutine AllocateLogical3DArray(var,st1,en1,st2,en2,st3,en3)
+                use param, only: ismaster
+                implicit none
+                integer, intent(in) :: st1,en1,st2,en2,st3,en3
+                logical,allocatable,dimension(:,:,:),intent(inout) :: var
+                integer :: alloc_stat
+          
+                if (.not. allocated(var)) then 
+                  allocate(var(st1:en1,st2:en2,st3:en3), stat=alloc_stat)
+                end if
+              
+                if (alloc_stat /= 0) then
+                if(ismaster) then 
+                 write(6,*) 'Memory allocation failed when creating new arrays'
+                end if
+                call MpiAbort
+                end if
+          
+                var = .false.
+          
+                return
+        end subroutine AllocateLogical3DArray
+
 !===========================================================================
 
         subroutine AllocateCplx3DArray(var,st1,en1,st2,en2,st3,en3)
