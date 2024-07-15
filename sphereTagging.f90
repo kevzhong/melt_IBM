@@ -374,9 +374,11 @@
                km=kc-1
                kp=kc+1
 
+               jc = jj
                jm=jmv(jj)
                jp=jpv(jj)
 
+               ic = ii
                im=imv(ii)
                ip=ipv(ii)
   
@@ -389,8 +391,6 @@
                ! Solid cell d_Usolid_dxj
                if (VOFp(ii,jj,k).lt. 1.0e-6) then
 
-              !write(*,*) "Solid ii jj k", ii, jj, k
-
                 solid_mask(ii,jj,k) = .true.
 
                 !                d  u T   |          1   [                              ]
@@ -400,7 +400,7 @@
                 ! uT |_{i-1/2}
                 x_grid(1) = xc(i)
                 x_grid(2) = ym(j)
-                x_grid(3) = zm(k)
+                x_grid(3) = zm(kk)
                 r = x_grid - x_GC ! relative distance 
                 u_imh = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
 
@@ -419,7 +419,7 @@
                 ! vT |_{j-1/2}
                 x_grid(1) = xm(i)
                 x_grid(2) = yc(j)
-                x_grid(3) = zm(k)
+                x_grid(3) = zm(kk)
                 r = x_grid - x_GC ! relative distance 
                 v_jmh = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
 
@@ -439,12 +439,12 @@
                 ! wT |_{k-1/2}
                 x_grid(1) = xm(i)
                 x_grid(2) = ym(j)
-                x_grid(3) = zc(k)
+                x_grid(3) = zc(kk)
                 r = x_grid - x_GC ! relative distance 
                 w_kmh = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
 
                 ! wT |_{k+1/2}
-                x_grid(3) = zc(k+1)
+                x_grid(3) = zc(kk+1)
                 r = x_grid - x_GC ! relative distance 
                 w_kph = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
 
