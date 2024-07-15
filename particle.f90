@@ -67,6 +67,10 @@ if(imlsfor.eq.1)then
 
         endif
 
+        if (imlsstr .eq. 1) then
+            call mls_structLoads
+        endif
+
         call velforce
         call tempforce
     end do

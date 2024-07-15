@@ -70,6 +70,13 @@ implicit none
   allocate(  qw_o(maxnf,Nparticle) , qw_i(maxnf,Nparticle)  ) !Normal gradients at vertices
   allocate(  qw_oVert(maxnv,Nparticle) , qw_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
 
+
+  ! Structural loads at Lagrangian nodes
+  allocate(  tau_n1(maxnf,Nparticle) ,tau_n2(maxnf,Nparticle), tau_n3(maxnf,Nparticle)  ) 
+  allocate(  press_tri(maxnf,Nparticle)  ) 
+
+
+
   allocate(vmelt(3,maxnv,Nparticle))
 
   !-- particle
@@ -82,6 +89,10 @@ implicit none
   !allocate( om_b_sqr(3, Nparticle), om_b_sqr_m1(3, Nparticle) )
   allocate( tail_head(3, Nparticle) )
   allocate( quat(4, Nparticle)  )
+
+  allocate(int_pr_dA(Nparticle))
+  allocate(int_tau_dA(3,Nparticle))
+
   !allocate( quat(4, Nparticle), quat_m1(4, Nparticle), quat_dot(4, Nparticle)  )
 
   !allocate(  quat_dot_m1(4, Nparticle)  ) !KZ: needed?
