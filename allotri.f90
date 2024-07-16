@@ -69,14 +69,6 @@ implicit none
 
   allocate(  qw_o(maxnf,Nparticle) , qw_i(maxnf,Nparticle)  ) !Normal gradients at vertices
   allocate(  qw_oVert(maxnv,Nparticle) , qw_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
-
-
-  ! Structural loads at Lagrangian nodes
-  allocate(  tau_n1(maxnf,Nparticle) ,tau_n2(maxnf,Nparticle), tau_n3(maxnf,Nparticle)  ) 
-  allocate(  press_tri(maxnf,Nparticle)  ) 
-
-
-
   allocate(vmelt(3,maxnv,Nparticle))
 
   !-- particle
@@ -86,12 +78,22 @@ implicit none
   allocate( u_tot(3, Nparticle),     u_tot_m1(3, Nparticle) )
   allocate( r_x_u_tot(3, Nparticle), r_x_u_tot_m1(3, Nparticle) )
   allocate( omega_s(3, Nparticle) )
-  !allocate( om_b_sqr(3, Nparticle), om_b_sqr_m1(3, Nparticle) )
   allocate( tail_head(3, Nparticle) )
   allocate( quat(4, Nparticle)  )
 
-  allocate(int_pr_dA(Nparticle))
+
+    ! Structural loads at Lagrangian nodes
+  allocate(  tau_n1(maxnf,Nparticle) ,tau_n2(maxnf,Nparticle), tau_n3(maxnf,Nparticle)  ) 
+  allocate(  press_n_tri(3,maxnf,Nparticle)  ) 
+
+  allocate(  r_x_tau_n1(maxnf,Nparticle) ,r_x_tau_n2(maxnf,Nparticle), r_x_tau_n3(maxnf,Nparticle)  ) 
+  allocate(  r_x_prn_tri(3,maxnf,Nparticle)  ) 
+
+  allocate(int_prn_dA(3,Nparticle))
+  allocate(int_r_x_prn_dA(3,Nparticle))
   allocate(int_tau_dA(3,Nparticle))
+  allocate(int_r_x_tau_dA(3,Nparticle))
+
 
   !allocate( quat(4, Nparticle), quat_m1(4, Nparticle), quat_dot(4, Nparticle)  )
 

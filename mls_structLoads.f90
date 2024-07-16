@@ -8,23 +8,30 @@ subroutine mls_structLoads
     real,dimension(3) :: pos, rad
     integer, dimension(3) :: probe_inds
     real, dimension(3) :: gradP, gradU, gradV, gradW
-    integer :: inp,nf
+    integer :: inp,nf,i
     integer :: icent, istag, jcent, jstag, kcent, kstag
-    real :: s, press_probe
+    real :: s, press_probe, press_tri
     real :: S11, S12, S13
     real :: S21, S22, S23
     real :: S31, S32, S33
     real :: sum_buffer
+    real :: tau1_buffer, tau2_buffer, tau3_buffer
+    real, dimension(3) :: r_x_tau_buffer
 
     
     ! Evaluate pressures and viscous stresses at Lagrangian nodes. Surface values extrapolated from probe locations
     ! Pre-multiplications by triangle areas also done to obtain surface-integrated loads, so result is effectively a force on triangles
-    press_tri(:,:) = 0.0d0
+    press_n_tri(:,:,:) = 0.0d0
+
     tau_n1(:,:) = 0.0d0
     tau_n2(:,:) = 0.0d0
     tau_n3(:,:) = 0.0d0
 
-    
+    r_x_tau_n1(:,:) = 0.0d0
+    r_x_tau_n2(:,:) = 0.0d0
+    r_x_tau_n3(:,:) = 0.0d0
+    r_x_prn_tri(:,:,:) = 0.0d0
+
     gradP = 0.0d0
     gradU = 0.0d0
     gradV = 0.0d0
@@ -77,12 +84,16 @@ subroutine mls_structLoads
 
              call wght_press(pos,ptx,press_probe,probe_inds) !Calc. pressure at probe
 
-             call wght_gradP(pos,ptx,gradP,probe_inds) ! Calc dP/dxi at probe
+             call wght_gradP(pos,ptx,gradP,probe_inds,nf) ! Calc dP/dxi at probe
 
-             press_tri(nf,inp) = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
+             press_tri = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
 
-             ! Convert pressure to force
-             press_tri(nf,inp) = press_tri(nf,inp) * sur(nf,inp) 
+             ! Convert to pressure force and project in normal direction
+            press_n_tri(1:3,nf,inp) = press_tri * sur(nf,inp) * tri_nor(1:3,nf,inp)
+
+             ! Get pressure torque
+            call cross( r_x_tau_buffer, rad(1:3), press_tri * tri_nor(1:3,nf,inp) )
+             r_x_prn_tri(1:3,nf,inp) = r_x_tau_buffer(1:3) * sur(nf,inp)
 
             !----------------- Viscous stress calculations -------------------------
 
@@ -109,41 +120,69 @@ subroutine mls_structLoads
 
             !----------------- U velocity gradients ---------------------------------
              probe_inds(1:3) = [istag, jcent, kcent]
-             call wght_gradU(pos,ptx,gradU,probe_inds) ! Calc dU/dxi at probe
+             call wght_gradU(pos,ptx,gradU,probe_inds,nf) ! Calc dU/dxi at probe
              S11 = gradU(1) ; S12 = gradU(2) ; S13 = gradU(3)
 
             !----------------- V velocity gradients ---------------------------------
              probe_inds(1:3) = [icent, jstag, kcent]
-             call wght_gradV(pos,ptx,gradV,probe_inds) ! Calc dV/dxi at probe
+             call wght_gradV(pos,ptx,gradV,probe_inds,nf) ! Calc dV/dxi at probe
              S21 = gradV(1) ; S22 = gradV(2) ; S23 = gradV(3)
 
-             !--------------- Accumulate (U,V) contributions to viscous stresses
-             tau_n1(nf,inp) = tau_n1(nf,inp) + (sur(nf,inp)/ren) * ( 2.0*S11    * tri_nor(1,nf,inp) + & 
-                                                                    (S12 + S21) * tri_nor(2,nf,inp) + & 
-                                                                    S13         * tri_nor(3,nf,inp) )
+            !write(*,*) "Solving triangle ",nf
+            !write(*,*) "gradU", gradU
+            !write(*,*) "gradV", gradV
 
-             tau_n2(nf,inp) = tau_n2(nf,inp) + (sur(nf,inp)/ren) * ((S21 + S12)    * tri_nor(1,nf,inp) + & 
-                                                                      2.0*S22      * tri_nor(2,nf,inp) + & 
-                                                                        S23        * tri_nor(3,nf,inp) )    
-                                                                
-            tau_n3(nf,inp) = tau_n3(nf,inp) + (sur(nf,inp)/ren) * (    S13      * tri_nor(1,nf,inp) + & 
-                                                                       S23      * tri_nor(2,nf,inp) )
+             !--------------- Accumulate (U,V) contributions to viscous stresses (forces, multipled by area)
+             tau1_buffer = (sur(nf,inp)/ren) * ( 2.0*S11    * tri_nor(1,nf,inp) + & 
+                                                (S12 + S21) * tri_nor(2,nf,inp) + & 
+                                                S13         * tri_nor(3,nf,inp) )
+
+             tau2_buffer = (sur(nf,inp)/ren) * ((S21 + S12)    * tri_nor(1,nf,inp) + & 
+                                                  2.0*S22      * tri_nor(2,nf,inp) + & 
+                                                    S23        * tri_nor(3,nf,inp) )
+
+             tau3_buffer = (sur(nf,inp)/ren) * (    S13      * tri_nor(1,nf,inp) + & 
+                                                    S23      * tri_nor(2,nf,inp) )
+
+             tau_n1(nf,inp) = tau_n1(nf,inp) + tau1_buffer
+             tau_n2(nf,inp) = tau_n2(nf,inp) + tau2_buffer    
+             tau_n3(nf,inp) = tau_n3(nf,inp) + tau3_buffer    
+
+            !--------------- Accumulate (U,V) contributions to viscous torques (multipled by area)
+             call cross(r_x_tau_buffer, rad, [tau1_buffer, tau2_buffer, tau3_buffer])
+
+             r_x_tau_n1(nf,inp) = r_x_tau_n1(nf,inp) + r_x_tau_buffer(1)
+             r_x_tau_n2(nf,inp) = r_x_tau_n2(nf,inp) + r_x_tau_buffer(2)
+             r_x_tau_n3(nf,inp) = r_x_tau_n3(nf,inp) + r_x_tau_buffer(3)   
+             
             endif
 
             if(kstag.ge.kstart .and. kstag.le.kend) then
                 !----------------- W velocity gradients ---------------------------------
                  probe_inds(1:3) = [icent, jcent, kstag]
-                 call wght_gradW(pos,ptx,gradW,probe_inds) ! Calc dW/dxi at probe
+                 call wght_gradW(pos,ptx,gradW,probe_inds,nf) ! Calc dW/dxi at probe
                  S31 = gradW(1) ; S32 = gradW(2) ; S33 = gradW(3)
+                 !write(*,*) "gradW", gradW
 
-                !--------------- Accumulate W contributions to viscous stresses
-                 tau_n1(nf,inp) = tau_n1(nf,inp) + (sur(nf,inp)/ren) * (S31 * tri_nor(3,nf,inp) )
+                !--------------- Accumulate W contributions to viscous stresses (multiplied by area)
+                 tau1_buffer = (sur(nf,inp)/ren) * (S31 * tri_nor(3,nf,inp) )
 
-                 tau_n2(nf,inp) = tau_n2(nf,inp) + (sur(nf,inp)/ren) * (S32 * tri_nor(3,nf,inp) )
+                 tau2_buffer = (sur(nf,inp)/ren) * (S32 * tri_nor(3,nf,inp) )
 
-                 tau_n3(nf,inp) = tau_n3(nf,inp) + (sur(nf,inp)/ren) * ( S31    * tri_nor(1,nf,inp) + & 
-                                                                         S32    * tri_nor(2,nf,inp) + &
-                                                                        2.0*S33 * tri_nor(3,nf,inp) )
+                 tau3_buffer = (sur(nf,inp)/ren) * ( S31    * tri_nor(1,nf,inp) + & 
+                                                     S32    * tri_nor(2,nf,inp) + &
+                                                    2.0*S33 * tri_nor(3,nf,inp) )
+
+                 tau_n1(nf,inp) = tau_n1(nf,inp) + tau1_buffer
+                 tau_n2(nf,inp) = tau_n2(nf,inp) + tau2_buffer
+                 tau_n3(nf,inp) = tau_n3(nf,inp) + tau3_buffer
+
+                !--------------- Accumulate W contributions to viscous torques (multipled by area)
+                 call cross(r_x_tau_buffer, rad, [tau1_buffer, tau2_buffer, tau3_buffer])
+
+                 r_x_tau_n1(nf,inp) = r_x_tau_n1(nf,inp) + r_x_tau_buffer(1)
+                 r_x_tau_n2(nf,inp) = r_x_tau_n2(nf,inp) + r_x_tau_buffer(2)
+                 r_x_tau_n3(nf,inp) = r_x_tau_n3(nf,inp) + r_x_tau_buffer(3)  
 
             endif
 
@@ -153,12 +192,38 @@ subroutine mls_structLoads
      enddo
     enddo
 
+    !call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !call MPI_Finalize(ierr)
+
+
+    ! ! Structural loads at Lagrangian nodes
+    ! allocate(  tau_n1(maxnf,Nparticle) ,tau_n2(maxnf,Nparticle), tau_n3(maxnf,Nparticle)  ) 
+    ! allocate(  press_n_tri(3,maxnf,Nparticle)  ) 
+  
+    ! allocate(  r_x_tau_n1(maxnf,Nparticle) ,r_x_tau_n2(maxnf,Nparticle), r_x_tau_n3(maxnf,Nparticle)  ) 
+    ! allocate(  r_x_prn_tri(3,maxnf,Nparticle)  ) 
+  
+    ! allocate(int_prn_dA(3,Nparticle))
+    ! allocate(int_r_x_prn_dA(3,Nparticle))
+    ! allocate(int_tau_dA(3,Nparticle))
+    ! allocate(int_r_x_tau_dA(3,Nparticle))
+
     ! Sum across all processors (triangles)
     do inp=1,Nparticle
 
-        int_pr_dA(inp) = sum( press_tri(:,inp) )
-        call MPI_ALLREDUCE(MPI_IN_PLACE,int_pr_dA(inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)     
-        
+        ! Integrated pressure forces and torques
+        do i=1,3
+            int_prn_dA(i,inp) = sum( press_n_tri(i,:,inp)  )
+            call MPI_ALLREDUCE(MPI_IN_PLACE,int_prn_dA(i,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+
+            int_r_x_prn_dA(i,inp) = sum( r_x_prn_tri(i,:,inp) )
+            call MPI_ALLREDUCE(MPI_IN_PLACE,int_r_x_prn_dA(i,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+        enddo
+
+        !write(*,*) "Integrated pressure loads: ", int_prn_dA(:,inp) 
+        !write(*,*) "Integrated pressure torques: ", int_r_x_prn_dA(:,inp)
+
+        !---- Integrated viscous forces
         int_tau_dA(1,inp) = sum( tau_n1(:,inp) )
         call MPI_ALLREDUCE(MPI_IN_PLACE,int_tau_dA(1,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)     
 
@@ -167,12 +232,22 @@ subroutine mls_structLoads
 
         int_tau_dA(3,inp) = sum( tau_n3(:,inp) )
         call MPI_ALLREDUCE(MPI_IN_PLACE,int_tau_dA(3,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)  
+
+        !---- Integrated viscous torques
+        int_r_x_tau_dA(1,inp) = sum( r_x_tau_n1(:,inp) )
+        call MPI_ALLREDUCE(MPI_IN_PLACE,int_r_x_tau_dA(1,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)  
+
+        int_r_x_tau_dA(2,inp) = sum( r_x_tau_n2(:,inp) )
+        call MPI_ALLREDUCE(MPI_IN_PLACE,int_r_x_tau_dA(2,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr) 
+
+        int_r_x_tau_dA(3,inp) = sum( r_x_tau_n3(:,inp) )
+        call MPI_ALLREDUCE(MPI_IN_PLACE,int_r_x_tau_dA(3,inp),1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr) 
+
+       !write(*,*) "Integrated viscous loads: ", int_tau_dA(:,inp)
+       !write(*,*) "Integrated viscous torques: ", int_r_x_prn_dA(:,inp)
+
     enddo
 
-    !call MPI_ALLREDUCE(MPI_IN_PLACE,press_tri,maxnf*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
-    !call MPI_ALLREDUCE(MPI_IN_PLACE,tau_n1,maxnf*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
-    !call MPI_ALLREDUCE(MPI_IN_PLACE,tau_n2,maxnf*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
-    !call MPI_ALLREDUCE(MPI_IN_PLACE,tau_n3,maxnf*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
 
     end subroutine mls_structLoads
 
@@ -292,12 +367,13 @@ end subroutine wght_press
           
     
     
-subroutine wght_gradP(pos,ptx,gradP,probe_inds)
+subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
     USE param
     USE geom
     use local_arrays, only: pr
     USE mls_param
     USE mpi_param, only: kstart, kend
+    use mpih
     implicit none
     real, dimension(3), intent(inout) :: gradP !dPdx, dPdy, dPdz at the probe
     real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
@@ -311,15 +387,16 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds)
     real :: Wtx, Wt23
     real :: dWx_dx, dWy_dy, dWz_dz
     real :: dWdx, dWdy, dWdz
+    real :: dis
     integer :: inp,inw,i,j,k,k1
-    integer :: ii,jj,kk,nk
+    integer :: ii,jj,kk,nk,nf
     
     integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
     
     !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
     
     if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
-      
+              
     !-------------FORCING FUNCTION------------------------
     ! volume of a face with a specific marker - thickness taken as average of grid spacing
       
@@ -357,60 +434,75 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds)
     ! Accumulate A(4,4)   , B(4,27) linear system
     ! Likewise for derivatives of A, B
     !do k=pind_i(3), pind_o(3)
-     do nk = 1,3 ! Different to apply periodicty in z
-        k = k_inds(nk)
-        norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
-        Wt(3) = mls_gaussian( norp(3) , wcon )
+    do nk = 1,3 ! Different to apply periodicty in z
+       k = k_inds(nk)
+       norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
+       Wt(3) = mls_gaussian( norp(3) , wcon )
+
+       if ( norp(3) .lt. 1.0e-15 ) then
+        dWz_dz = 0.0
+       else
         dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
         dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
-        do j=pind_i(2), pind_o(2)
-      
-            norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
-            Wt(2) = mls_gaussian( norp(2) , wcon )
-            Wt23 = Wt(2)*Wt(3)
-      
+       endif
+
+       do j=pind_i(2), pind_o(2)
+
+           norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
+           Wt(2) = mls_gaussian( norp(2) , wcon )
+           Wt23 = Wt(2)*Wt(3)
+
+           if ( norp(2) .lt. 1.0e-15 ) then
+            dWy_dy = 0.0
+           else
             dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
             dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
-            do i=pind_i(1), pind_o(1)
-      
-                norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
-                Wt(1) = mls_gaussian( norp(1) , wcon )
-                Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
-    
+           endif
+
+           do i=pind_i(1), pind_o(1)
+     
+               norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
+               Wt(1) = mls_gaussian( norp(1) , wcon )
+               Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+
+               if ( norp(1) .lt. 1.0e-15 ) then
+                dWx_dx = 0.0
+               else
                 dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
                 dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
-    
-                pxk(1)=1.0d0
-                pxk(2)=xm(i)
-                pxk(3)=ym(j)
-                pxk(4)=zm(k)
-                ! C = alpha * A * B + beta * C
-                ! Note how the result of the computation is stored in C
-                !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+               endif
+
+               pxk(1)=1.0d0
+               pxk(2)=xm(i)
+               pxk(3)=ym(j)
+               pxk(4)=zm(k)
+               ! C = alpha * A * B + beta * C
+               ! Note how the result of the computation is stored in C
+               !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
                 call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
                 B(1:4,inw)=Wtx*pxk(1:4)
-    
+
                 ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
                 dWdx = dWx_dx * Wt(2)  * Wt(3)
                 dWdy = Wt(1)  * dWy_dy * Wt(3)
                 dWdz = Wt(1)  * Wt(2)  * dWz_dz
-      
+            
                 call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
                 call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
                 call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
-    
+
                 dBdx(1:4,inw)=dWdx * pxk(1:4)
                 dBdy(1:4,inw)=dWdy * pxk(1:4)
                 dBdz(1:4,inw)=dWdz * pxk(1:4)
-    
+
                 !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
-    
+
                 ii = modulo(i-1,n1m) + 1
                 jj = modulo(j-1,n2m) + 1
                 !kk = modulo(k-1,n3m) + 1
-    
+
                 kk = keul_inds(nk)
-    
+
                 !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
                 Pnel(inw) = pr(ii,jj,kk) ! Store Eulerian support domain values for summation later
     
@@ -418,7 +510,216 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds)
             enddo !end i
         enddo !end j
     enddo !end k
-      
+              
+    ! calling routine to compute inverse
+    ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
+    call inverseLU(pinvA,invA)
+
+    !---------------------LIN-ALG ROUTINES----------------------------
+    ! matrix multiplications for final interpolation
+    !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+    ! C = alpha * A * B + beta * C
+    ! Note how the result of the computation is stored in C
+    ! 
+    !
+    ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
+    !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
+    !
+    ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
+
+    !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
+    ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
+    ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
+    ! Our MLS shape function ptxAB := Phi in their notation
+    ! Notably, only inversion of matrix A is required in this framework (stored in invA)
+    ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
+
+    ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
+
+    ! Now compute derivatives of gamma for use in (3.141)
+
+    !---------------------- x derivative ddx_ptxAB-------------------------------------------
+    pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
+    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
+    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
+
+    ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
+
+
+
+    !---------------------- y derivative ddy_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
+
+    !---------------------- z derivative ddz_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
+    
+    !-------------------- Now compute derivatives at the marker location---------------------
+    ! e.g. Vanella & Balaras (2009) equation (27)
+
+    gradP(1) = sum( ddx_PtxAB * Pnel) !dP dx
+    gradP(2) = sum( ddy_PtxAB * Pnel) !dP dy
+    gradP(3) = sum( ddz_PtxAB * Pnel) !dP dz
+
+
+    endif
+end subroutine wght_gradP
+
+      subroutine wght_gradU(pos,ptx,gradU,probe_inds,nf)
+        USE param
+        USE geom
+        use local_arrays, only: vx
+        USE mls_param
+        USE mpi_param, only: kstart, kend
+        use mpih
+        implicit none
+        real, dimension(3), intent(inout) :: gradU !dPdx, dPdy, dPdz at the probe
+        real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
+        real,dimension(nel) :: Unel ! Eulerian support domain values of temperature
+        real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
+        real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
+        real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
+        real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
+        real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
+        real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
+        real :: Wtx, Wt23
+        real :: dWx_dx, dWy_dy, dWz_dz
+        real :: dWdx, dWdy, dWdz
+        real :: dis
+        integer :: inp,inw,i,j,k,k1
+        integer :: ii,jj,kk,nk,nf
+        
+        integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+        
+        !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
+        
+        if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
+                  
+        !-------------FORCING FUNCTION------------------------
+        ! volume of a face with a specific marker - thickness taken as average of grid spacing
+          
+        !WGHT1
+        !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
+        !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
+        !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+        
+        pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
+        pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
+        pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
+        
+        
+          
+        k1  = floor(pos(3)*dx3) + 1
+        pind_i(3)=k1-1
+        pind_o(3)=k1+1
+        
+        ! For the spatial grid
+        k_inds = [k1-1,k1,k1]
+        
+        ! For the Eulerian field
+        k1  = modulo(k1-1,n3m)  + 1
+        keul_inds = [k1-1,k1,k1+1]
+        
+          
+        pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
+        dAdx(1:4,1:4)=0.0d0
+        dAdy(1:4,1:4)=0.0d0
+        dAdz(1:4,1:4)=0.0d0
+        
+        inw = 1
+          
+          
+        ! Accumulate A(4,4)   , B(4,27) linear system
+        ! Likewise for derivatives of A, B
+        !do k=pind_i(3), pind_o(3)
+        do nk = 1,3 ! Different to apply periodicty in z
+           k = k_inds(nk)
+           norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
+           Wt(3) = mls_gaussian( norp(3) , wcon )
+    
+           if ( norp(3) .lt. 1.0e-15 ) then
+            dWz_dz = 0.0
+           else
+            dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
+            dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
+           endif
+    
+           do j=pind_i(2), pind_o(2)
+    
+               norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
+               Wt(2) = mls_gaussian( norp(2) , wcon )
+               Wt23 = Wt(2)*Wt(3)
+    
+               if ( norp(2) .lt. 1.0e-15 ) then
+                dWy_dy = 0.0
+               else
+                dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
+                dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+               endif
+    
+               do i=pind_i(1), pind_o(1)
+         
+                   norp(1)=abs(pos(1) - xc(i) ) / (wscl / dx1)
+                   Wt(1) = mls_gaussian( norp(1) , wcon )
+                   Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+    
+                   if ( norp(1) .lt. 1.0e-15 ) then
+                    dWx_dx = 0.0
+                   else
+                    dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
+                    dWx_dx = dWx_dx * ( ( pos(1) - xc(i) ) / abs( pos(1) - xc(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+                   endif
+    
+                   pxk(1)=1.0d0
+                   pxk(2)=xc(i)
+                   pxk(3)=ym(j)
+                   pxk(4)=zm(k)
+                   ! C = alpha * A * B + beta * C
+                   ! Note how the result of the computation is stored in C
+                   !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+                    call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
+                    B(1:4,inw)=Wtx*pxk(1:4)
+    
+                    ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
+                    dWdx = dWx_dx * Wt(2)  * Wt(3)
+                    dWdy = Wt(1)  * dWy_dy * Wt(3)
+                    dWdz = Wt(1)  * Wt(2)  * dWz_dz
+                
+                    call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
+                    call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
+                    call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
+    
+                    dBdx(1:4,inw)=dWdx * pxk(1:4)
+                    dBdy(1:4,inw)=dWdy * pxk(1:4)
+                    dBdz(1:4,inw)=dWdz * pxk(1:4)
+    
+                    !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
+    
+                    ii = modulo(i-1,n1m) + 1
+                    jj = modulo(j-1,n2m) + 1
+                    !kk = modulo(k-1,n3m) + 1
+    
+                    kk = keul_inds(nk)
+    
+                    !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
+                    Unel(inw) = vx(ii,jj,kk) ! Store Eulerian support domain values for summation later
+        
+                    inw = inw + 1
+                enddo !end i
+            enddo !end j
+        enddo !end k
+                  
         ! calling routine to compute inverse
         ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
         call inverseLU(pinvA,invA)
@@ -476,584 +777,428 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds)
         !-------------------- Now compute derivatives at the marker location---------------------
         ! e.g. Vanella & Balaras (2009) equation (27)
     
-        gradP(1) = sum( ddx_PtxAB * Pnel) !dT dx
-        gradP(2) = sum( ddy_PtxAB * Pnel) !dT dy
-        gradP(3) = sum( ddz_PtxAB * Pnel) !dT dz
+        gradU(1) = sum( ddx_PtxAB * Unel) !dU dx
+        gradU(2) = sum( ddy_PtxAB * Unel) !dU dy
+        gradU(3) = sum( ddz_PtxAB * Unel) !dU dz
     
-      endif
-      end subroutine wght_gradP
-
-      subroutine wght_gradU(pos,ptx,gradU,probe_inds)
-        USE param
-        USE geom
-        use local_arrays, only: vx
-        USE mls_param
-        USE mpi_param, only: kstart, kend
-        implicit none
-        real, dimension(3), intent(inout) :: gradU !dPdx, dPdy, dPdz at the probe
-        real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
-        real,dimension(nel) :: Unel ! Eulerian support domain values of temperature
-        real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
-        real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
-        real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
-        real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
-        real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
-        real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
-        real :: Wtx, Wt23
-        real :: dWx_dx, dWy_dy, dWz_dz
-        real :: dWdx, dWdy, dWdz
-        integer :: inp,inw,i,j,k,k1
-        integer :: ii,jj,kk,nk
-        
-        integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
-        
-        !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
-        
-        if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
-          
-        !-------------FORCING FUNCTION------------------------
-        ! volume of a face with a specific marker - thickness taken as average of grid spacing
-          
-        !WGHT1
-        !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
-        !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
-        !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
-        
-        pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
-        pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
-        pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
-        
-        
-          
-        k1  = floor(pos(3)*dx3) + 1
-        pind_i(3)=k1-1
-        pind_o(3)=k1+1
-        
-        ! For the spatial grid
-        k_inds = [k1-1,k1,k1]
-        
-        ! For the Eulerian field
-        k1  = modulo(k1-1,n3m)  + 1
-        keul_inds = [k1-1,k1,k1+1]
-        
-          
-        pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
-        dAdx(1:4,1:4)=0.0d0
-        dAdy(1:4,1:4)=0.0d0
-        dAdz(1:4,1:4)=0.0d0
-        
-        inw = 1
-          
-          
-        ! Accumulate A(4,4)   , B(4,27) linear system
-        ! Likewise for derivatives of A, B
-        !do k=pind_i(3), pind_o(3)
-         do nk = 1,3 ! Different to apply periodicty in z
-            k = k_inds(nk)
-            norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
-            Wt(3) = mls_gaussian( norp(3) , wcon )
-            dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
-            dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
-            do j=pind_i(2), pind_o(2)
-          
-                norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
-                Wt(2) = mls_gaussian( norp(2) , wcon )
-                Wt23 = Wt(2)*Wt(3)
-          
-                dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
-                dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
-                do i=pind_i(1), pind_o(1)
-          
-                    norp(1)=abs(pos(1) - xc(i) ) / (wscl / dx1)
-                    Wt(1) = mls_gaussian( norp(1) , wcon )
-                    Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
-        
-                    dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
-                    dWx_dx = dWx_dx * ( ( pos(1) - xc(i) ) / abs( pos(1) - xc(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
-        
-                    pxk(1)=1.0d0
-                    pxk(2)=xc(i)
-                    pxk(3)=ym(j)
-                    pxk(4)=zm(k)
-                    ! C = alpha * A * B + beta * C
-                    ! Note how the result of the computation is stored in C
-                    !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-                    call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
-                    B(1:4,inw)=Wtx*pxk(1:4)
-        
-                    ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
-                    dWdx = dWx_dx * Wt(2)  * Wt(3)
-                    dWdy = Wt(1)  * dWy_dy * Wt(3)
-                    dWdz = Wt(1)  * Wt(2)  * dWz_dz
-          
-                    call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
-                    call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
-                    call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
-        
-                    dBdx(1:4,inw)=dWdx * pxk(1:4)
-                    dBdy(1:4,inw)=dWdy * pxk(1:4)
-                    dBdz(1:4,inw)=dWdz * pxk(1:4)
-        
-                    !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
-        
-                    ii = modulo(i-1,n1m) + 1
-                    jj = modulo(j-1,n2m) + 1
-                    !kk = modulo(k-1,n3m) + 1
-        
-                    kk = keul_inds(nk)
-        
-                    !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
-                    Unel(inw) = vx(ii,jj,kk) ! Store Eulerian support domain values for summation later
-        
-                    inw = inw + 1
-                enddo !end i
-            enddo !end j
-        enddo !end k
-          
-            ! calling routine to compute inverse
-            ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-            call inverseLU(pinvA,invA)
-        
-            !---------------------LIN-ALG ROUTINES----------------------------
-            ! matrix multiplications for final interpolation
-            !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-            ! C = alpha * A * B + beta * C
-            ! Note how the result of the computation is stored in C
-            ! 
-            !
-            ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
-            !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
-            !
-            ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
-        
-            !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
-            ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
-            ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
-            ! Our MLS shape function ptxAB := Phi in their notation
-            ! Notably, only inversion of matrix A is required in this framework (stored in invA)
-            ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
-        
-            ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
-            call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
-        
-            ! Now compute derivatives of gamma for use in (3.141)
-        
-            !---------------------- x derivative ddx_ptxAB-------------------------------------------
-            pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
-            call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
-            !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
-            call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
-        
-            ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
-        
-        
-        
-            !---------------------- y derivative ddy_ptxAB-------------------------------------------
-            pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
-            call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
-            call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
-        
-            !---------------------- z derivative ddz_ptxAB-------------------------------------------
-            pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
-            call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
-            call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
-            call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
-            
-            !-------------------- Now compute derivatives at the marker location---------------------
-            ! e.g. Vanella & Balaras (2009) equation (27)
-        
-            gradU(1) = sum( ddx_PtxAB * Unel) !dU dx
-            gradU(2) = sum( ddy_PtxAB * Unel) !dU dy
-            gradU(3) = sum( ddz_PtxAB * Unel) !dU dz
-        
-          endif
-          end subroutine wght_gradU
+    
+        endif
+    end subroutine wght_gradU
 
 
-          subroutine wght_gradV(pos,ptx,gradV,probe_inds)
-            USE param
-            USE geom
-            use local_arrays, only: vy
-            USE mls_param
-            USE mpi_param, only: kstart, kend
-            implicit none
-            real, dimension(3), intent(inout) :: gradV !dPdx, dPdy, dPdz at the probe
-            real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
-            real,dimension(nel) :: Vnel ! Eulerian support domain values of temperature
-            real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
-            real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
-            real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
-            real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
-            real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
-            real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
-            real :: Wtx, Wt23
-            real :: dWx_dx, dWy_dy, dWz_dz
-            real :: dWdx, dWdy, dWdz
-            integer :: inp,inw,i,j,k,k1
-            integer :: ii,jj,kk,nk
-            
-            integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
-            
-            !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
-            
-            if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
+subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
+    USE param
+    USE geom
+    use local_arrays, only: vy
+    USE mls_param
+    USE mpi_param, only: kstart, kend
+    use mpih
+    implicit none
+    real, dimension(3), intent(inout) :: gradV !dPdx, dPdy, dPdz at the probe
+    real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
+    real,dimension(nel) :: Vnel ! Eulerian support domain values of temperature
+    real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
+    real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
+    real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
+    real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
+    real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
+    real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
+    real :: Wtx, Wt23
+    real :: dWx_dx, dWy_dy, dWz_dz
+    real :: dWdx, dWdy, dWdz
+    real :: dis
+    integer :: inp,inw,i,j,k,k1
+    integer :: ii,jj,kk,nk,nf
+    
+    integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+    
+    !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
+    
+    if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
               
-            !-------------FORCING FUNCTION------------------------
-            ! volume of a face with a specific marker - thickness taken as average of grid spacing
+    !-------------FORCING FUNCTION------------------------
+    ! volume of a face with a specific marker - thickness taken as average of grid spacing
+      
+    !WGHT1
+    !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
+    !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
+    !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+    
+    pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
+    pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
+    pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
+    
+    
+      
+    k1  = floor(pos(3)*dx3) + 1
+    pind_i(3)=k1-1
+    pind_o(3)=k1+1
+    
+    ! For the spatial grid
+    k_inds = [k1-1,k1,k1]
+    
+    ! For the Eulerian field
+    k1  = modulo(k1-1,n3m)  + 1
+    keul_inds = [k1-1,k1,k1+1]
+    
+      
+    pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
+    dAdx(1:4,1:4)=0.0d0
+    dAdy(1:4,1:4)=0.0d0
+    dAdz(1:4,1:4)=0.0d0
+    
+    inw = 1
+      
+      
+    ! Accumulate A(4,4)   , B(4,27) linear system
+    ! Likewise for derivatives of A, B
+    !do k=pind_i(3), pind_o(3)
+    do nk = 1,3 ! Different to apply periodicty in z
+       k = k_inds(nk)
+       norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
+       Wt(3) = mls_gaussian( norp(3) , wcon )
+
+       if ( norp(3) .lt. 1.0e-15 ) then
+        dWz_dz = 0.0
+       else
+        dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
+        dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
+       endif
+
+       do j=pind_i(2), pind_o(2)
+
+           norp(2)=abs( pos(2) - yc(j) ) / (wscl / dx2)
+           Wt(2) = mls_gaussian( norp(2) , wcon )
+           Wt23 = Wt(2)*Wt(3)
+
+           if ( norp(2) .lt. 1.0e-15 ) then
+            dWy_dy = 0.0
+           else
+            dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
+            dWy_dy = dWy_dy * ( ( pos(2) - yc(j) ) / abs( pos(2) - yc(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+           endif
+
+           do i=pind_i(1), pind_o(1)
+     
+               norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
+               Wt(1) = mls_gaussian( norp(1) , wcon )
+               Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+
+               if ( norp(1) .lt. 1.0e-15 ) then
+                dWx_dx = 0.0
+               else
+                dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
+                dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+               endif
+
+               pxk(1)=1.0d0
+               pxk(2)=xm(i)
+               pxk(3)=yc(j)
+               pxk(4)=zm(k)
+               ! C = alpha * A * B + beta * C
+               ! Note how the result of the computation is stored in C
+               !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+                call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
+                B(1:4,inw)=Wtx*pxk(1:4)
+
+                ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
+                dWdx = dWx_dx * Wt(2)  * Wt(3)
+                dWdy = Wt(1)  * dWy_dy * Wt(3)
+                dWdz = Wt(1)  * Wt(2)  * dWz_dz
+            
+                call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
+                call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
+                call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
+
+                dBdx(1:4,inw)=dWdx * pxk(1:4)
+                dBdy(1:4,inw)=dWdy * pxk(1:4)
+                dBdz(1:4,inw)=dWdz * pxk(1:4)
+
+                !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
+
+                ii = modulo(i-1,n1m) + 1
+                jj = modulo(j-1,n2m) + 1
+                !kk = modulo(k-1,n3m) + 1
+
+                kk = keul_inds(nk)
+
+                !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
+                Vnel(inw) = vy(ii,jj,kk) ! Store Eulerian support domain values for summation later
+    
+                inw = inw + 1
+            enddo !end i
+        enddo !end j
+    enddo !end k
               
-            !WGHT1
-            !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
-            !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
-            !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
-            
-            pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
-            pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
-            pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
-            
-            
-              
-            k1  = floor(pos(3)*dx3) + 1
-            pind_i(3)=k1-1
-            pind_o(3)=k1+1
-            
-            ! For the spatial grid
-            k_inds = [k1-1,k1,k1]
-            
-            ! For the Eulerian field
-            k1  = modulo(k1-1,n3m)  + 1
-            keul_inds = [k1-1,k1,k1+1]
-            
-              
-            pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
-            dAdx(1:4,1:4)=0.0d0
-            dAdy(1:4,1:4)=0.0d0
-            dAdz(1:4,1:4)=0.0d0
-            
-            inw = 1
-              
-              
-            ! Accumulate A(4,4)   , B(4,27) linear system
-            ! Likewise for derivatives of A, B
-            !do k=pind_i(3), pind_o(3)
-             do nk = 1,3 ! Different to apply periodicty in z
-                k = k_inds(nk)
-                norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
-                Wt(3) = mls_gaussian( norp(3) , wcon )
-                dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
-                dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
-                do j=pind_i(2), pind_o(2)
-              
-                    norp(2)=abs( pos(2) - yc(j) ) / (wscl / dx2)
-                    Wt(2) = mls_gaussian( norp(2) , wcon )
-                    Wt23 = Wt(2)*Wt(3)
-              
-                    dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
-                    dWy_dy = dWy_dy * ( ( pos(2) - yc(j) ) / abs( pos(2) - yc(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
-                    do i=pind_i(1), pind_o(1)
-              
-                        norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
-                        Wt(1) = mls_gaussian( norp(1) , wcon )
-                        Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
-            
-                        dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
-                        dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
-            
-                        pxk(1)=1.0d0
-                        pxk(2)=xm(i)
-                        pxk(3)=yc(j)
-                        pxk(4)=zm(k)
-                        ! C = alpha * A * B + beta * C
-                        ! Note how the result of the computation is stored in C
-                        !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-                        call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
-                        B(1:4,inw)=Wtx*pxk(1:4)
-            
-                        ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
-                        dWdx = dWx_dx * Wt(2)  * Wt(3)
-                        dWdy = Wt(1)  * dWy_dy * Wt(3)
-                        dWdz = Wt(1)  * Wt(2)  * dWz_dz
-              
-                        call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
-                        call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
-                        call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
-            
-                        dBdx(1:4,inw)=dWdx * pxk(1:4)
-                        dBdy(1:4,inw)=dWdy * pxk(1:4)
-                        dBdz(1:4,inw)=dWdz * pxk(1:4)
-            
-                        !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
-            
-                        ii = modulo(i-1,n1m) + 1
-                        jj = modulo(j-1,n2m) + 1
-                        !kk = modulo(k-1,n3m) + 1
-            
-                        kk = keul_inds(nk)
-            
-                        !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
-                        Vnel(inw) = vy(ii,jj,kk) ! Store Eulerian support domain values for summation later
-            
-                        inw = inw + 1
-                    enddo !end i
-                enddo !end j
-            enddo !end k
-              
-                ! calling routine to compute inverse
-                ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-                call inverseLU(pinvA,invA)
-            
-                !---------------------LIN-ALG ROUTINES----------------------------
-                ! matrix multiplications for final interpolation
-                !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-                ! C = alpha * A * B + beta * C
-                ! Note how the result of the computation is stored in C
-                ! 
-                !
-                ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
-                !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
-                !
-                ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
-            
-                !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
-                ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
-                ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
-                ! Our MLS shape function ptxAB := Phi in their notation
-                ! Notably, only inversion of matrix A is required in this framework (stored in invA)
-                ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
-            
-                ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
-                call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
-            
-                ! Now compute derivatives of gamma for use in (3.141)
-            
-                !---------------------- x derivative ddx_ptxAB-------------------------------------------
-                pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
-                call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
-                !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
-                call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
-            
-                ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
-            
-            
-            
-                !---------------------- y derivative ddy_ptxAB-------------------------------------------
-                pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
-                call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
-                call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
-            
-                !---------------------- z derivative ddz_ptxAB-------------------------------------------
-                pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
-                call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
-                call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
-                call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
-                
-                !-------------------- Now compute derivatives at the marker location---------------------
-                ! e.g. Vanella & Balaras (2009) equation (27)
-            
-                gradV(1) = sum( ddx_PtxAB * Vnel) !dV dx
-                gradV(2) = sum( ddy_PtxAB * Vnel) !dV dy
-                gradV(3) = sum( ddz_PtxAB * Vnel) !dV dz
-            
-              endif
+    ! calling routine to compute inverse
+    ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
+    call inverseLU(pinvA,invA)
+
+    !---------------------LIN-ALG ROUTINES----------------------------
+    ! matrix multiplications for final interpolation
+    !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+    ! C = alpha * A * B + beta * C
+    ! Note how the result of the computation is stored in C
+    ! 
+    !
+    ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
+    !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
+    !
+    ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
+
+    !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
+    ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
+    ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
+    ! Our MLS shape function ptxAB := Phi in their notation
+    ! Notably, only inversion of matrix A is required in this framework (stored in invA)
+    ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
+
+    ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
+
+    ! Now compute derivatives of gamma for use in (3.141)
+
+    !---------------------- x derivative ddx_ptxAB-------------------------------------------
+    pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
+    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
+    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
+
+    ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
+
+
+
+    !---------------------- y derivative ddy_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
+
+    !---------------------- z derivative ddz_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
+    
+    !-------------------- Now compute derivatives at the marker location---------------------
+    ! e.g. Vanella & Balaras (2009) equation (27)
+
+    gradV(1) = sum( ddx_PtxAB * Vnel) !dV dx
+    gradV(2) = sum( ddy_PtxAB * Vnel) !dV dy
+    gradV(3) = sum( ddz_PtxAB * Vnel) !dV dz
+
+
+    endif
 end subroutine wght_gradV
     
+subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
+    USE param
+    USE geom
+    use local_arrays, only: vz
+    USE mls_param
+    USE mpi_param, only: kstart, kend
+    use mpih
+    implicit none
+    real, dimension(3), intent(inout) :: gradW !dPdx, dPdy, dPdz at the probe
+    real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
+    real,dimension(nel) :: Wnel ! Eulerian support domain values of temperature
+    real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
+    real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
+    real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
+    real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
+    real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
+    real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
+    real :: Wtx, Wt23
+    real :: dWx_dx, dWy_dy, dWz_dz
+    real :: dWdx, dWdy, dWdz
+    real :: dis
+    integer :: inp,inw,i,j,k,k1
+    integer :: ii,jj,kk,nk,nf
+    
+    integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+    
+    !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
+    
+    if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
+              
+    !-------------FORCING FUNCTION------------------------
+    ! volume of a face with a specific marker - thickness taken as average of grid spacing
+      
+    !WGHT1
+    !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
+    !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
+    !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
+    
+    pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
+    pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
+    pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
+    
+    
+      
+    k1  = nint(pos(3)*dx3) + 1
+    pind_i(3)=k1-1
+    pind_o(3)=k1+1
+    
+    ! For the spatial grid
+    k_inds = [k1-1,k1,k1]
+    
+    ! For the Eulerian field
+    k1  = modulo(k1-1,n3m)  + 1
+    keul_inds = [k1-1,k1,k1+1]
+    
+      
+    pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
+    dAdx(1:4,1:4)=0.0d0
+    dAdy(1:4,1:4)=0.0d0
+    dAdz(1:4,1:4)=0.0d0
+    
+    inw = 1
+      
+      
+    ! Accumulate A(4,4)   , B(4,27) linear system
+    ! Likewise for derivatives of A, B
+    !do k=pind_i(3), pind_o(3)
+    do nk = 1,3 ! Different to apply periodicty in z
+       k = k_inds(nk)
+       norp(3)=abs( pos(3) - zc(k) ) / (wscl / dx3)
+       Wt(3) = mls_gaussian( norp(3) , wcon )
 
-subroutine wght_gradW(pos,ptx,gradW,probe_inds)
-                USE param
-                USE geom
-                use local_arrays, only: vz
-                USE mls_param
-                USE mpi_param, only: kstart, kend
-                implicit none
-                real, dimension(3), intent(inout) :: gradW !dPdx, dPdy, dPdz at the probe
-                real,dimension(nel) :: ddx_PtxAB(nel), ddy_PtxAB(nel), ddz_PtxAB(nel) !Shape function derivatives
-                real,dimension(nel) :: Wnel ! Eulerian support domain values of temperature
-                real,dimension(4) :: pxk ! [1,x,y,z] Basis function evaluated at Eulerian cage coordinates
-                real,dimension(4), intent(in) :: ptx ! Basis function [1, x, y, z] where (x,y,z) evaluated at the probe location
-                real,dimension(3) :: pos,norp,Wt ! Probe location, normalised cage distances and weights
-                real,dimension(4,4) :: pinvA,invA, dAdx, dAdy, dAdz
-                real,dimension(4,nel) :: B, dBdx, dBdy, dBdz
-                real, dimension(4) :: gamvec(4), dgamdx(4), dgamdy(4), dgamdz(4) ! Auxilary vectors for computing shape function derivatives
-                real :: Wtx, Wt23
-                real :: dWx_dx, dWy_dy, dWz_dz
-                real :: dWdx, dWdy, dWdz
-                integer :: inp,inw,i,j,k,k1
-                integer :: ii,jj,kk,nk
-                
-                integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
-                
-                !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
-                
-                if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
-                  
-                !-------------FORCING FUNCTION------------------------
-                ! volume of a face with a specific marker - thickness taken as average of grid spacing
-                  
-                !WGHT1
-                !pind_i(1)=pindv(1,nv,inp)-1;  pind_o(1)=pindv(1,nv,inp)+1
-                !pind_i(2)=pindv(2,nv,inp)-1;  pind_o(2)=pindv(2,nv,inp)+1
-                !pind_i(3)=pind(3,ntr,inp)-1;  pind_o(3)=pind(3,ntr,inp)+1
-                
-                pind_i(1)=probe_inds(1)-1;  pind_o(1)=probe_inds(1)+1
-                pind_i(2)=probe_inds(2)-1;  pind_o(2)=probe_inds(2)+1
-                pind_i(3)=probe_inds(3)-1;  pind_o(3)=probe_inds(3)+1
-                
-                
-                  
-                k1  = floor(pos(3)*dx3) + 1
-                pind_i(3)=k1-1
-                pind_o(3)=k1+1
-                
-                ! For the spatial grid
-                k_inds = [k1-1,k1,k1]
-                
-                ! For the Eulerian field
-                k1  = modulo(k1-1,n3m)  + 1
-                keul_inds = [k1-1,k1,k1+1]
-                
-                  
-                pinvA(1:4,1:4)=0.0d0 ! Is summed in the loop below
-                dAdx(1:4,1:4)=0.0d0
-                dAdy(1:4,1:4)=0.0d0
-                dAdz(1:4,1:4)=0.0d0
-                
-                inw = 1
-                  
-                  
-                ! Accumulate A(4,4)   , B(4,27) linear system
-                ! Likewise for derivatives of A, B
-                !do k=pind_i(3), pind_o(3)
-                 do nk = 1,3 ! Different to apply periodicty in z
-                    k = k_inds(nk)
-                    norp(3)=abs( pos(3) - zc(k) ) / (wscl / dx3)
-                    Wt(3) = mls_gaussian( norp(3) , wcon )
-                    dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
-                    dWz_dz = dWz_dz * ( ( pos(3) - zc(k) ) / abs( pos(3) - zc(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
-                    do j=pind_i(2), pind_o(2)
-                  
-                        norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
-                        Wt(2) = mls_gaussian( norp(2) , wcon )
-                        Wt23 = Wt(2)*Wt(3)
-                  
-                        dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
-                        dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
-                        do i=pind_i(1), pind_o(1)
-                  
-                            norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
-                            Wt(1) = mls_gaussian( norp(1) , wcon )
-                            Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
-                
-                            dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
-                            dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
-                
-                            pxk(1)=1.0d0
-                            pxk(2)=xm(i)
-                            pxk(3)=yc(j)
-                            pxk(4)=zm(k)
-                            ! C = alpha * A * B + beta * C
-                            ! Note how the result of the computation is stored in C
-                            !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-                            call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
-                            B(1:4,inw)=Wtx*pxk(1:4)
-                
-                            ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
-                            dWdx = dWx_dx * Wt(2)  * Wt(3)
-                            dWdy = Wt(1)  * dWy_dy * Wt(3)
-                            dWdz = Wt(1)  * Wt(2)  * dWz_dz
-                  
-                            call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
-                            call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
-                            call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
-                
-                            dBdx(1:4,inw)=dWdx * pxk(1:4)
-                            dBdy(1:4,inw)=dWdy * pxk(1:4)
-                            dBdz(1:4,inw)=dWdz * pxk(1:4)
-                
-                            !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
-                
-                            ii = modulo(i-1,n1m) + 1
-                            jj = modulo(j-1,n2m) + 1
-                            !kk = modulo(k-1,n3m) + 1
-                
-                            kk = keul_inds(nk)
-                
-                            !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
-                            Wnel(inw) = vz(ii,jj,kk) ! Store Eulerian support domain values for summation later
-                
-                            inw = inw + 1
-                        enddo !end i
-                    enddo !end j
-                enddo !end k
-                  
-                    ! calling routine to compute inverse
-                    ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-                    call inverseLU(pinvA,invA)
-                
-                    !---------------------LIN-ALG ROUTINES----------------------------
-                    ! matrix multiplications for final interpolation
-                    !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
-                    ! C = alpha * A * B + beta * C
-                    ! Note how the result of the computation is stored in C
-                    ! 
-                    !
-                    ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
-                    !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
-                    !
-                    ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
-                
-                    !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
-                    ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
-                    ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
-                    ! Our MLS shape function ptxAB := Phi in their notation
-                    ! Notably, only inversion of matrix A is required in this framework (stored in invA)
-                    ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
-                
-                    ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
-                    call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
-                
-                    ! Now compute derivatives of gamma for use in (3.141)
-                
-                    !---------------------- x derivative ddx_ptxAB-------------------------------------------
-                    pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
-                    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
-                    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
-                    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
-                
-                    ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
-                
-                
-                
-                    !---------------------- y derivative ddy_ptxAB-------------------------------------------
-                    pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
-                    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
-                    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
-                
-                    !---------------------- z derivative ddz_ptxAB-------------------------------------------
-                    pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
-                    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
-                    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
-                    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
-                    
-                    !-------------------- Now compute derivatives at the marker location---------------------
-                    ! e.g. Vanella & Balaras (2009) equation (27)
-                
-                    gradW(1) = sum( ddx_PtxAB * Wnel) !dW dx
-                    gradW(2) = sum( ddy_PtxAB * Wnel) !dW dy
-                    gradW(3) = sum( ddz_PtxAB * Wnel) !dW dz
-                
-                  endif
+       if ( norp(3) .lt. 1.0e-15 ) then
+        dWz_dz = 0.0
+       else
+        dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
+        dWz_dz = dWz_dz * ( ( pos(3) - zc(k) ) / abs( pos(3) - zc(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
+       endif
+
+       do j=pind_i(2), pind_o(2)
+
+           norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
+           Wt(2) = mls_gaussian( norp(2) , wcon )
+           Wt23 = Wt(2)*Wt(3)
+
+           if ( norp(2) .lt. 1.0e-15 ) then
+            dWy_dy = 0.0
+           else
+            dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
+            dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+           endif
+
+           do i=pind_i(1), pind_o(1)
+     
+               norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
+               Wt(1) = mls_gaussian( norp(1) , wcon )
+               Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
+
+               if ( norp(1) .lt. 1.0e-15 ) then
+                dWx_dx = 0.0
+               else
+                dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
+                dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+               endif
+
+               pxk(1)=1.0d0
+               pxk(2)=xm(i)
+               pxk(3)=ym(j)
+               pxk(4)=zc(k)
+               ! C = alpha * A * B + beta * C
+               ! Note how the result of the computation is stored in C
+               !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+                call DGEMM('N','T',4,4,1,Wtx,pxk,4,pxk,4, 1.0d0,pinvA,4) ! Accumulate A matrix ( eventually inverted to pinvA )
+                B(1:4,inw)=Wtx*pxk(1:4)
+
+                ! Eq. (3.165) and Program 3.5, 3.6 in Liu & Gu 2005
+                dWdx = dWx_dx * Wt(2)  * Wt(3)
+                dWdy = Wt(1)  * dWy_dy * Wt(3)
+                dWdz = Wt(1)  * Wt(2)  * dWz_dz
+            
+                call DGEMM('N','T',4,4,1,dWdx,pxk,4,pxk,4, 1.0d0,dAdx,4) 
+                call DGEMM('N','T',4,4,1,dWdy,pxk,4,pxk,4, 1.0d0,dAdy,4) 
+                call DGEMM('N','T',4,4,1,dWdz,pxk,4,pxk,4, 1.0d0,dAdz,4) 
+
+                dBdx(1:4,inw)=dWdx * pxk(1:4)
+                dBdy(1:4,inw)=dWdy * pxk(1:4)
+                dBdz(1:4,inw)=dWdz * pxk(1:4)
+
+                !Tnel(inw) = temp(i,j,k) ! Store Eulerian support domain values for summation later
+
+                ii = modulo(i-1,n1m) + 1
+                jj = modulo(j-1,n2m) + 1
+                !kk = modulo(k-1,n3m) + 1
+
+                kk = keul_inds(nk)
+
+                !Tnel(inw) = temp(ii,jj,kk) ! Store Eulerian support domain values for summation later
+                Wnel(inw) = vz(ii,jj,kk) ! Store Eulerian support domain values for summation later
+    
+                inw = inw + 1
+            enddo !end i
+        enddo !end j
+    enddo !end k
+              
+    ! calling routine to compute inverse
+    ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
+    call inverseLU(pinvA,invA)
+
+    !---------------------LIN-ALG ROUTINES----------------------------
+    ! matrix multiplications for final interpolation
+    !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
+    ! C = alpha * A * B + beta * C
+    ! Note how the result of the computation is stored in C
+    ! 
+    !
+    ! Matrix-vector operations: y = alpha * Ax + beta * y   ; result stored in y   incx incy are strides (should be 1)
+    !DGEMV(TPOSE?, nRowA, nColA, alpha, A, nRowA, x, incx, beta, y, incy) 
+    !
+    ! NB: for the intel MKL implementations, must have B =/= C ! But this is not the case for LAPACK
+
+    !---------------SHAPE FUNCTION DERIVATIVE CALCULATIONS---------------
+    ! For evaluation of shape function derivatives, ddx_ptxAB, ddy_ptxAB, ddz_ptxAB
+    ! See equations (3.138--3.141 , 3.144) in Liu & Gu (2005)
+    ! Our MLS shape function ptxAB := Phi in their notation
+    ! Notably, only inversion of matrix A is required in this framework (stored in invA)
+    ! Also no need for evaluating the shape function (i.e. ptxAB), as we only need its derivatives here
+
+    ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
+
+    ! Now compute derivatives of gamma for use in (3.141)
+
+    !---------------------- x derivative ddx_ptxAB-------------------------------------------
+    pxk = [0.0d0,1.0d0,0.0d0,0.0d0] ! Store d/dx(ptx) initially, re-use pxk memory
+    call DGEMV('N',    4, 4, -1.0d0, dAdx, 4, gamvec, 1, 1.0d0, pxk, 1 ) ! Get -dAdx*gamma + dpdx first, store in pxk
+    !Now get dgamdx = Ainv * (-dAdx*gamma + dpdx) where (-dAdx*gamma + dpdx) was computed above and is stored in pxk
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdx, 1 ) 
+
+    ! Compute MLS shape function derivative ddx_ptxAB = dgamdx^T*B + gamma^T*dBdx
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdx, 1, B, 4, 0.0d0, ddx_ptxAB, 1) ! Term dgamdx^T*B
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdx, 4 , 1.0d0 ,ddx_ptxAB, 1) ! += gamma^T*dBdx
+
+
+
+    !---------------------- y derivative ddy_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,1.0d0,0.0d0] ! Store d/dy(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdy, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdy, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdy, 1, B, 4, 0.0d0, ddy_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdy, 4 , 1.0d0 ,ddy_ptxAB, 1)
+
+    !---------------------- z derivative ddz_ptxAB-------------------------------------------
+    pxk = [0.0d0,0.0d0,0.0d0,1.0d0] ! Store d/dz(ptx) initially
+    call DGEMV('N',    4, 4, -1.0d0, dAdz, 4, gamvec, 1, 1.0d0, pxk, 1 )
+    call DGEMV('N',    4, 4, 1.0d0, invA, 4, pxk, 1, 0.0d0, dgamdz, 1 ) 
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, dgamdz, 1, B, 4, 0.0d0, ddz_ptxAB, 1)
+    call DGEMM('N', 'N', 1, nel, 4, 1.0d0, gamvec, 1, dBdz, 4 , 1.0d0 ,ddz_ptxAB, 1)
+    
+    !-------------------- Now compute derivatives at the marker location---------------------
+    ! e.g. Vanella & Balaras (2009) equation (27)
+
+    gradW(1) = sum( ddx_PtxAB * Wnel) !dW dx
+    gradW(2) = sum( ddy_PtxAB * Wnel) !dW dy
+    gradW(3) = sum( ddz_PtxAB * Wnel) !dW dz
+
+    endif
 end subroutine wght_gradW

@@ -244,15 +244,15 @@
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
       real, dimension(:,:,:), allocatable :: ptxAB_temp
       !real, dimension(:,:,:), allocatable :: ddx_ptxAB, ddy_ptxAB, ddz_ptxAB !Shape function derivatives at probes
-      real, dimension(:,:), allocatable :: tau_n1, tau_n2, tau_n3, press_tri ! Structural loads
+      real, dimension(:,:), allocatable :: tau_n1, tau_n2, tau_n3 ! Structural loads
+      real, dimension(:,:,:), allocatable ::  press_n_tri ! Structural loads
+      real, dimension(:,:), allocatable :: r_x_tau_n1, r_x_tau_n2, r_x_tau_n3 ! Structural torques
+      real, dimension(:,:,:), allocatable :: r_x_prn_tri ! Structural torques
       real, dimension(:,:), allocatable :: qw_o, qw_i ! Normal gradients at interface faces (outward and inward dirn)
       real, dimension(:,:), allocatable :: qw_oVert, qw_iVert ! Normal gradients at interface VERTICES (outward and inward dirn)
       real, dimension(:,:), allocatable :: Avert ! Area of each vertex
       real, dimension(:,:,:), allocatable :: vmelt ! local melting velocity at vertices
-
-      !real,dimension(:,:,:,:), allocatable :: ptxAB_pr
-      real, dimension(:),allocatable :: int_pr_dA
-      real, dimension(:,:),allocatable :: int_tau_dA
+      real, dimension(:,:),allocatable :: int_tau_dA, int_r_x_tau_dA,int_prn_dA, int_r_x_prn_dA
 
 
 

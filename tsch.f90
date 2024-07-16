@@ -36,9 +36,9 @@
 
             call get_bbox_inds(bbox_inds,inp)
 
-            call convex_hull_q12(bbox_inds,inp)
-            call convex_hull_q22(bbox_inds,inp)
-            call convex_hull_q32(bbox_inds,inp)
+            !call convex_hull_q12(bbox_inds,inp)
+            !call convex_hull_q22(bbox_inds,inp)
+            !call convex_hull_q32(bbox_inds,inp)
             !write(*,*) "Starting qc2 conv hull"
             call convex_hull_qc2(bbox_inds,inp)
         enddo
@@ -70,13 +70,13 @@
         VOFz(:,:,:) = 1.
         VOFp(:,:,:) = 1.
         
-        do inp=1,Nparticle
-         call get_bbox_inds(bbox_inds,inp)
-         call convex_hull_q12(bbox_inds,inp)
-         call convex_hull_q22(bbox_inds,inp)
-         call convex_hull_q32(bbox_inds,inp)
-         call convex_hull_qc2(bbox_inds,inp)
-        enddo
+        !do inp=1,Nparticle
+         !call get_bbox_inds(bbox_inds,inp)
+         !call convex_hull_q12(bbox_inds,inp)
+         !call convex_hull_q22(bbox_inds,inp)
+         !call convex_hull_q32(bbox_inds,inp)
+         !call convex_hull_qc2(bbox_inds,inp)
+        !enddo
       !endif
         !------------------------------------------------------------------------------
         call divg
