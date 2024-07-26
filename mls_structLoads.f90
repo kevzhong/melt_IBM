@@ -18,7 +18,18 @@ subroutine mls_structLoads
     real :: tau1_buffer, tau2_buffer, tau3_buffer
     real, dimension(3) :: r_x_tau_buffer
 
-    
+    ! Assign from previous timestep
+    int_prn_dA_m1 = int_prn_dA
+    int_tau_dA_m1 = int_tau_dA
+    int_r_x_prn_dA_m1 = int_r_x_prn_dA
+    int_r_x_tau_dA_m1 = int_r_x_tau_dA
+
+    int_prn_dA(:,:) = 0.0d0
+    int_tau_dA(:,:) = 0.0d0
+    int_r_x_prn_dA(:,:) = 0.0d0
+    int_r_x_tau_dA(:,:) = 0.0d0
+
+
     ! Evaluate pressures and viscous stresses at Lagrangian nodes. Surface values extrapolated from probe locations
     ! Pre-multiplications by triangle areas also done to obtain surface-integrated loads, so result is effectively a force on triangles
     press_n_tri(:,:,:) = 0.0d0
@@ -86,7 +97,8 @@ subroutine mls_structLoads
 
              call wght_gradP(pos,ptx,gradP,probe_inds,nf) ! Calc dP/dxi at probe
 
-             press_tri = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
+             !press_tri = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
+             press_tri = press_probe !- h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
 
              ! Convert to pressure force and project in normal direction
             press_n_tri(1:3,nf,inp) = press_tri * sur(nf,inp) * tri_nor(1:3,nf,inp)

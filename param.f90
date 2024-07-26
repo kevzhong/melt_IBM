@@ -253,6 +253,7 @@
       real, dimension(:,:), allocatable :: Avert ! Area of each vertex
       real, dimension(:,:,:), allocatable :: vmelt ! local melting velocity at vertices
       real, dimension(:,:),allocatable :: int_tau_dA, int_r_x_tau_dA,int_prn_dA, int_r_x_prn_dA
+      real, dimension(:,:),allocatable :: int_tau_dA_m1, int_r_x_tau_dA_m1,int_prn_dA_m1, int_r_x_prn_dA_m1
 
 
 

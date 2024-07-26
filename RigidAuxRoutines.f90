@@ -109,14 +109,16 @@ do inp=1,Nparticle
   pos_m1(:,inp)       = pos_cm(:,inp)
   om_m1(:,inp)        = omega_c(:,inp)
 
-  call NE_MLS(int_prn_dA(1:3,inp),     int_tau_dA(1:3,inp),     &
-              int_r_x_prn_dA(1:3,inp), int_r_x_tau_dA(1:3,inp), &
-                          vel_CM(:,inp),   vel_m1(:,inp),       &
-                          pos_CM(:,inp),   pos_m1(:,inp),       &
-                          omega_c(:,inp),     om_m1(:,inp),     &
-                          InertTensor(:,:,inp),                 &
-                          inp,                                  &
-                          Volume(inp) )
+  call NE_MLS(int_prn_dA(1:3,inp),        int_tau_dA(1:3,inp),        &
+              int_prn_dA_m1(1:3,inp),     int_tau_dA_m1(1:3,inp),     &
+              int_r_x_prn_dA(1:3,inp),    int_r_x_tau_dA(1:3,inp),    &
+              int_r_x_prn_dA_m1(1:3,inp), int_r_x_tau_dA_m1(1:3,inp), &
+              vel_CM(:,inp),              vel_m1(:,inp),              &
+              pos_CM(:,inp),              pos_m1(:,inp),              &
+              omega_c(:,inp),             om_m1(:,inp),               &
+              InertTensor(:,:,inp),                                   &
+              inp,                                                    &
+              Volume(inp) )
 enddo
 
 end subroutine
@@ -135,14 +137,16 @@ end subroutine
 !                         alpha_b,  acm_m1,      &
 !                         Volume)
 
-subroutine NE_MLS(int_prn_dA,     int_tau_dA,     &
-                  int_r_x_prn_dA, int_r_x_tau_dA, &
-                          vel_CM,   vel_cmm1,     &
-                          pos_CM,   pos_cmm1,     &
-                          omega_c,  omega_c_m1,   &
-                          I_ij,                   &
-                          inp,                    &
-                          Volume)
+subroutine NE_MLS(int_prn_dA,         int_tau_dA,        &
+                  int_prn_dA_m1,      int_tau_dA_m1,     &
+                  int_r_x_prn_dA,     int_r_x_tau_dA,    &
+                  int_r_x_prn_dA_m1,  int_r_x_tau_dA_m1, &
+                  vel_CM,   vel_cmm1,                    &
+                  pos_CM,   pos_cmm1,                    &
+                  omega_c,  omega_c_m1,                  &
+                  I_ij,                                  &
+                  inp,                                   &
+                  Volume)
 
 ! Given total force and total torque acting on the body, it evolves
 ! the newton equation for center of mass and
@@ -154,7 +158,9 @@ use mpih
 implicit none
 
 real,dimension(3) :: int_prn_dA, int_tau_dA ! total forces acting on the rigid body
+real,dimension(3) :: int_prn_dA_m1, int_tau_dA_m1 ! total forces acting on the rigid body
 real,dimension(3) :: int_r_x_prn_dA, int_r_x_tau_dA ! total torques acting on the rigid body
+real,dimension(3) :: int_r_x_prn_dA_m1, int_r_x_tau_dA_m1 ! total torques acting on the rigid body
 real,dimension(3) :: vel_CM        ! velocity of the center of mass
 real,dimension(3) :: pos_CM        ! position of the center of mass
 real,dimension(4)   :: quat        ! quaternions
@@ -198,8 +204,12 @@ e_z = 0.; e_z(3) = -1.0
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
-vel_CM = vel_CMm1 - al * dt * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
-                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+! vel_CM = vel_CMm1 - al * dt * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
+!                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+
+vel_CM = vel_CMm1 - 0.5 * al * dt * ( -int_prn_dA + int_tau_dA  & 
+                                      -int_prn_dA_m1 + int_tau_dA_m1  )         & ! Hydrodynamic loads
+                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
 
@@ -247,8 +257,13 @@ do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
   ! - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
   ! +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
 
+  ! omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+  !                   + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
+
   omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-                    - al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
+                    + 0.5 * al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA  &
+                                        -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) )
+
 
   ! No rotation
   !omega_c = 0.0
@@ -307,19 +322,22 @@ do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
 !n_iter = n_iter + 1
 enddo
 
+!vel_CM = vel_CMm1 - al * dt * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
+!                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+
 
 
 if (ismaster) then
 write(*,*) "Iresidual: ", Iresidual
-!write(*,*) "-------------------------"
-!write(*,*) -1.0*dt * pre_fac * For_tot, " IBM translation"
-!write(*,*) (u_tot - u_tot_m1) / dens_ratio, " Impulse translation"
-!write(*,*) "-------------------------"
-!write(*,*) matmul(I_inv, matmul(I_ij,omega_c_m1) ), "I_ij x om_m1"
-!rite(*,*) -1.0*matmul(I_inv, - dt *torq_surf  ), "IBM rotation"
-!write(*,*) matmul(I_inv,   dr_x_u_b  ), "Rotation impulse"
-!write(*,*) "-------------------------"
+write(*,*) "int_prn_dA", int_prn_dA
+write(*,*) "int_tau_dA", int_tau_dA
 endif
+
+if(ismaster) then
+  open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
+        write(112,'(40E17.5)') int_prn_dA, int_tau_dA
+  close(112)
+end if
 
 
 

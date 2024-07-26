@@ -94,6 +94,11 @@ implicit none
   allocate(int_tau_dA(3,Nparticle))
   allocate(int_r_x_tau_dA(3,Nparticle))
 
+  allocate(int_prn_dA_m1(3,Nparticle))
+  allocate(int_r_x_prn_dA_m1(3,Nparticle))
+  allocate(int_tau_dA_m1(3,Nparticle))
+  allocate(int_r_x_tau_dA_m1(3,Nparticle))
+
 
   !allocate( quat(4, Nparticle), quat_m1(4, Nparticle), quat_dot(4, Nparticle)  )
 
