@@ -57,7 +57,8 @@ subroutine convex_hull_q1(ind,inp)
   
              if (k.ge.kstart.and.k.le.kend) then 
   
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
@@ -142,7 +143,8 @@ subroutine convex_hull_q1(ind,inp)
   
              if (k.ge.kstart.and.k.le.kend) then 
   
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
@@ -228,7 +230,8 @@ subroutine convex_hull_q1(ind,inp)
   
              if (k.ge.kstart.and.k.le.kend) then 
   
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
