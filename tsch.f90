@@ -18,10 +18,16 @@
 
       beta=dt/ren*0.5d0
 
+      ! Accumulate Structural loads across all sub-steps
+      Fp(:) = 0.0d0
+      Ftau(:) = 0.0d0
+
       do ns=1,nsst                                                 
         al=alm(ns)
         ga=gam(ns)
         ro=rom(ns)
+
+
         
         VOFx(:,:,:) = 1.
         VOFy(:,:,:) = 1.
@@ -62,6 +68,9 @@
 
         call particle
 
+        Fp = Fp + int_prn_dA(:,1)
+        Ftau = Ftau + int_tau_dA(:,1)
+
         !------------ KZ: update VOF, remove later since called by Newton--Euler -----
         !if ( (imlsfor.eq.1) .and. (imlsstr .eq. 0 ) ) then
 
@@ -96,6 +105,29 @@
 !     ======================================================
 !     End pressure correction
 !     ======================================================
+
+
+!         !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
+! if (imlsstr.eq.1) then
+
+!     call mls_structLoads
+
+!   ! Update: tri-centroid locations, object COM, Volume, Inertia tensor components (rotation matrix)
+!   do inp = 1,Nparticle
+!       call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
+!       xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
+!   enddo
+
+!   !if (ismaster) then
+!   !    write(*,*) "Volume fraction is ", Volume(1)*100.0
+!   !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
+!   !endif    
+!   !KZ: check if anything else needs to be updated
+
+!   ! Move / rotate object by solving Newton--Euler
+!   call update_part_pos
+! endif
+! !------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
 
         enddo
 

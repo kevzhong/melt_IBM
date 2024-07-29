@@ -194,6 +194,12 @@ character(70) namfile
           call CalcDissipation
           call writeClock
 
+          if(ismaster) then
+            open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
+                  write(112,'(40E17.5)') Fp, Ftau
+            close(112)
+          end if
+
        time=time+dt
       if((ntime.eq.ntst).or.(mod(ntime,100).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua

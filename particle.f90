@@ -100,7 +100,7 @@ endif
 !------------------------------------ (2) END MELTING  --------------------------------------------------
 
 
-!------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
+! !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
 if (imlsstr.eq.1) then
 
     ! Update: tri-centroid locations, object COM, Volume, Inertia tensor components (rotation matrix)
@@ -120,7 +120,7 @@ if (imlsstr.eq.1) then
     ! Move / rotate object by solving Newton--Euler
     call update_part_pos
 endif
-!------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
+! !------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
 
 !-------------------------------- (4)  BEGIN REMESHING  -------------------------------------------------
 if (iremesh .eq. 1 ) then

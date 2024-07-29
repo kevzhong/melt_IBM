@@ -172,7 +172,7 @@ real,dimension(3) :: vel_CMm1            ! velocity of the center of mass
 real,dimension(3) :: pos_CMm1            ! position of the center of mass
 real,dimension(3) :: omega_c_m1          ! angular vel body frame
 integer :: inp
-real :: Volume, angle_buffer, magOM
+real :: Volume, angle_buffer, magOM, pre_fac
 
 ! Iterative inertia tensor update (Ardekani et al. 2016)
 real :: tolerance, Iresidual ! Iteration tolerance for the lhs inertia tensor
@@ -197,19 +197,19 @@ integer :: IPIV(3), INFO
 
 e_z = 0.; e_z(3) = -1.0
 
-!pre_fac = 1.0 / Volume / dens_ratio
+pre_fac = 1.0 / Volume / dens_ratio
 ! translation
 !a_CM = - pre_fac * for_tot &
 !      + e_z / dens_ratio &
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
-! vel_CM = vel_CMm1 - al * dt * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
-!                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+vel_CM = vel_CMm1 + al * dt * pre_fac * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
+                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
-vel_CM = vel_CMm1 - 0.5 * al * dt * ( -int_prn_dA + int_tau_dA  & 
-                                      -int_prn_dA_m1 + int_tau_dA_m1  )         & ! Hydrodynamic loads
-                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+! vel_CM = vel_CMm1 + 0.5 * al * dt * pre_fac * ( -int_prn_dA + int_tau_dA  & 
+!                                       -int_prn_dA_m1 + int_tau_dA_m1  )         & ! Hydrodynamic loads
+!                    + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
 
@@ -257,12 +257,12 @@ do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
   ! - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
   ! +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
 
-  ! omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  !                   + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
-
   omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-                    + 0.5 * al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA  &
-                                        -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) )
+                    + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
+
+  ! omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+  !                   + 0.5 * al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA  &
+  !                                       -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) )
 
 
   ! No rotation
@@ -333,11 +333,11 @@ write(*,*) "int_prn_dA", int_prn_dA
 write(*,*) "int_tau_dA", int_tau_dA
 endif
 
-if(ismaster) then
-  open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
-        write(112,'(40E17.5)') int_prn_dA, int_tau_dA
-  close(112)
-end if
+! if(ismaster) then
+!   open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
+!         write(112,'(40E17.5)') int_prn_dA, int_tau_dA
+!   close(112)
+! end if
 
 
 

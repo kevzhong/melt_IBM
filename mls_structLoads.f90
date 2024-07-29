@@ -97,8 +97,8 @@ subroutine mls_structLoads
 
              call wght_gradP(pos,ptx,gradP,probe_inds,nf) ! Calc dP/dxi at probe
 
-             !press_tri = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
-             press_tri = press_probe !- h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
+             press_tri = press_probe - h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
+             !press_tri = press_probe !- h_eulerian * dot_product( gradP, tri_nor(1:3,nf,inp) )
 
              ! Convert to pressure force and project in normal direction
             press_n_tri(1:3,nf,inp) = press_tri * sur(nf,inp) * tri_nor(1:3,nf,inp)
