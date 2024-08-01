@@ -887,11 +887,11 @@ subroutine update_xyz
         !call cross(om_dCM(:), omega_c(:,inp), tri_bar(:,i,inp)  -  pos_CM(:,inp)  )
         call cross(om_dCM(:), omega_c(:,inp), dxyz_s(:,i,inp)  )
 
-        if (imelt .eq. 1) then
-          vel_tri(:,i,inp) = vel_tri(:,i,inp) + vel_CM(:,inp) + om_dCM(:)
-        else
+        !if (imelt .eq. 1) then
+        !  vel_tri(:,i,inp) = vel_tri(:,i,inp) + vel_CM(:,inp) + om_dCM(:)
+        !else
           vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:)
-        endif
+        !endif
 
       endif
 
