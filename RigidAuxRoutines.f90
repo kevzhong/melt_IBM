@@ -204,12 +204,12 @@ pre_fac = 1.0 / Volume / dens_ratio
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
-vel_CM = vel_CMm1 + al * dt * pre_fac * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
-                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+!vel_CM = vel_CMm1 + al * dt * pre_fac * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
+!                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
-! vel_CM = vel_CMm1 + 0.5 * al * dt * pre_fac * ( -int_prn_dA + int_tau_dA  & 
-!                                       -int_prn_dA_m1 + int_tau_dA_m1  )         & ! Hydrodynamic loads
-!                    + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
+                  +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
+                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
 
@@ -252,17 +252,12 @@ end if
 
 do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
 
+  !omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+  !                  + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
 
-  ! omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  ! - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
-  ! +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
-
-  omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-                    + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
-
-  ! omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  !                   + 0.5 * al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA  &
-  !                                       -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) )
+   omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+                     +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
+                     +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
 
 
   ! No rotation
@@ -274,7 +269,7 @@ do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
 
   angle_buffer = magOM * al* dt
 
-  if (magOM .lt. 1.0e-16 ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
+  if (magOM .lt. EPSILON(1.0d0) ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
     om_buffer(1:3) = 0.0
   if (ismaster) then
     write(*,*) "Div. by zero avoided for rotation axis!"
@@ -327,11 +322,11 @@ enddo
 
 
 
-if (ismaster) then
-write(*,*) "Iresidual: ", Iresidual
-write(*,*) "int_prn_dA", int_prn_dA
-write(*,*) "int_tau_dA", int_tau_dA
-endif
+! if (ismaster) then
+! write(*,*) "Iresidual: ", Iresidual
+! write(*,*) "int_prn_dA", int_prn_dA
+! write(*,*) "int_tau_dA", int_tau_dA
+! endif
 
 ! if(ismaster) then
 !   open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
@@ -1094,11 +1089,11 @@ subroutine update_xyz
         !call cross(om_dCM(:), omega_c(:,inp), tri_bar(:,i,inp)  -  pos_CM(:,inp)  )
         call cross(om_dCM(:), omega_c(:,inp), dxyz_s(:,i,inp)  )
 
-        if (imelt .eq. 1) then
-          vel_tri(:,i,inp) = vel_tri(:,i,inp) + vel_CM(:,inp) + om_dCM(:)
-        else
-          vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:)
-        endif
+        !if (imelt .eq. 1) then
+        !  vel_tri(:,i,inp) = vel_tri(:,i,inp) + vel_CM(:,inp) + om_dCM(:)
+        !else
+        vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:)
+        !endif
 
       endif
 

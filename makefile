@@ -23,7 +23,7 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
 
 FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f90 remesh_coarsen.f90 remesh_smooth.f90 findProbeIndices.f90 \
          	forc1.f90 forc2.f90 forc3.f90 forctemp.f90 mlsForce.f90 mlsWeight.f90 mls_structLoads.f90 mls_heatFlux.f90 stefanCondition.f90 \
-			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 rayCutVol.f90
+			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90 #rayCutVol.f90
 #KZ: cutvol.f90 removed for raytagging
 
 MFILES = param.f90 geom.f90 #coll.f90 #KZ: no collisions

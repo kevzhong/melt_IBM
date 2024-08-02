@@ -56,7 +56,8 @@
 
            if (k.ge.kstart.and.k.le.kend) then 
 
-            call rayTagQ(vof,C,Q,inp)
+            !call rayTagQ(vof,C,Q,inp)
+            call rayTagQ_faster(vof,Q,kk,inp)
 
              ii = modulo(i-1,n1m) + 1
              jj = modulo(j-1,n2m) + 1
@@ -115,7 +116,8 @@ subroutine convex_hull_q22(ind,inp)
   
              if (k.ge.kstart.and.k.le.kend) then 
   
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
@@ -174,7 +176,8 @@ subroutine convex_hull_q22(ind,inp)
   
              if (k.ge.kstart.and.k.le.kend) then 
   
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
@@ -223,7 +226,7 @@ subroutine convex_hull_q22(ind,inp)
     ! C is the control-point and stores the ray origin
 
     ! Random control-point well-outside computational domain
-    C = [0.0, 0.0, 0.0 ] - [xlen*5.0, ylen*4.0, zlen * 3.0]
+    !C = [0.0, 0.0, 0.0 ] - [xlen*5.0, ylen*4.0, zlen * 3.0]
   
     do i = ind(1,1),ind(1,2)
       Q(1) = xm(i)
@@ -240,7 +243,8 @@ subroutine convex_hull_q22(ind,inp)
 
               x_gc = pos_cm(1:3,inp)
 
-              call rayTagQ(vof,C,Q,inp)
+              !call rayTagQ(vof,C,Q,inp)
+              call rayTagQ_faster(vof,Q,kk,inp)
   
                ii = modulo(i-1,n1m) + 1
                jj = modulo(j-1,n2m) + 1
@@ -277,25 +281,15 @@ subroutine convex_hull_q22(ind,inp)
                 x_grid(3) = zm(kk)
                 r = x_grid - x_GC ! relative distance 
 
-                !write(*,*) "x_grid", x_grid
-                !write(*,*) "r", r
-
-
                 u_imh = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
-
-                !write(*,*) "u_imh", u_imh
 
                 ! uT |_{i+1/2}
                 x_grid(1) = xc(i+1)
                 r = x_grid - x_GC ! relative distance 
                 u_iph = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
 
-                !write(*,*) "u_iph", u_iph
-
                 h31=( u_iph*(temp(ip,jc,kc)+temp(ic,jc,kc)) & 
                 -u_imh*(temp(ic,jc,kc)+temp(im,jc,kc)) )*udx1
-
-                !write(*,*) "Finished u terms"
 
 
                 !                d  v T   |          1   [                              ]
@@ -317,9 +311,6 @@ subroutine convex_hull_q22(ind,inp)
                 h32=( v_jph*(temp(ic,jp,kc)+temp(ic,jc,kc)) &
                 -v_jmh*(temp(ic,jc,kc)+temp(ic,jm,kc)) )*udx2
 
-                !write(*,*) "Finished v terms"
-
-
 
                 !                d  w T   |          1   [                              ]
                 !             ----------- |  =     ----- |  wT |      -      wT |       |
@@ -339,8 +330,6 @@ subroutine convex_hull_q22(ind,inp)
 
                 h33=( w_kph*(temp(ic,jc,kp)+temp(ic,jc,kc)) &
                 -w_kmh*(temp(ic,jc,kc)+temp(ic,jc,km)) )*udx3
-
-                !write(*,*) "Finished w terms"
 
                 d_UsolidT_dxj(ii,jj,k) = (h31+h32+h33)
 
@@ -446,6 +435,77 @@ subroutine rayTagQ(vof,C,Q,inp)
 
 end subroutine
 
+subroutine rayTagQ_faster(vof,Q,k,inp)
+  ! Tag the cell Q, defined by its cell-centered coordinates as being either interface, fluid or solid
+  use param
+  use mls_param
+  implicit none
+  real, dimension(3) :: V0, V1, V2, Q,C, intPoint
+  real, dimension(2) :: xx,yy,zz
+
+  real :: vof, zcent
+  integer :: i,inp, int_count, pad, k1,k
+  logical :: intersect, insideBox
+
+  ! Force C to be parallel to the computational grid lines: efficient
+
+  C = [-xlen*10.0, -ylen*3.0, Q(3) ]
+
+  int_count = 0
+  
+  pad = 2
+
+  do i =1,maxnf
+      if (.not. isGhostFace(i,inp) ) then
+          V0 = xyzv(1:3,vert_of_face(1,i,inp),inp)
+          V1 = xyzv(1:3,vert_of_face(2,i,inp),inp)
+          V2 = xyzv(1:3,vert_of_face(3,i,inp),inp)
+
+        ! If triangle in cell, cell is interface, break out
+        call triangleBoxIntersect(insideBox,V0,V1,V2, Q, dx1, dx2, dx3)    
+        if (insideBox .eqv. .true. ) then
+          vof = 0.5
+          return
+        endif       
+
+        zcent = (1.0/3.0)* ( V0(3) + V1(3) + V2(3) )
+        k1 = floor(zcent*dx3) + 1
+
+        if (abs(k1 - k) .le. pad ) then
+          call rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
+
+          ! If intersected, check if cell is interface cell
+          if (intersect) then
+            call pointBoxIntersect(insideBox,intPoint, Q, dx1, dx2, dx3)
+            if (insideBox .eqv. .true. ) then
+
+              !! Cell is interface, estimate VOF based on signed distance to the triangle plane
+              !xx = [ Q(1) - 0.5/dx1 , Q(1) + 0.5/dx1 ]
+              !yy = [ Q(2) - 0.5/dx2 , Q(2) + 0.5/dx2 ]
+              !zz = [ Q(3) - 0.5/dx3 , Q(3) + 0.5/dx3 ]
+              !call compute_interface_VOF(vof,xx,yy,zz,tri_nor(1:3,i,inp),V0)
+              vof = 0.5
+
+              ! Exit, no need to check other triangles
+              return
+
+            else ! Intersected: add to counter
+              int_count = int_count + 1
+            endif ! if interface
+          endif !if intersect
+        endif
+      endif !ifGhost
+  enddo
+
+  ! Even intersections: external, odd intersections: internal
+  if (modulo(int_count,2) .eq. 0) then !even = fluid
+      vof = 1.0
+  else ! odd = solid
+      vof = 0.0
+  endif
+
+end subroutine
+
 
 recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     ! Using the Möller & Trumbore (2005) algorithm to
@@ -513,6 +573,48 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     endif
 
 end subroutine
+
+subroutine pointBoxIntersect(insideBox,intPoint, Q, dx1, dx2, dx3)
+  ! Test if point intPoint is inside 3D box with centroid Q
+  !use mls_param
+  implicit none
+  real, dimension(3) :: Q, intPoint
+  real :: dx1, dx2, dx3
+  logical :: insideBox
+
+  insideBox = .false.
+
+
+  if( ( ( Q(1) - 0.5/dx1 .lt. intPoint(1) ) .and.  ( intPoint(1)  .lt.   Q(1) + 0.5/dx1 )  ) .and. &
+  ( ( Q(2) - 0.5/dx2 .lt. intPoint(2) ) .and.  ( intPoint(2)  .lt.   Q(2) + 0.5/dx2 )  ) .and. &
+   ( ( Q(3) - 0.5/dx3 .lt. intPoint(3) ) .and.  ( intPoint(3)  .lt.   Q(3) + 0.5/dx3 )  ) ) then
+    insideBox = .true.
+   endif
+
+end subroutine pointBoxIntersect
+
+subroutine triangleBoxIntersect(insideBox,V0,V1,V2, Q, dx1, dx2, dx3)
+  ! Test if point intPoint is inside 3D box with centroid Q
+  !use mls_param
+  implicit none
+  real, dimension(3) :: Q, V0, V1, V2
+  real :: dx1, dx2, dx3
+  logical :: insideBox
+
+  insideBox = .false.
+
+  call pointBoxIntersect(insideBox,V0, Q, dx1, dx2, dx3)
+
+  if (insideBox .eqv. .false.) then
+    call pointBoxIntersect(insideBox,V1, Q, dx1, dx2, dx3)
+  endif
+
+  if (insideBox .eqv. .false.) then
+    call pointBoxIntersect(insideBox,V2, Q, dx1, dx2, dx3)
+  endif
+
+
+end subroutine triangleBoxIntersect
 
 ! subroutine compute_interface_VOF(VOF,xx,yy,zz,nhat,V0)
 !     !use param

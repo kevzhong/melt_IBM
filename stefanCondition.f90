@@ -25,28 +25,30 @@ do inp=1,Nparticle
         endif
     enddo
 
-    ! Add vmelt contribution to vel_tri for each Lagrangian marker
-    do nf = 1,maxnf
-        if (.not. isGhostFace(nf,inp) ) then
-            ! Vertex -> face interpolation, equal weigting
-            v1 = vert_of_face(1,nf,inp)
-            v2 = vert_of_face(2,nf,inp)
-            v3 = vert_of_face(3,nf,inp)
+    !KZ: interface motion does not contribute to fluid velocity
+    
+    ! ! Add vmelt contribution to vel_tri for each Lagrangian marker
+    ! do nf = 1,maxnf
+    !     if (.not. isGhostFace(nf,inp) ) then
+    !         ! Vertex -> face interpolation, equal weigting
+    !         v1 = vert_of_face(1,nf,inp)
+    !         v2 = vert_of_face(2,nf,inp)
+    !         v3 = vert_of_face(3,nf,inp)
 
-            ! Equal load distribution (1/3) for each vertex on each triangle
-            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v1,inp)
-            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v2,inp)
-            !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v3,inp)
+    !         ! Equal load distribution (1/3) for each vertex on each triangle
+    !         !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v1,inp)
+    !         !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v2,inp)
+    !         !vel_tri(1:3,nf,inp) = vel_tri(1:3,nf,inp) + (1.0/3.0) * vmelt(1:3,v3,inp)
 
-            ! Equal load distribution (1/3) for each vertex on each triangle
-            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v1,inp)
-            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v2,inp)
-            vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v3,inp)
+    !         ! Equal load distribution (1/3) for each vertex on each triangle
+    !         vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v1,inp)
+    !         vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v2,inp)
+    !         vel_tri(1:3,nf,inp) = (1.0/3.0) * vmelt(1:3,v3,inp)
 
-            !Reset at end
+    !         !Reset at end
 
-        endif
-    enddo
+    !     endif
+    ! enddo
 
 enddo
 
