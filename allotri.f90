@@ -70,6 +70,7 @@ implicit none
   allocate(  qw_o(maxnf,Nparticle) , qw_i(maxnf,Nparticle)  ) !Normal gradients at vertices
   allocate(  qw_oVert(maxnv,Nparticle) , qw_iVert(maxnv,Nparticle)  ) !Normal gradients at vertices
   allocate(vmelt(3,maxnv,Nparticle))
+  allocate(vmelt_m1(3,maxnv,Nparticle))
 
   !-- particle
   allocate( fpxyz(3, Nparticle),     ftxyz(3, Nparticle) )

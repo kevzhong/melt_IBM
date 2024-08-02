@@ -8,6 +8,9 @@ integer :: inp,nv,nf
 integer :: v1, v2, v3
 
 
+! RK3 memory swap
+vmelt_m1 = vmelt
+
 do inp=1,Nparticle
     do nv = 1,maxnv
         if (isGhostVert(nv,inp) .eqv. .false. ) then
@@ -21,7 +24,9 @@ do inp=1,Nparticle
             !vmelt(nv,inp) = dot_product( rhs_stefan, nhat ) ! Store the scalar local melting velocity
             
             ! Update interface location
-            xyzv(1:3,nv,inp) = xyzv(1:3,nv,inp) +  al * dt * vmelt(1:3,nv,inp)
+            !xyzv(1:3,nv,inp) = xyzv(1:3,nv,inp) +  al * dt * vmelt(1:3,nv,inp)
+            xyzv(1:3,nv,inp) = xyzv(1:3,nv,inp) + dt * ( ga * vmelt(1:3,nv,inp) + ro * vmelt_m1(1:3,nv,inp) )
+
         endif
     enddo
 
