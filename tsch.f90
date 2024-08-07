@@ -33,20 +33,16 @@
         VOFy(:,:,:) = 1.
         VOFz(:,:,:) = 1.
         VOFp(:,:,:) = 1.
-
         solid_mask(:,:,:) = .false.
 
         if(imlsfor.eq.1)then
           do inp=1,Nparticle
-
             call get_bbox_inds(bbox_inds,inp)
-
-            !call convex_hull_q12(bbox_inds,inp)
-            !call convex_hull_q22(bbox_inds,inp)
-            !call convex_hull_q32(bbox_inds,inp)
-            !write(*,*) "Starting qc2 conv hull"
+            call convex_hull_q12(bbox_inds,inp)
+            call convex_hull_q22(bbox_inds,inp)
+            call convex_hull_q32(bbox_inds,inp)
             call convex_hull_qc2(bbox_inds,inp)
-        enddo
+          enddo
         endif
 
         call hdnl1
@@ -57,33 +53,12 @@
         call invtr1 
         call invtr2      
         call invtr3
-        !write(*,*) "Starting invtrte"
         call invtrte
 
-        !VOFx(:,:,:) = 1.
-        !VOFy(:,:,:) = 1.
-        !VOFz(:,:,:) = 1.
-        !VOFp(:,:,:) = 1.
+
 
         call particle
 
-        !------------ KZ: update VOF, remove later since called by Newton--Euler -----
-        !if ( (imlsfor.eq.1) .and. (imlsstr .eq. 0 ) ) then
-
-        !VOFx(:,:,:) = 1.
-        !VOFy(:,:,:) = 1.
-        !VOFz(:,:,:) = 1.
-        !VOFp(:,:,:) = 1.
-        
-        !do inp=1,Nparticle
-         !call get_bbox_inds(bbox_inds,inp)
-         !call convex_hull_q12(bbox_inds,inp)
-         !call convex_hull_q22(bbox_inds,inp)
-         !call convex_hull_q32(bbox_inds,inp)
-         !call convex_hull_qc2(bbox_inds,inp)
-        !enddo
-      !endif
-        !------------------------------------------------------------------------------
         call divg
         call phcalc 
 

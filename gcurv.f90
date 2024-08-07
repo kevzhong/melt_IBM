@@ -12,6 +12,8 @@ implicit none
 real    :: ti(2), tin(3)
 real    :: dmax,tpc
 real :: tstart, tend
+integer :: inp
+real,dimension(3,2)     :: bbox_inds
 character(70) namfile
   call mpi_workdistribution
   call InitArrays
@@ -190,9 +192,18 @@ character(70) namfile
           call write_partvel
 
           call writeTriMeshStats
+          call writeClock
+
+        VOFp(:,:,:) = 1.
+        solid_mask = .false. 
+        if (  (imlsstr .eq. 1 ) ) then
+        do inp=1,Nparticle
+          call get_bbox_inds(bbox_inds,inp)
+          call convex_hull_qc2(bbox_inds,inp)
+        enddo
+        endif
           call CalcInjection
           call CalcDissipation
-          call writeClock
 
           if(ismaster) then
             open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')

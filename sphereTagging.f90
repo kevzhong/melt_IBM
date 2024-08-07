@@ -591,3 +591,20 @@
     !bbox_inds(:,2) = [n1m, n2m, n3m]
   
 end subroutine
+
+subroutine get_periodic_indices(k,x)
+  use param
+  implicit none
+  integer :: k
+  real    :: x(3)
+
+  if (k .ge. n3) then
+     k = k - n3m
+    x(3) = x(3) - zlen
+  end if
+
+  if (k .lt. 1) then
+     k = k + n3m
+     x(3) = x(3) + zlen
+  end if
+end subroutine

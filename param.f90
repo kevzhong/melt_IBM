@@ -54,7 +54,6 @@
         integer  :: n2m, n3m, n1m,n1mh,n2mh
         integer  :: iaxsy
         real :: cflm 
-        real :: keta
         real :: ren, prandtl, pec, betagz
         real :: pi
         real :: al,ga,ro

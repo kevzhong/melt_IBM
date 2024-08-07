@@ -1086,14 +1086,9 @@ subroutine update_xyz
       if (.not. isGhostFace(i,inp) ) then
         
         ! Add Urot = omega x r contribution to local surface velocity
-        !call cross(om_dCM(:), omega_c(:,inp), tri_bar(:,i,inp)  -  pos_CM(:,inp)  )
         call cross(om_dCM(:), omega_c(:,inp), dxyz_s(:,i,inp)  )
 
-        !if (imelt .eq. 1) then
-        !  vel_tri(:,i,inp) = vel_tri(:,i,inp) + vel_CM(:,inp) + om_dCM(:)
-        !else
         vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:)
-        !endif
 
       endif
 
@@ -1101,15 +1096,4 @@ subroutine update_xyz
 
  end do
 
-!  if (ismaster) then
-!   write(6,'(A,E10.3,A,E10.3)')"xmin  ",  minval( pack(xyzv(1,:,1) , .not. isGhostVert(:,1)  ) ),&
-!   "xmax ", maxval( pack(xyzv(1,:,1) , .not. isGhostVert(:,1)  ) )
-
-!   write(6,'(A,E10.3,A,E10.3)')"ymin  ",  minval( pack(xyzv(2,:,1) , .not. isGhostVert(:,1)  ) ),&
-!   "ymax ", maxval( pack(xyzv(2,:,1) , .not. isGhostVert(:,1)  ) )
-
-!   write(6,'(A,E10.3,A,E10.3)')"zmin  ",  minval( pack(xyzv(3,:,1) , .not. isGhostVert(:,1)  ) ),&
-!    "zmax ", maxval( pack(xyzv(3,:,1) , .not. isGhostVert(:,1)  ) )
-
-!  endif
 end subroutine update_xyz
