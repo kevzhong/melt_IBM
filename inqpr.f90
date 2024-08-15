@@ -160,12 +160,11 @@ subroutine inqpr_taylorHIT
 
                         ! Taylor-green vortices IC
 
-                        vx(ic,jc,kc) = cos(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * ym(jc) / ylen ) &
-                                     * sin(2.0 * pi * zm(kc) / zlen )
-                        vy(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * yc(jc) / ylen ) &
-                                     * sin(2.0 * pi * zm(kc) / zlen )
-                        vz(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * ym(jc) / ylen ) &
-                                     * cos(2.0 * pi * zc(kc) / zlen )
+                        vx(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * ym(jc) / ylen ) &
+                                     * cos(2.0 * pi * zm(kc) / zlen )
+                        vy(ic,jc,kc) = -cos(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * yc(jc) / ylen ) &
+                                     * cos(2.0 * pi * zm(kc) / zlen )
+                        vz(ic,jc,kc) = 0.0
 
                   enddo !end j
             enddo !end i

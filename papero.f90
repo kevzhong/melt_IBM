@@ -44,7 +44,7 @@
         read(15,301) dummy
         read(15,*) tl, epsstar, kf_on_kmin
         read(15,301) dummy       
-        read(15,*) idtv,dtmax,cfllim 
+        read(15,*) idtv,dtmax,cfllim , cflfix
         read(15,301) dummy       
         read(15,*) forcing 
         read(15,301) dummy       

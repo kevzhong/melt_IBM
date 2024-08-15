@@ -36,7 +36,7 @@
                 amil(ic)=-betadx*ackl_b ! Sub-diagonal elements
                 fil(ic)=rhs(ic,jc,kc)*ackl_b !RHS vector
              enddo
-                call tripvmyline(amil,acil,apil,fil,1,n1m,n1)
+                call tridiag_periodic(amil,acil,apil,fil,1,n1m,n1)
              do ic=1,n1m
                 rhs(ic,jc,kc) = fil(ic)  
              enddo

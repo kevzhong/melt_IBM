@@ -29,7 +29,7 @@
             fkl(kc)=rhst(kc,ic,jc)*ackl_b
           end do
 
-          call tripvmyline(amkl,ackl,apkl,fkl,1,n3m,n3)
+          call tridiag_periodic(amkl,ackl,apkl,fkl,1,n3m,n3)
 
           do kc=1,n3m
             rhst(kc,ic,jc)=fkl(kc)

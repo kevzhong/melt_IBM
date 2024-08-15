@@ -122,12 +122,14 @@ character(70) namfile
 
        call cfl 
 
-       if(idtv.eq.1) then
-         if(ntime.ne.1) then
-            dt=cflmax/cflm
-            if(dt.gt.dtmax) dt=dtmax
-         endif
-       else
+       if(idtv.eq.1) then !CFL mode
+         !if(ntime.ne.1) then
+            !dt=cflmax/cflm
+            !if(dt.gt.dtmax) dt=dtmax
+         !endif
+        call get_dt
+
+       else ! Constant DT mode
          cflm=cflm*dt
        endif
 
@@ -161,7 +163,6 @@ character(70) namfile
           !write(6,'(A,F10.6)') "min Atri/AE:", minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) )/A_eulerian 
           write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
           write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
-
           endif
         !endif
 

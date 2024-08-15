@@ -75,7 +75,8 @@ call update_both_ghosts(n1,n2,vz,kstart,kend)
 
       eps_in = eps_in*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
       kenerg =0.5d0* kenerg*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
-      en_ibm=2.9103*en_ibm/dble(n1m*n2m*n3m)
+      !en_ibm=2.9103*en_ibm/dble(n1m*n2m*n3m)
+      en_ibm = en_ibm/dble(n1m*n2m*n3m)
 
       if(ismaster) then
        namfile='flowmov/eps_in.txt'

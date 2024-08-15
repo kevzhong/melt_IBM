@@ -28,4 +28,43 @@
 
 
       return  
-      end                                                               
+      end      
+      
+      subroutine get_dt
+        use param
+        use local_arrays, only: vx,vy,vz
+        use mpih
+        use mpi_param, only: kstart,kend
+        implicit none
+        integer :: j,k,jp,kp,i,ip
+        real :: cfl_buffer
+        
+        dt = dtmax
+
+        cfl_buffer = 0.0
+                                                                         
+        do k=kstart,kend
+          do j=1,n2m
+            do i=1,n1m
+              
+              cfl_buffer = max(cfl_buffer, abs(vx(i,j,k)) * dt * dx1 , &
+                                           abs(vy(i,j,k)) * dt * dx2 , &
+                                           abs(vz(i,j,k)) * dt * dx3  )
+
+        enddo
+        enddo
+        enddo
+              
+        call MpiAllMaxRealScalar(cfl_buffer)
+  
+        if (cfl_buffer .gt. 0.0 ) then
+          dt = dt * cflfix / cfl_buffer
+        endif
+
+        if (ismaster) then
+          write(*,*) "Time-step", dt
+        endif
+
+        return  
+        end                                                               
+  

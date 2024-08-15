@@ -409,7 +409,8 @@ subroutine writePPpartVol
   namfile='flowmov/partPPVol.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
-  write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , vel_CM(3,1) 
+  !write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , vel_CM(3,1) 
+  write(43,'(100E15.7)')time, Volume(1), Surface(1)
 
   close(43)
   end if
@@ -435,7 +436,7 @@ subroutine writeTriMeshStats
   ! Time, Nv, Ne, Nf, min(skew), max(skew), min(elength), max(elength), min(atri), max(atri)
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')time,&
-  write(43, '(F10.6, 3(I5), 6(F10.6))')time,&
+  write(43, '(F10.6, 3(I10), 6(F10.6))')time,&
   count(isGhostVert(:,1) .eqv. .false.),count(isGhostEdge(:,1) .eqv. .false.),count(isGhostFace(:,1) .eqv. .false.),&
   minval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ),   maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , &
   minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ),   maxval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) , &

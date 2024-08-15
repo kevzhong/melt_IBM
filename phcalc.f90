@@ -53,7 +53,8 @@
       do j=jstart,jend
        do i=1,n1m
         do k=1,n3m
-          buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j)+1.e-16)
+          !buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j)+1.e-16)
+          buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j) )
         end do
        end do
       end do
@@ -62,6 +63,7 @@
 !     so manually set it to zero to avoid NaNs
 
       if(jstart.eq.1) buft(1,1,1) = 0.0d0
+      !buft(1,1,1) = 0.0d0
 
 !     Inverse Fourier transform in all three directions
 

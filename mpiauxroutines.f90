@@ -125,19 +125,22 @@
       end subroutine MpiAllMaxRealScalar
 !==============================================================================
 
-      subroutine MpiMinRealScalar(var)
+      subroutine MpiAllMinRealScalar(var)
       use mpih
       implicit none
       real, intent(inout) :: var
       real :: buf
       
-       call MPI_REDUCE(var,buf,1, &
-        MPI_DOUBLE_PRECISION,MPI_MIN,0,MPI_COMM_WORLD,ierr)
+      ! call MPI_REDUCE(var,buf,1, &
+      !  MPI_DOUBLE_PRECISION,MPI_MIN,0,MPI_COMM_WORLD,ierr)
+
+        call MPI_ALLREDUCE(var,buf,1, &
+        MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,ierr)
  
        var = buf
 
       return
-      end subroutine MpiMinRealScalar
+      end subroutine MpiAllMinRealScalar
 !==============================================================================
 
       subroutine MpiSumReal1D(var,sz)

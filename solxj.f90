@@ -23,7 +23,7 @@
                 amjl(jc)=-betadx*ackl_b
                 fjl(jc)=rhs(ic,jc,kc)*ackl_b
              enddo
-                call tripvmyline(amjl,acjl,apjl,fjl,1,n2m,n2)
+                call tridiag_periodic(amjl,acjl,apjl,fjl,1,n2m,n2)
              do jc=1,n2m
                 rhs(ic,jc,kc) = fjl(jc)  
              enddo

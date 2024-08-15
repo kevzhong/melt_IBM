@@ -12,7 +12,7 @@
         real      :: xlen, ylen, zlen
         real      :: pra,dt,resid,cflmax,tsta
         integer   :: starea
-        real      :: dtmax,cfllim
+        real      :: dtmax,cfllim,cflfix
         real      :: tl,epsstar,kf_on_kmin
         integer   :: nson,idtv,forcing
         real      :: Tmelt, Tliq, Tsol, latHeat, cpliquid

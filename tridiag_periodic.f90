@@ -1,4 +1,4 @@
-      subroutine tripvmyline(ami,aci,api,rrr,n1i,n1f,m1)
+      subroutine tridiag_periodic(ami,aci,api,rrr,n1i,n1f,m1)
       implicit none
       integer :: n1i,n1f,m1
       real, dimension(m1) :: ami,aci,api,rrr
