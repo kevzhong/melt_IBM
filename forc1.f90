@@ -1,4 +1,4 @@
-subroutine forc1(ntr,inp,ptxAB,Vel,rad,torque,force)
+subroutine forc1(ntr,inp,ptxAB,Vel)
 USE param
 USE mls_param
 USE local_arrays, only: vx
@@ -6,13 +6,12 @@ USE mpi_param, only: kstart, kend
 USE mls_local, only: for_xc
 use mpih, only: myid
 implicit none
-real,dimension(3) :: rad,torque
 real,dimension(nel) :: ui
 real,dimension(nel) :: ptxAB(nel)
 integer :: inp,ntr,inw,i,j,k
 real Um, Vel
 integer, dimension(3) :: pind_i, pind_o
-real force,for
+real for
 integer :: ii,jj,kk
 integer kstartp
 
@@ -64,29 +63,6 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
          enddo
          enddo
          enddo
-
-
-  ! =========
-
-  ! RHS IBM terms for Newton--Euler, see eqn (8) in Breugem (2012, JCP)
-  ! particle force
-
-!                  Ntri
-!                  ____
-!     rho_p   1    \    _
-!  -  ----  -----       F * Atri * dx
-!     rho_f   V    /      
-!                  ----  
-      
-! The variable "for" contains everything to the right of the summation symbol above
-
-  for = (Vel-Um) * sur(ntr,inp) * invdx1dt
-  force = force + for
-
-  !-- torque
-  torque(2) = torque(2) + for*rad(3)
-  torque(3) = torque(3) - for*rad(2)
-
 endif
 end
 

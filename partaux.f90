@@ -135,32 +135,6 @@ subroutine write_partrot
 
 end subroutine write_partrot 
 
-subroutine write_tail_head 
-  use param
-  use mls_param
-  use mpih
-
-  implicit none
-
-  integer i,idx,inp
-
-  character(70) namfile
-
-  ! first of all, fill up velocity arrays
-
-  if (myid.eq.0) then
-
-    namfile='flowmov/tail_head.txt'
-
-    open(unit=43,file=namfile,Access = 'append', Status='unknown')
-    write(43,'(100E15.7)')time,dt, tail_head 
-   
-    close(43)
-  end if
-
-end subroutine write_tail_head
-
-
 
 subroutine set_particle_array_sizes
   use param

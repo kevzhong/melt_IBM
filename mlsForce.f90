@@ -9,28 +9,22 @@ real,dimension(4,4) :: ptx
 real,dimension(3) :: tsur_xyz,fsur_xyz,pos_vec, pos
 real              :: angle
 integer :: inp,ntr
-real :: force(3,Nparticle), torque(3,Nparticle),force_tau(3,Nparticle)
-
-force = 0.
-torque = 0.
 
 do inp = 1, Nparticle
  do ntr = 1, maxnf
       if (isGhostFace(ntr,inp) .eqv. .false. ) then
 
       if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
-         pos_vec(1:3) = tri_bar(1:3,ntr,inp) - pos_cm(1:3,inp)
 
-         call forc1(ntr,inp,ptxAB_q1(1:nel,ntr,inp),vel_tri(1,ntr,inp),pos_vec,torque(1:3,inp),force(1,inp))
-         call forc2(ntr,inp,ptxAB_q2(1:nel,ntr,inp),vel_tri(2,ntr,inp),pos_vec,torque(1:3,inp),force(2,inp))
+         call forc1(ntr,inp,ptxAB_q1(1:nel,ntr,inp),vel_tri(1,ntr,inp) )
+         call forc2(ntr,inp,ptxAB_q2(1:nel,ntr,inp),vel_tri(2,ntr,inp) )
          call forctemp(ntr,inp,ptxAB_temp(1:nel,ntr,inp))
       endif
 
       !if(pind(6,ntr,inp).ge.kstart-1 .and. pind(6,ntr,inp).le.kend+1) then
       if(pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
+         call forc3(ntr,inp,ptxAB_q3(1:nel,ntr,inp),vel_tri(3,ntr,inp) )
 
-         pos_vec(1:3) = tri_bar(1:3,ntr,inp) - pos_cm(1:3,inp)
-         call forc3(ntr,inp,ptxAB_q3(1:nel,ntr,inp),vel_tri(3,ntr,inp),pos_vec,torque(1:3,inp),force(3,inp))
       endif
 
    endif
@@ -38,11 +32,5 @@ do inp = 1, Nparticle
  enddo
 enddo
 
-! do inp=1,Nparticle
-!    call mpi_globalsum_double_arr(force(1:3,inp),3)
-!    call mpi_globalsum_double_arr(torque(1:3,inp),3)
-!    fpxyz(:,inp) = fpxyz(:,inp) + force(:,inp)
-!    ftxyz(:,inp) = ftxyz(:,inp) + torque(:,inp)
-! enddo
 
 end subroutine mlsForce

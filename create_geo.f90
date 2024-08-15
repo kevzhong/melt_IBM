@@ -69,7 +69,7 @@ subroutine setup_particles
       quat = 0.
 
       vel_CM    = 0.
-      a_CM      = 0.
+      !a_CM      = 0.
       !u_tot     = 0.
       !r_x_u_tot = 0.
 

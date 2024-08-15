@@ -140,7 +140,8 @@ character(70) namfile
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
           write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
-          !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
+          write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
+          write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
           endif
         !endif
 

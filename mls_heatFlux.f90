@@ -74,6 +74,10 @@ do inp=1,Nparticle
     endif
  enddo
 enddo
+
+call MPI_ALLREDUCE(MPI_IN_PLACE,qw_oVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
+call MPI_ALLREDUCE(MPI_IN_PLACE,qw_iVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+
 end subroutine mls_heatFlux
 
 

@@ -64,16 +64,6 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
          enddo
          enddo
 
-
-!  ! =========
-!  ! particle force
-!  for = (Vel-Um) * sur(ntr,inp) * invdx1dt
-!  force = force + for
-!
-!  !-- torque
-  !torque(2) = torque(2) + for*rad(3)
-  !torque(3) = torque(3) - for*rad(2)
-
 endif
 end
 

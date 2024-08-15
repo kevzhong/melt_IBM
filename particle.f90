@@ -38,9 +38,6 @@ if(imlsfor.eq.1)then
     call findCentroidIndices
     call mlsWeight
 
-    fpxyz=0.0d0
-    ftxyz=0.0d0
-
     my_down=myid-1
     my_up=myid+1
 
@@ -61,10 +58,6 @@ if(imlsfor.eq.1)then
         if (imelt .eq. 1) then 
             call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
             call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
-            
-            call MPI_ALLREDUCE(MPI_IN_PLACE,qw_oVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)        
-            call MPI_ALLREDUCE(MPI_IN_PLACE,qw_iVert,maxnv*Nparticle,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
-
         endif
 
         if (imlsstr .eq. 1) then

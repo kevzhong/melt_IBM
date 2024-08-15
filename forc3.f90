@@ -1,4 +1,4 @@
-subroutine forc3(ntr,inp,ptxAB,Vel,rad,torque,force)
+subroutine forc3(ntr,inp,ptxAB,Vel)
 USE param
 USE mls_param
 USE local_arrays, only: vz
@@ -6,13 +6,12 @@ USE mpi_param, only: kstart, kend
 USE mls_local, only: for_zc
 use mpih, only: myid
 implicit none
-real,dimension(3) :: rad,torque
 real,dimension(nel) :: ui
 real,dimension(nel) :: ptxAB(nel)
 integer :: inp,ntr,inw,i,j,k
 real Um, Vel
 integer, dimension(3) :: pind_i, pind_o
-real force,for
+real for
 integer :: ii,jj,kk
 integer :: kstartp
 
@@ -71,16 +70,6 @@ if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
          enddo
          enddo
          enddo
-
-  ! =========
-  ! particle force
-  for = (Vel-Um) * sur(ntr,inp) * invdx1dt
-  force = force + for
-
-  !-- torque
-  torque(1) = torque(1) + for*rad(2)
-  torque(2) = torque(2) - for*rad(1)
-
 
 endif
 end
