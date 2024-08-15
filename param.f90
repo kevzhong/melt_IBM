@@ -7,14 +7,14 @@
 !       read from input file bou.in
 !==========================================================
         integer   :: n2, n3,n1
-        integer   :: nsst, nwrit, nread,pread, ntst, ireset, temp_restart
+        integer   :: nsst, nread,pread, ntst, ireset, temp_restart
         real      :: tframe,tpin,tmax,walltimemax
         real      :: xlen, ylen, zlen
         real      :: pra,dt,resid,cflmax,tsta
         integer   :: starea
         real      :: dtmax,cfllim,cflfix
-        real      :: tl,epsstar,kf_on_kmin
-        integer   :: nson,idtv,forcing
+        real      :: tl,epsstar,kf_on_kmin, C_HIT
+        integer   :: nson,idtv,forcing, which_hit
         real      :: Tmelt, Tliq, Tsol, latHeat, cpliquid
 !=================================================
 !       end of input file
@@ -136,12 +136,7 @@
       module local_aux
        use param
        implicit none
-       !real, allocatable, dimension(:,:,:) :: vxc, vyc, vzc !KZ unused
-       !real, allocatable, dimension(:,:,:) :: matderxc, matderx !KZ unused
-       !real, allocatable, dimension(:,:,:) :: matderyc, matdery !KZ unused
-       !real, allocatable, dimension(:,:,:) :: matderzc, matderz !KZ unused
        real,allocatable,dimension(:,:,:) :: vorx, vory, vorz
-       !real,allocatable,dimension(:,:,:) :: vxo, vyo, vzo !KZ unused
       end module local_aux
 
       module mls_param
@@ -220,8 +215,7 @@
       !-- Particle vars
       real, dimension(:,:), allocatable :: fpxyz,     ftxyz
       real, dimension(:,:), allocatable :: pos_CM,    vel_CM, a_CM
-      real, dimension(:,:), allocatable :: omega_c,   omega_dot_b, alpha_b
-      real, dimension(:,:), allocatable :: om_b_sqr,  om_b_sqr_m1
+      real, dimension(:,:), allocatable :: omega_c
       real, dimension(:,:), allocatable :: u_tot,     u_tot_m1
       real, dimension(:,:), allocatable :: r_x_u_tot, r_x_u_tot_m1
       real, dimension(:,:), allocatable :: omega_s
@@ -237,12 +231,10 @@
       real    invdx1dt
       real, dimension(:,:), allocatable :: cfac
       real :: h_eulerian, A_eulerian
-      !real, dimension (3,3) :: i_inv, i_inv2, GLOBAL_IBIJ
 
       !-- mlsWeight
       real, dimension(:,:,:), allocatable :: ptxAB_q1,ptxAB_q2,ptxAB_q3
       real, dimension(:,:,:), allocatable :: ptxAB_temp
-      !real, dimension(:,:,:), allocatable :: ddx_ptxAB, ddy_ptxAB, ddz_ptxAB !Shape function derivatives at probes
       real, dimension(:,:), allocatable :: tau_n1, tau_n2, tau_n3 ! Structural loads
       real, dimension(:,:,:), allocatable ::  press_n_tri ! Structural loads
       real, dimension(:,:), allocatable :: r_x_tau_n1, r_x_tau_n2, r_x_tau_n3 ! Structural torques
@@ -253,9 +245,8 @@
       real, dimension(:,:,:), allocatable :: vmelt, vmelt_m1 ! local melting velocity at vertices
       real, dimension(:,:),allocatable :: int_tau_dA, int_r_x_tau_dA,int_prn_dA, int_r_x_prn_dA
       real, dimension(:,:),allocatable :: int_tau_dA_m1, int_r_x_tau_dA_m1,int_prn_dA_m1, int_r_x_prn_dA_m1
-      real, dimension(3) :: Fp, Ftau ! Drag forces
-
-
+      real, dimension(3) :: Fp, Ftau ! Integrated loads
+      real, dimension(3) :: Torq_p, Torq_tau ! Integrated torques
 
       end module mls_param
 

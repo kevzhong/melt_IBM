@@ -102,17 +102,6 @@ character(70) namfile
       if(ismaster) then
        write(6,*) 'Initialization Time = ', tin(2) -tin(1), ' sec.'
       endif
-
-      allocate(VOFx(n1,n2,kstart-1:kend+1))
-      allocate(VOFy(n1,n2,kstart-1:kend+1))
-      allocate(VOFz(n1,n2,kstart-1:kend+1))
-      allocate(VOFp(n1,n2,kstart-1:kend+1))
-
-      ! ! Check IC correctness
-      ! call write_tecplot_geom
-      ! call mkmov_hdf_ycut
-      ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      ! call MPI_Finalize(ierr)
 ! 
 !  ********* starts the time dependent calculation ***
 
@@ -123,30 +112,22 @@ character(70) namfile
        call cfl 
 
        if(idtv.eq.1) then !CFL mode
-         !if(ntime.ne.1) then
-            !dt=cflmax/cflm
-            !if(dt.gt.dtmax) dt=dtmax
-         !endif
+         if(ntime.ne.1) then
+            dt=dtmax
+         endif
         call get_dt
 
        else ! Constant DT mode
          cflm=cflm*dt
        endif
 
-       ! Reset wall times
-       !wtime_vof = 0.
-       !eul_solve_wtime = 0.
-       !mls_wtime = 0.
-       !pressure_wtime = 0.
-       hit_wtime = 0.
 
        if (forcing.eq.1) then
-        tstart = MPI_WTIME()
-       call CalcHITRandomForce
-       !call CalcABC_HITForce
-
-       tend = MPI_WTIME()
-       hit_wtime = tend - tstart
+        if (which_hit .eq. 1) then
+          call CalcHITRandomForce
+        elseif (which_hit .eq. 2) then
+          call CalcABC_HITForce
+        endif
        endif
 
        call tschem
@@ -158,61 +139,37 @@ character(70) namfile
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
-          write(6,'(A,F10.6)') "Max tri skewness:", maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) 
           write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
-          !write(6,'(A,F10.6)') "min Atri/AE:", minval( pack(sur(:,:) , .not. isGhostFace(:,:)  ) )/A_eulerian 
-          write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
-          write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
+          !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
           endif
         !endif
 
 
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           !call findCMindices
            call mkmov_hdf_xcut
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
            call mpi_write_tempField
-           !call writePrincAxes(pos_CM(:,1),GLOBAL_IBIJ)
-
-!              call writePind            
-!              call writePPpartpos
-!              call writePPquat
-!              call write_tail_head
-!              call write_shortdist
-              !call mpi_write_field
+           !call mpi_write_field
          endif
          
         ! ASCII write
-          call writePPpartVol
+          call writePartVol
           call writeInertTens
           call write_partrot
           call write_partpos
           call write_partvel
+          call writeStructLoads
 
           call writeTriMeshStats
           call writeClock
 
-        VOFp(:,:,:) = 1.
-        solid_mask = .false. 
-        if (  (imlsstr .eq. 1 ) ) then
-        do inp=1,Nparticle
-          call get_bbox_inds(bbox_inds,inp)
-          call convex_hull_qc2(bbox_inds,inp)
-        enddo
-        endif
           call CalcInjection
           call CalcDissipation
 
-          if(ismaster) then
-            open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
-                  write(112,'(40E17.5)') Fp, Ftau
-            close(112)
-          end if
-
-       time=time+dt
+      time=time+dt
       if((ntime.eq.ntst).or.(mod(ntime,100).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field

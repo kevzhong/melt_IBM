@@ -37,7 +37,7 @@
       dk=kend-kstart+1
 
       !KZ FOR DEBUG
-      write(*,*) "myid:  ",myid, "kstart is: ", kstart, "kend is: ", kend
+      !write(*,*) "myid:  ",myid, "kstart is: ", kstart, "kend is: ", kend
 
 #ifdef DEBUG
       write(*,*) "jstart: ",jstart

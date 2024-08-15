@@ -10,6 +10,7 @@ This is a repository for a DNS code which simulates the Lagrangian melting of a 
 Fortran compiler can be GNU (`gfortran`) or Intel, but it is important that the HDF5 library was compiled using the specified Fortran compiler.
 
 For MacOS, dependendices can be installed simply:
+
 `brew install fftw hdf5-mpi open-mpi openblas lapack gcc`
 
 # Usage

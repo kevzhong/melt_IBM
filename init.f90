@@ -18,6 +18,14 @@
       call AllocateReal3DArray(temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(pr,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
+      ! Phase-indicator, internal-solid treatment
+      allocate(VOFx(n1,n2,kstart-1:kend+1))
+      allocate(VOFy(n1,n2,kstart-1:kend+1))
+      allocate(VOFz(n1,n2,kstart-1:kend+1))
+      allocate(VOFp(n1,n2,kstart-1:kend+1))
+      call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
+      call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
+
       ! Auxilary fractional-step pseudo-pressure
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &
           kstart-lvlhalo,kend+lvlhalo)
@@ -43,16 +51,6 @@
       call AllocateReal3DArray(ru2,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(ru3,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(rut,1,n1,1,n2,kstart,kend)
-
-      ! KZ: RHS vectors for tagged solid cells, lazy way to track
-      !call AllocateReal3DArray(usolid_x,1,n1,1,n2,kstart,kend)
-      !call AllocateReal3DArray(usolid_y,1,n1,1,n2,kstart,kend)
-      !call AllocateReal3DArray(usolid_z,1,n1,1,n2,kstart,kend)
-
-     call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
-
-      call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
-
 
 
       call AllocateReal3DArray(vx_me,1,n1,1,n2,kstart,kend)

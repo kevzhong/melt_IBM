@@ -39,7 +39,7 @@
         integer :: j,k,jp,kp,i,ip
         real :: cfl_buffer
         
-        dt = dtmax
+        !dt = dtmax
 
         cfl_buffer = 0.0
                                                                          
@@ -47,10 +47,18 @@
           do j=1,n2m
             do i=1,n1m
               
-              cfl_buffer = max(cfl_buffer, abs(vx(i,j,k)) * dt * dx1 , &
-                                           abs(vy(i,j,k)) * dt * dx2 , &
+              ! cfl_buffer = max(cfl_buffer, abs(vx(i,j,k)) * dt * dx1 , &
+              !                              abs(vy(i,j,k)) * dt * dx2 , &
+              !                              abs(vz(i,j,k)) * dt * dx3  )
+              
+              ! Advective restriction
+              cfl_buffer = max(cfl_buffer, abs(vx(i,j,k)) * dt * dx1 + &
+                                           abs(vy(i,j,k)) * dt * dx2 + &
                                            abs(vz(i,j,k)) * dt * dx3  )
 
+
+              ! Viscous restriction
+              cfl_buffer = max(cfl_buffer, 6.0 / ren * dt * dx1**2 )             
         enddo
         enddo
         enddo
@@ -61,9 +69,9 @@
           dt = dt * cflfix / cfl_buffer
         endif
 
-        if (ismaster) then
-          write(*,*) "Time-step", dt
-        endif
+        !if (ismaster) then
+        !  write(*,*) "Time-step", dt
+        !endif
 
         return  
         end                                                               

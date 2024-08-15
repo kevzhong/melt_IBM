@@ -17,7 +17,7 @@ subroutine write_partpos
 
   if (myid.eq.0) then
 
-  namfile='flowmov/part_pos.txt'
+  namfile='stringdata/part_pos.txt'
 
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   write(43,'(100E15.7)')time,dt, pos_cm 
@@ -44,7 +44,7 @@ subroutine write_partvel
 
   if (myid.eq.0) then
 
-    namfile='flowmov/part_vel.txt'
+    namfile='stringdata/part_vel.txt'
 
     open(unit=43,file=namfile,Access = 'append', Status='unknown')
       write(43,'(100E15.7)') time,dt, vel_cm 
@@ -125,7 +125,7 @@ subroutine write_partrot
 
   if (myid.eq.0) then
 
-    namfile='flowmov/part_rot.txt'
+    namfile='stringdata/part_rot.txt'
 
     open(unit=43,file=namfile,Access = 'append', Status='unknown')
     write(43,'(100E15.7)')time,dt, omega_c 
@@ -381,7 +381,7 @@ subroutine writeInertTens
 
   if (myid.eq.0) then
 
-  namfile='flowmov/inertTensor.txt'
+  namfile='stringdata/inertTensor.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   write(43,'(100E15.7)') InertTensor(1,1,1), InertTensor(1,2,1), InertTensor(1,3,1) , &
@@ -391,7 +391,32 @@ subroutine writeInertTens
   end if
 end subroutine writeInertTens
 
-subroutine writePPpartVol
+subroutine writeStructLoads
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+
+if (IMLSSTR .eq. 1) then
+  if (myid.eq.0) then
+  namfile='stringdata/mlsLoads.txt'
+
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)') Fp, Ftau, torq_p, torq_tau
+
+  close(43)
+  end if
+endif
+end subroutine writeStructLoads
+
+subroutine writePartVol
   use param
   use mls_param
   use mpih
@@ -406,7 +431,7 @@ subroutine writePPpartVol
 
   if (myid.eq.0) then
 
-  namfile='flowmov/partPPVol.txt'
+  namfile='stringdata/part_vol.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , vel_CM(3,1) 
@@ -414,7 +439,7 @@ subroutine writePPpartVol
 
   close(43)
   end if
-end subroutine writePPpartVol
+end subroutine writePartVol
 
 subroutine writeTriMeshStats
   use param
@@ -430,7 +455,7 @@ subroutine writeTriMeshStats
 
   if (myid.eq.0) then
 
-  namfile='flowmov/triStats.txt'
+  namfile='stringdata/triStats.txt'
  !KZ: note hard-coded single particle for now
 
   ! Time, Nv, Ne, Nf, min(skew), max(skew), min(elength), max(elength), min(atri), max(atri)
@@ -467,7 +492,7 @@ subroutine writeClock
 
   if (myid.eq.0) then
 
-  namfile='flowmov/clock.txt'
+  namfile='stringdata/clock.txt'
 
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   write(43,'(100E15.7)')time, wtime_vof, eul_solve_wtime, mls_wtime, pressure_wtime, hit_wtime,wtime_total
@@ -590,7 +615,7 @@ subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift)
 
   if (myid.eq.0) then
 
-  namfile='flowmov/remeshStats.txt'
+  namfile='stringdata/remeshStats.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 

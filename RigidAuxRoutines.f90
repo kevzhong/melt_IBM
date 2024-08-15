@@ -116,7 +116,7 @@ do inp=1,Nparticle
               vel_CM(:,inp),              vel_m1(:,inp),              &
               pos_CM(:,inp),              pos_m1(:,inp),              &
               omega_c(:,inp),             om_m1(:,inp),               &
-              InertTensor(:,:,inp),                                   &
+              InertTensor(:,:,inp),       quat(:,inp),                &
               inp,                                                    &
               Volume(inp) )
 enddo
@@ -144,7 +144,7 @@ subroutine NE_MLS(int_prn_dA,         int_tau_dA,        &
                   vel_CM,   vel_cmm1,                    &
                   pos_CM,   pos_cmm1,                    &
                   omega_c,  omega_c_m1,                  &
-                  I_ij,                                  &
+                  I_ij,     quat,                        &
                   inp,                                   &
                   Volume)
 
@@ -323,19 +323,10 @@ enddo
 
 
 ! if (ismaster) then
-! write(*,*) "Iresidual: ", Iresidual
-! write(*,*) "int_prn_dA", int_prn_dA
-! write(*,*) "int_tau_dA", int_tau_dA
-! endif
-
-! if(ismaster) then
-!   open(112,file='flowmov/mlsLoads.txt',status='unknown', position='append')
-!         write(112,'(40E17.5)') int_prn_dA, int_tau_dA
-!   close(112)
-! end if
-
-
-
+!  write(*,*) "Iresidual: ", Iresidual
+!  write(*,*) "int_prn_dA", int_prn_dA
+!  write(*,*) "int_tau_dA", int_tau_dA
+!  endif
 end subroutine NE_MLS
 
 

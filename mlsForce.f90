@@ -38,11 +38,11 @@ do inp = 1, Nparticle
  enddo
 enddo
 
-do inp=1,Nparticle
-   call mpi_globalsum_double_arr(force(1:3,inp),3)
-   call mpi_globalsum_double_arr(torque(1:3,inp),3)
-   fpxyz(:,inp) = fpxyz(:,inp) + force(:,inp)
-   ftxyz(:,inp) = ftxyz(:,inp) + torque(:,inp)
-enddo
+! do inp=1,Nparticle
+!    call mpi_globalsum_double_arr(force(1:3,inp),3)
+!    call mpi_globalsum_double_arr(torque(1:3,inp),3)
+!    fpxyz(:,inp) = fpxyz(:,inp) + force(:,inp)
+!    ftxyz(:,inp) = ftxyz(:,inp) + torque(:,inp)
+! enddo
 
 end subroutine mlsForce

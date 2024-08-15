@@ -260,8 +260,13 @@ subroutine mls_structLoads
 
     enddo
 
-    end subroutine mls_structLoads
+    ! Accumulate structural loads for dumping
+    Fp(1:3) = Fp(1:3) + int_prn_dA(:,1)
+    Ftau(1:3) = Ftau(1:3) + int_tau_dA(:,1)
 
+    Torq_p(1:3) = Torq_p(1:3) + int_r_x_prn_dA(:,1)
+    Torq_tau(1:3) = Torq_tau(1:3) + int_r_x_tau_dA(:,1)
+    end subroutine mls_structLoads
 
 
 subroutine wght_press(pos,ptx,press_probe,probe_inds)

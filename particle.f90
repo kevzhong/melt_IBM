@@ -111,10 +111,10 @@ if (imlsstr.eq.1) then
         xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
     enddo
 
-    !if (ismaster) then
-    !    write(*,*) "Volume fraction is ", Volume(1)*100.0
-    !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
-    !endif    
+    ! if (ismaster) then
+    !     write(*,*) "Volume fraction is ", Volume(1)*100.0
+    ! !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
+    ! endif    
     !KZ: check if anything else needs to be updated
 
     ! Move / rotate object by solving Newton--Euler

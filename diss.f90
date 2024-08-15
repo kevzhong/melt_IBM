@@ -152,7 +152,7 @@
       !re_lam = sqrt(20.0 / 3.0 * kenerg**2 / (diss_volAvg * nu) ) ! cf. eqn (6.59--6.65), Pope (2000)
       if(ismaster) then
             write(6,*) "Re_lambda", re_lam 
-      namfile='flowmov/diss.txt'
+      namfile='stringdata/diss.txt'
       
       open(unit=92,file=namfile, Access='append', Status='unknown')
       !write(92,'(100E15.7)') time,dt,diss_volAvg,kmax_eta,eta,re_lam!,nu,ren

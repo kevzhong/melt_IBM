@@ -75,7 +75,7 @@ implicit none
   !-- particle
   allocate( fpxyz(3, Nparticle),     ftxyz(3, Nparticle) )
   allocate( pos_CM(3, Nparticle),    vel_CM(3, Nparticle),  a_CM(3, Nparticle) )
-  allocate( omega_c(3, Nparticle),   omega_dot_b(3, Nparticle), alpha_b(3, Nparticle))
+  allocate( omega_c(3, Nparticle) )
   allocate( u_tot(3, Nparticle),     u_tot_m1(3, Nparticle) )
   allocate( r_x_u_tot(3, Nparticle), r_x_u_tot_m1(3, Nparticle) )
   allocate( omega_s(3, Nparticle) )

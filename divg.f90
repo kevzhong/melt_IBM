@@ -89,6 +89,8 @@ use mpi_param, only: kstart,kend
 implicit none
 integer :: jc,kc,kp,jp,ic,ip
 real    :: dqcap
+
+resid = 1.0d0-2
   
 do kc=kstart,kend
   kp=kc+1

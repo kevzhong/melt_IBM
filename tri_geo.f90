@@ -23,7 +23,6 @@ subroutine tri_geo
     call setup_particles
 
     call init_geomCoords !KZ: Set vertex and centroid coordinates in xyz space
-    !call set_xyz 
   
     do inp=1,Nparticle
       call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
@@ -38,10 +37,6 @@ subroutine tri_geo
       call calculate_normal(tri_nor(:,:,inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp))
       call calculate_areaWeighted_vert_normal (tri_nor(:,:,inp),vert_nor(:,:,inp),maxnv,maxnf,sur(:,inp),&
             vert_of_face(:,:,inp),isGhostFace(:,inp),isGhostVert(:,inp))
-
-      ! Volume is pre-computed by rigidBody_calcs
-      !call calculate_volume2 (Volume(inp),maxnf,tri_nor(:,:,inp),sur(:,inp),tri_bar(:,:,inp),isGhostFace(:,inp))
-
     enddo
 
   else if(pread.eq.1)then ! Otherwise, read from continuation files

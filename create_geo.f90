@@ -42,7 +42,7 @@ subroutine setup_particles
   xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
 
   if (ismaster) then
-    write(*,*) "InertTensor(:,:,1)", InertTensor(:,:,1)
+    write(*,*) "Volume: ", Volume(1)
   endif
 
   ! KZ: note the hard-coded single particle for now
@@ -54,38 +54,24 @@ subroutine setup_particles
   
      do inp=1,Nparticle
      ! Initialise rigid body variables
-      !call random_number(a)
-      ! b=a ; c=a
-      
-!      a=pi/4  ; b=0.0 ; c=0.0
-      !quat(1,inp) = cos(0.5*(a))*cos(0.5*(b+c))
-      !quat(2,inp) = sin(0.5*(a))*cos(0.5*(b-c))
-      !quat(3,inp) = sin(0.5*(a))*sin(0.5*(b-c))
-      !quat(4,inp) = cos(0.5*(a))*sin(0.5*(b+c))
-
-      ! Identity quaternion
-      quat(1,inp) = 1.0
-      quat(2,inp) = 0.0
-      quat(3,inp) = 0.0
-      quat(4,inp) = 0.0
-
-
       omega_c(:,inp) = 0.0
-      alpha_b(:,inp) = 0.0
-      omega_dot_b = 0.0
 
-      !quat_dot = 0.0
-      !quat_dot_m1 = 0.0
-      
-      !om_b_sqr = 0.0
 
-      u_tot_m1 = 0.
-      r_x_u_tot_m1 = 0.
+      !u_tot_m1 = 0.
+      !r_x_u_tot_m1 = 0.
+
+      int_prn_dA = 0.
+      int_tau_dA = 0.
+
+      int_r_x_prn_dA = 0.
+      int_r_x_tau_dA = 0.
+
+      quat = 0.
 
       vel_CM    = 0.
       a_CM      = 0.
-      u_tot     = 0.
-      r_x_u_tot = 0.
+      !u_tot     = 0.
+      !r_x_u_tot = 0.
 
       !KZ : for initialising stationary
       vel_tri(:,:,inp) = 0.
@@ -142,20 +128,24 @@ end subroutine
     call hdf_read_2d(pos_CM,shape(pos_CM),dname)
     dname = trim("vel_CM")
     call hdf_read_2d(vel_CM,shape(vel_CM),dname)
-    dname = trim("quat")
-    call hdf_read_2d(quat,shape(quat),dname)
-    !dname = trim("quat_dot")
-    !call hdf_read_2d(quat_dot,shape(quat_dot),dname)
     dname = trim("omega_c")
     call hdf_read_2d(omega_c,shape(omega_c),dname)
-    !dname = trim("om_b_sqr")
-    !call hdf_read_2d(om_b_sqr,shape(om_b_sqr),dname)
 
+    dname = trim("quat")
+    call hdf_read_2d(quat,shape(quat),dname)
 
-    dname = trim("u_tot")
-    call hdf_read_2d(u_tot,shape(u_tot),dname)
-    dname = trim("r_x_u_tot")
-    call hdf_read_2d(r_x_u_tot,shape(r_x_u_tot),dname)
+    dname = trim("int_prn_dA")
+    call hdf_read_2d(int_prn_dA,shape(int_prn_dA),dname)
+    dname = trim("int_tau_dA")
+    call hdf_read_2d(int_tau_dA,shape(int_tau_dA),dname)
+
+    dname = trim("int_r_x_prn_dA")
+    call hdf_read_2d(int_r_x_prn_dA,shape(int_r_x_prn_dA),dname) 
+    dname = trim("int_r_x_tau_dA")
+    call hdf_read_2d(int_r_x_tau_dA,shape(int_r_x_tau_dA),dname) 
+
+    dname = trim("InertTensor")
+    call hdf_read_3d(InertTensor,shape(InertTensor),dname) 
 
     dname = trim("volume")
     call hdf_read_1d(Volume,Nparticle,dname)
@@ -240,12 +230,13 @@ end subroutine
     call mpi_bcast(vel_CM,size(vel_cm),mpi_double,0,mpi_comm_world,ierr)
 
     call mpi_bcast(quat,     size(quat),     mpi_double,0,mpi_comm_world,ierr)
-    !call mpi_bcast(quat_dot, size(quat_dot), mpi_double,0,mpi_comm_world,ierr)
-    !call mpi_bcast(omega_c,  size(omega_c),  mpi_double,0,mpi_comm_world,ierr)
-    !call mpi_bcast(om_b_sqr, size(om_b_sqr), mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(omega_c,  size(omega_c),  mpi_double,0,mpi_comm_world,ierr)
 
-    call mpi_bcast(u_tot,    size(u_tot),    mpi_double,0,mpi_comm_world,ierr)
-    call mpi_bcast(r_x_u_tot,size(r_x_u_tot),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(int_prn_dA, size(int_prn_dA), mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(int_tau_dA,size(int_tau_dA),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(int_r_x_prn_dA,size(int_r_x_prn_dA),mpi_double,0,mpi_comm_world,ierr)
+    call mpi_bcast(int_r_x_tau_dA,size(int_r_x_tau_dA),mpi_double,0,mpi_comm_world,ierr)
+
 
     call mpi_bcast(Volume,size(Volume),mpi_double,0,mpi_comm_world,ierr)
     call mpi_bcast(Surface,size(Surface),mpi_double,0,mpi_comm_world,ierr)
@@ -297,23 +288,25 @@ end subroutine
     call hdf_write_2d(pos_CM,(/3,Nparticle/),dataset)
     dataset = trim("vel_CM")
     call hdf_write_2d(vel_CM,(/3,Nparticle/),dataset)
-    dataset = trim("quat")
-    call hdf_write_2d(quat,(/4,Nparticle/),dataset)
-    !dataset = trim("quat_dot")
-    !call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
+
     dataset = trim("omega_c")
     call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
-    !dataset = trim("om_b_sqr")
-    !call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
 
-    dataset = trim("u_tot")
-    call hdf_write_2d(u_tot,(/3,Nparticle/),dataset)
-    dataset = trim("r_x_u_tot")
-    call hdf_write_2d(r_x_u_tot,(/3,Nparticle/),dataset)
+    dataset = trim("quat")
+    call hdf_write_2d(quat,(/4,Nparticle/),dataset)
 
+    dataset = trim("int_prn_dA")
+    call hdf_write_2d(int_prn_dA,(/3,Nparticle/),dataset)
+    dataset = trim("int_tau_dA")
+    call hdf_write_2d(int_tau_dA,(/3,Nparticle/),dataset)
 
-    ! Global quantities: Volume, surface area, 
-    ! Inertia tensor, principal axes, etc (eventually)
+    dataset = trim("int_r_x_prn_dA")
+    call hdf_write_2d(int_r_x_prn_dA,(/3,Nparticle/),dataset)
+    dataset = trim("int_r_x_tau_dA")
+    call hdf_write_2d(int_r_x_tau_dA,(/3,Nparticle/),dataset)
+
+    dataset = trim("InertTensor")
+    call hdf_write_3d(InertTensor,(/3,3,Nparticle/),dataset)
 
     dataset = trim("volume")
     call hdf_write_1d(Volume,Nparticle,dataset)
@@ -413,140 +406,3 @@ subroutine print_particle_info
     write(*,*) 'Min edge/dx: ',    minval(eLengths(:,1)) * ddx3
   end if
 end subroutine
-
-
-subroutine write_h5_geo
-  use param
-  use mpih
-  use mls_param
- 
-  implicit none
-
-  character(70) filename
-  character(30) dataset
-  character(5) ipfi
-
-  integer, dimension(2) :: dims
-  real tprfi
-  integer :: itime
-
-  tprfi = 1/tframe
-  itime=nint(time*tprfi)
-
-
-  dims(1)=n1m
-  dims(2)=n2m
-  82 format(i7.7)
-  write(ipfi,82) itime
-
-  filename='flowmov/partHist_'//ipfi
-  !filename = 'continuation/particles.h5'
-   
-
-  if (myid.eq.0) then 
-    call hdf5_create_blank_file(filename)
-
-    !---------------------- Newton--Euler, rigid-body quantities ------------
-    dataset = trim("pos_CM")
-    call hdf_write_2d(pos_CM,(/3,Nparticle/),dataset)
-    dataset = trim("vel_CM")
-    call hdf_write_2d(vel_CM,(/3,Nparticle/),dataset)
-    dataset = trim("quat")
-    call hdf_write_2d(quat,(/4,Nparticle/),dataset)
-    !dataset = trim("quat_dot")
-    !call hdf_write_2d(quat_dot,(/4,Nparticle/),dataset)
-    dataset = trim("omega_c")
-    call hdf_write_2d(omega_c,(/3,Nparticle/),dataset)
-    !dataset = trim("om_b_sqr")
-    !call hdf_write_2d(om_b_sqr,(/3,Nparticle/),dataset)
-
-    dataset = trim("u_tot")
-    call hdf_write_2d(u_tot,(/3,Nparticle/),dataset)
-    dataset = trim("r_x_u_tot")
-    call hdf_write_2d(r_x_u_tot,(/3,Nparticle/),dataset)
-
-
-    ! Global quantities: Volume, surface area, 
-    ! Inertia tensor, principal axes, etc (eventually)
-
-    dataset = trim("volume")
-    call hdf_write_1d(Volume,Nparticle,dataset)
-    dataset = trim("total_area")
-    call hdf_write_1d(Surface,Nparticle,dataset)
-
-    !-------------- BEGIN GEOMETRY INFORMATION -----------------------------------
-
-    ! ----------------------------   Edge information ----------------------------
-
-    !----- Connectivity information ---------------
-    dataset = trim("vert_of_edge")
-    call hdf_write_3dInt(vert_of_edge,(/2,maxne,Nparticle/),dataset)
-
-    dataset = trim("face_of_edge")
-    call hdf_write_3dInt(face_of_edge,(/2,maxne,Nparticle/),dataset)
-
-    dataset = trim("isGhostEdge")
-    call hdf_write_2dInt(isGhostEdge,(/maxne,Nparticle/),dataset)
-    !---------------------------------------------
-
-    !----- Derived geoemtric quantities ----------
-
-    dataset = trim("eLengths")
-    call hdf_write_2d(eLengths,(/maxne,Nparticle/),dataset)
-
-    !---------------------------------------------
-
-    
-    ! ----------------------------   Face information ----------------------------
-
-    !----- Connectivity information ---------------
-    dataset = trim("vert_of_face")
-    call hdf_write_3dInt(vert_of_face,(/3,maxnf,Nparticle/),dataset)
-
-    dataset = trim("edge_of_face")
-    call hdf_write_3dInt(edge_of_face,(/3,maxnf,Nparticle/),dataset)
-
-    dataset = trim("isGhostFace")
-    call hdf_write_2dInt(isGhostFace,(/maxnf,Nparticle/),dataset)
-    !---------------------------------------------
-
-    !----- Derived geoemtric quantities ----------
-
-    dataset = trim("tri_bar")
-    call hdf_write_3d(tri_bar,(/3,maxnf,Nparticle/),dataset)
-
-    dataset = trim("tri_nor")
-    call hdf_write_3d(tri_nor,(/3,maxnf,Nparticle/),dataset)
-
-    dataset = trim("Atri")
-    call hdf_write_2d(sur,(/maxnf,Nparticle/),dataset)
-
-    dataset = trim("skewness")
-    call hdf_write_2d(skewness,(/maxnf,Nparticle/),dataset)
-    !---------------------------------------------
-
-
-    ! ----------------------------   Vertex information --------------------------
-
-    !----- Connectivity information ---------------
-
-    dataset = trim("isGhostVert")
-    call hdf_write_2dInt(isGhostVert,(/maxnv,Nparticle/),dataset)
-
-    dataset = trim("xyzv")
-    call hdf_write_3d(xyzv,(/3,maxnv,Nparticle/),dataset)
-    !---------------------------------------------
-
-    !----- Derived geoemtric quantities ----------
-    dataset = trim("vert_nor")
-    call hdf_write_3d(vert_nor,(/3,maxnv,Nparticle/),dataset)
-
-    dataset = trim("Avert")
-    call hdf_write_2d(Avert,(/maxnv,Nparticle/),dataset)
-
-    !---------------------------------------------
-
-
-
-  end if
-  end subroutine

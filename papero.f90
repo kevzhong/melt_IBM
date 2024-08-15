@@ -32,30 +32,35 @@
         read(15,301) dummy
         read(15,*) n1m,n2m,n3m
         read(15,301) dummy
-        read(15,*) ntst,nsst,tframe,tpin,ireset,temp_restart
-        read(15,301) dummy
-        read(15,*) nwrit, nread, pread 
-        read(15,301) dummy
         read(15,*) xlen,ylen,zlen
         read(15,301) dummy
-        read(15,*) ren,prandtl,betagz,dt,resid
+        read(15,*) nread, pread 
         read(15,301) dummy
-        read(15,*) tsta,starea,cflmax
+        read(15,*) ntst,nsst,tframe,tpin,ireset
         read(15,301) dummy
-        read(15,*) tl, epsstar, kf_on_kmin
-        read(15,301) dummy       
-        read(15,*) idtv,dtmax,cfllim , cflfix
-        read(15,301) dummy       
+        read(15,*) idtv, dt, dtmax, cflfix
+        read(15,301) dummy
+        read(15,*) ren,prandtl,betagz
+        read(15,301) dummy
+        read(15,*) Tmelt , Tliq, Tsol, latHeat, cpliquid, temp_restart
+        read(15,301) dummy
         read(15,*) forcing 
-        read(15,301) dummy       
-        read(15,*) Tmelt , Tliq, Tsol, latHeat, cpliquid
       close(15)
+
+      open(unit=15,file='HITForcing.in',status='old')
+      read(15,301) dummy
+      read(15,*) which_hit
+      read(15,301) dummy
+      read(15,*) tl, epsstar, kf_on_kmin
+      read(15,301) dummy
+      read(15,301) C_HIT
+    close(15)
 
       open(unit=15,file='part.in',status='old')
         read(15,301) dummy       
         read(15,*) imlsfor, imlsstr, imelt
-        read(15,301) dummy       
-        read(15,*) wcon,wscl,dens_ratio
+        read(15,301) dummy
+        read(15,*) dens_ratio
         read(15,301) dummy       
         read(15,*) gtsfx, rad_p
         read(15,301) dummy       
@@ -86,6 +91,8 @@
       endif
 
       gtsfx = "gts/" // trim(gtsfx)
+
+      starea = 0 ! KZ: fix to zero, not using stat.f90
 
 
       pec = ren * prandtl
@@ -136,7 +143,7 @@
       write(6,202) ren, prandtl
   202 format(/,5x,'Parameters: ',' Re=',e10.3,'       Prandtl = ',f5.2)
       if(idtv.eq.1) then
-         write(6,204) cflmax
+         write(6,204) cflfix
   204 format(/,5x,'Variable dt and fixed cfl= ', &
        e11.4,/ )            
       else 

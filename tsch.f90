@@ -5,9 +5,9 @@
       use mls_param
       use mpi_param, only: kstart,kend
       use local_aux
-      use stat_arrays, only: vxvyvz_rms_vol
+      !use stat_arrays, only: vxvyvz_rms_vol
       implicit none
-      real,dimension(3,3)     :: AA, AAT
+      !real,dimension(3,3)     :: AA, AAT
       real,dimension(3,2)     :: bbox_inds
       real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
       real :: tstart, tend
@@ -17,17 +17,16 @@
       
 
       beta=dt/ren*0.5d0
-
       ! Accumulate Structural loads across all sub-steps
-      Fp(:) = 0.0d0
-      Ftau(:) = 0.0d0
+      Fp(1:3) = 0.0d0
+      Ftau(1:3) = 0.0d0
+      Torq_p(1:3) = 0.0d0
+      Torq_tau(1:3) = 0.0d0
 
       do ns=1,nsst                                                 
         al=alm(ns)
         ga=gam(ns)
         ro=rom(ns)
-
-
         
         VOFx(:,:,:) = 1.
         VOFy(:,:,:) = 1.

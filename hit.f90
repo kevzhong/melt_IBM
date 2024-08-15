@@ -277,7 +277,7 @@ subroutine CalcABC_HITForce
       integer :: j,k,i
       real :: C
 
-      C = 0.1 * (2.0*pi / xlen)**2
+      C = C_HIT * (2.0*pi / xlen)**2
 
       do k=kstart,kend
             do j=1,n2m

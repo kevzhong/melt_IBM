@@ -6,8 +6,9 @@
       use mls_param
       use mls_local
       implicit none
-      integer :: kc,jc,ic,ip,jp,kp
+      integer :: kc,jc,ic,ip,jp,kp,inp
       real :: eps_in,kenerg,en_ibm
+      real,dimension(3,2)     :: bbox_inds
       character(70) namfile
 
 call update_both_ghosts(n1,n2,vx,kstart,kend)
@@ -21,6 +22,17 @@ call update_both_ghosts(n1,n2,vz,kstart,kend)
  call update_add_lower_ghost(for_xc)
  call update_add_lower_ghost(for_yc)
  call update_add_lower_ghost(for_zc)
+
+ !-------------------- Re-tag cells --------------------------
+ VOFp(:,:,:) = 1.
+ solid_mask = .false. 
+ if (  (imlsstr .eq. 1 ) ) then
+ do inp=1,Nparticle
+   call get_bbox_inds(bbox_inds,inp)
+   call convex_hull_qc2(bbox_inds,inp)
+ enddo
+ endif
+ !-------------------- End re-tag cells --------------------------
 
       eps_in=0.0d0
       kenerg=0.0d0
@@ -79,7 +91,7 @@ call update_both_ghosts(n1,n2,vz,kstart,kend)
       en_ibm = en_ibm/dble(n1m*n2m*n3m)
 
       if(ismaster) then
-       namfile='flowmov/eps_in.txt'
+       namfile='stringdata/eps_in.txt'
 
        open(unit=92,file=namfile, Access='append', Status='unknown')
        write(92,'(100E15.7)') time,eps_in,kenerg,en_ibm
