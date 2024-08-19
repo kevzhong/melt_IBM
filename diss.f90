@@ -114,7 +114,6 @@
        &                   ((vy(ic,jc,kc)+vy(ic,jp,kc))*0.5)**2 + &
        &                   ((vz(ic,jc,kc)+vz(ic,jc,kp)*0.5))**2
 
-      end if
 
       ! dissipte = 2.0*(h11**2+h22**2+h33**2)+ &
       !         (h21+h12)**2+ (h31+h13)**2+ (h32+h23)**2
@@ -127,6 +126,7 @@
 
       diss_volAvg = diss_volAvg+dissipte
 
+      end if
 
        end do
        end do

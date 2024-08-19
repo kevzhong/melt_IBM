@@ -2,6 +2,7 @@ subroutine mls_heatFlux
 USE param
 USE mls_param
 USE mpi_param, only: kstart, kend
+use mpih
 implicit none
 real,dimension(4) :: ptx
 real,dimension(3) :: pos
