@@ -548,7 +548,7 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
 
     ! First Barycentric limit u[0,1]
     u = f * dot_product(s,p) 
-    if ( (u < EPS ) .or. (u .gt. 1.0) ) then
+    if ( (u < EPSILON(1.0d0) ) .or. (u .gt. 1.0) ) then
         intersect = .false.
     endif
 
@@ -556,7 +556,7 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     call cross(q1, s, e1)
     v = f * dot_product(r, q1)
 
-    if (  (v .lt. EPS) .or. ( (u + v) .gt. 1.0  ) ) then
+    if (  (v .lt. EPSILON(1.0d0)) .or. ( (u + v) .gt. 1.0  ) ) then
         intersect = .false.
     endif
 
