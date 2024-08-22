@@ -285,10 +285,6 @@ subroutine CalcABC_HITForce
                         forcx(i,j,k) = C * sin(2.0 * pi * zm(k) / zlen ) + C * cos(2.0 * pi * ym(j) / ylen )
                         forcy(i,j,k) = C * sin(2.0 * pi * xm(i) / xlen ) + C * cos(2.0 * pi * zm(k) / zlen )
                         forcz(i,j,k) = C * sin(2.0 * pi * ym(j) / ylen ) + C * cos(2.0 * pi * xm(i) / xlen )
-
-                        !forcx(i,j,k) = C * sin(2.0 * pi * zm(k) / zlen ) + C * cos(2.0 * pi * ym(j) / ylen )
-                        !forcy(i,j,k) = C * sin(2.0 * pi * xm(i) / xlen ) + C * cos(2.0 * pi * zm(k) / zlen )
-                        !forcz(i,j,k) = C * sin(2.0 * pi * ym(j) / ylen ) + C * cos(2.0 * pi * xm(i) / xlen )
                   enddo
             enddo
       enddo

@@ -152,8 +152,8 @@ character(70) namfile
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
-           call mpi_write_tempField
-           !call mpi_write_field
+           !call mpi_write_tempField
+           call mpi_write_field
          endif
          
         ! ASCII write

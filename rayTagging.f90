@@ -520,7 +520,7 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     real :: EPS, a, f, u , v, t
     logical :: intersect
 
-    EPS = 1e-10
+    EPS = 1e-14
 
     intersect = .true.
 
@@ -537,8 +537,10 @@ recursive subroutine rayTriangle_intersect(intersect,intPoint,C,Q,V0,V1,V2)
     a = dot_product(e1,p)
 
     !Parallel ray, change query point and recursively call 
-    if ( (a .gt. -EPS) .and. (a .le. EPS ) ) then
+    !if ( (a .gt. -EPS) .and. (a .le. EPS ) ) then
+    if (abs(a) .lt. EPSILON(1.0d0) ) then
         Cprime = [C(2), C(3), C(1) ]
+        write(*,*) "Warning: parallel ray detected!"
         call rayTriangle_intersect(intersect,intPoint,Cprime,Q,V0,V1,V2)
     endif
 
@@ -615,6 +617,37 @@ subroutine triangleBoxIntersect(insideBox,V0,V1,V2, Q, dx1, dx2, dx3)
 
 
 end subroutine triangleBoxIntersect
+
+subroutine interp_vof
+  ! Interpolate VOFx, VOFv, VOFw from cell-centered VOFp information
+  use param
+  use mpi_param, only: kstart,kend
+  implicit none
+  integer :: ic,jc,kc
+  integer :: km,kp,jm,jp,im,ip
+
+  call update_both_ghosts(n1,n2,VOFx,kstart,kend)
+  call update_both_ghosts(n1,n2,VOFy,kstart,kend)
+  call update_both_ghosts(n1,n2,VOFz,kstart,kend)
+  call update_both_ghosts(n1,n2,VOFp,kstart,kend)
+
+  do kc=kstart,kend
+    km=kc-1
+    kp=kc+1
+      do jc=1,n2m
+        jm=jmv(jc)
+        jp=jpv(jc)
+        do ic=1,n1m
+          ip=ipv(ic)
+          im=imv(ic)
+          
+          VOFx(ic,jc,kc) = 0.5 * (VOFp(im,jc,kc) + VOFp(ic,jc,kc) )
+          VOFy(ic,jc,kc) = 0.5 * (VOFp(ic,jm,kc) + VOFp(ic,jc,kc) )
+          VOFz(ic,jc,kc) = 0.5 * (VOFp(ic,jc,km) + VOFp(ic,jc,kc) )
+        enddo
+      enddo
+  enddo
+end subroutine interp_vof
 
 ! subroutine compute_interface_VOF(VOF,xx,yy,zz,nhat,V0)
 !     !use param

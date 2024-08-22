@@ -3,9 +3,9 @@
 XLEN         YLEN          ZLEN
  1.0          1.0           1.0
  NREAD         PREAD 
-  1            1
+  0            0
 NTST   NSST    TFRAME    TPIN      IRESET
- 5     3      1e-3    5e-3       0
+ 50     3      1e-3    5e-3       0
 IDTV    DT    DTMAX  WANT_CFL 
   0    1e-3    1e-3    1.0  
  REN     PRANDTL  BETA_GZ     

@@ -53,7 +53,7 @@
       read(15,301) dummy
       read(15,*) tl, epsstar, kf_on_kmin
       read(15,301) dummy
-      read(15,301) C_HIT
+      read(15,*) C_HIT
     close(15)
 
       open(unit=15,file='part.in',status='old')
@@ -153,6 +153,8 @@
       endif
 !m====================================================    
       endif
+      
+      write(*,*) "C_HIT is ", C_HIT
 !m======================================================
 
       call  gcurv
