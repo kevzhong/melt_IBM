@@ -64,11 +64,6 @@
         real, dimension(1:3) :: vmax
         real, dimension(1:3) :: gam,rom,alm
 
-        complex,allocatable,dimension(:,:) :: term1a,term1b
-        complex,allocatable,dimension(:,:) :: term2a,term2b
-        complex,allocatable,dimension(:,:) :: term3a,term3b
-        real, dimension(6,7,7,7) :: bcoefs
-
         integer :: nmodes
         integer, allocatable :: waveN(:)
         complex(kind=kind(0d0)), allocatable :: exp_I_kl_xi(:,:), exp_I_km_yj(:,:), exp_I_kn_zk(:,:)

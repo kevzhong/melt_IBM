@@ -30,7 +30,7 @@
       if(normalexit) then
 !       call WriteStats
        call mpi_write_continua
-       call WriteRandForcCoef
+       !call WriteRandForcCoef
        call continua_particle
        !call continua_collision
       if(ismaster) write(6,'(a)') 'Continuation files written'

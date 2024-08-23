@@ -96,6 +96,9 @@ character(70) namfile
       cflm=cflm*dt
 
       call InitRandomForce
+      if (nread .eq. 1) then
+        call hdf_read_bhat
+      endif
 
       tin(2) = MPI_WTIME()
 

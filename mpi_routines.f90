@@ -362,6 +362,14 @@ end subroutine mpi_globalsum_double_var
       if(allocated(pr_rms)) deallocate(pr_rms)
       if(allocated(pr_me)) deallocate(pr_me)
 
+
+      !------------------------------------------
+        ! KZ HIT stuff
+      deallocate( waveN )
+      deallocate( bhat )
+      deallocate( exp_I_kl_xi, exp_I_km_yj, exp_I_kn_zk)
+      deallocate( exp_I_kl_xsi, exp_I_km_ysj, exp_I_kn_zsk)
+
     
       end subroutine mem_dealloc
 !================================================

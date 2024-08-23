@@ -115,8 +115,8 @@
        &                   ((vz(ic,jc,kc)+vz(ic,jc,kp)*0.5))**2
 
 
-      ! dissipte = 2.0*(h11**2+h22**2+h33**2)+ &
-      !         (h21+h12)**2+ (h31+h13)**2+ (h32+h23)**2
+       !dissipte = 2.0*(h11**2+h22**2+h33**2)+ &
+       !        (h21+h12)**2+ (h31+h13)**2+ (h32+h23)**2
 
       !sij sij = s11^2 + s22^2 + s33^2 + 2*(  s12^2 + s13^2 + s23^2  )
       dissipte = h11**2 + h22**2 + h33**2 + & ! s11^2 + s22^2 + s33^2            
@@ -136,10 +136,12 @@
       
       call MpiAllSumRealScalar(diss_volAvg)
       call MpiAllSumRealScalar(kenerg)
-      kenerg =0.5d0* kenerg*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
+      !kenerg =0.5d0* kenerg*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
+      kenerg =0.5d0* kenerg / (dble(n1m*n2m*n3m))
 
       nu=1.0d0/ren
-      diss_volAvg = 2.0d0 * nu*diss_volAvg/((dx1*dx2*dx3)*(xlen*ylen*zlen))
+      diss_volAvg = 2.0d0 * nu*diss_volAvg / (dble(n1m*n2m*n3m))
+      !diss_volAvg =  nu*diss_volAvg/((dx1*dx2*dx3)*(xlen*ylen*zlen))
 
       urms = sqrt( 2.0 / 3.0 * kenerg )
 

@@ -18,6 +18,8 @@ subroutine CalcHITRandomForce
           ! il, jm, knn
   
       kf = kf_on_kmin * 2.0 * pi / xlen
+
+      Fhat = 0.0
   
       if (ismaster) then ! Only for 1 process to sync random numbers
           do l = 1,nmodes ! x wavenumber
@@ -213,7 +215,7 @@ subroutine CalcHITRandomForce
             ! Count the number of modes
             count = 0
         
-            kf = kf_on_kmin * 2*pi/xlen
+            kf = kf_on_kmin * 2.0*pi/xlen
         
             do l = 1,nmodes
                 kx = float( waveN(l) )*2.0*pi/xlen
@@ -231,52 +233,7 @@ subroutine CalcHITRandomForce
         
         if (myid .eq. 0) write(*,*) count," wavenumber modes will be forced!"
         
-        end subroutine InitRandomForce
-
-
-subroutine WriteRandForcCoef
-use mpih
-use param
-use hdf5
-IMPLICIT NONE
-integer hdf_error, ndims
-character(40) filnambc
-integer(HID_T) :: file_id
-integer(HID_T) :: dset_coef
-integer(HID_T) :: dspace_coef
-integer(HSIZE_T) :: dims_coef(4)
-
-
-filnambc = 'continuation/continua_bcoefs.h5'
-
-if(ismaster) then 
-
-ndims=4
-dims_coef(1)=6
-dims_coef(2)=7
-dims_coef(3)=7
-dims_coef(4)=7
-
-call h5fcreate_f(filnambc,H5F_ACC_TRUNC_F, file_id, hdf_error)
-
-call h5screate_simple_f(ndims, dims_coef, dspace_coef, hdf_error)
-
-call h5dcreate_f(file_id, 'bcoefs', H5T_NATIVE_DOUBLE, &
-                dspace_coef, dset_coef, hdf_error)
-
-call h5dwrite_f(dset_coef, H5T_NATIVE_DOUBLE, bcoefs, &
-       dims_coef,hdf_error)
-
-call h5dclose_f(dset_coef, hdf_error)
-call h5sclose_f(dspace_coef, hdf_error)
-
-call h5fclose_f(file_id, hdf_error)
-
-endif
-
-
-return                                    
-end      
+end subroutine InitRandomForce
 
 subroutine CalcABC_HITForce
       use param
@@ -305,13 +262,111 @@ subroutine CalcABC_HITForce
 end
 
 
-subroutine memDealloc_HIT
+  subroutine WriteRandForcCoef
+    use mpih
+    use param
+    use hdf5
+    IMPLICIT NONE
+    integer hdf_error, ndims
+    character(40) filnambc
+    integer(HID_T) :: file_id
+    integer(HID_T) :: dset_coef, dset_coef2
+    integer(HID_T) :: dspace_coef
+    integer(HSIZE_T) :: dims_coef(4)
+    
+    
+    
+    ! Size of bhat is
+    ! bhat(3,nmodes,nmodes,nmodes) ) as a complex double
+    
+    if(ismaster) then 
+    
+    ndims=4
+    dims_coef(1)=3
+    dims_coef(2)=nmodes
+    dims_coef(3)=nmodes
+    dims_coef(4)=nmodes
+    
+    filnambc = 'continuation/continua_bhat.h5'
+    call h5fcreate_f(filnambc,H5F_ACC_TRUNC_F, file_id, hdf_error)
 
-      use param
-  
-      deallocate( waveN )
-      deallocate( bhat )
-      deallocate( exp_I_kl_xi, exp_I_km_yj, exp_I_kn_zk)
-      deallocate( exp_I_kl_xsi, exp_I_km_ysj, exp_I_kn_zsk)
-  
-  end subroutine memDealloc_HIT
+    call h5screate_simple_f(ndims, dims_coef, dspace_coef, hdf_error)
+
+    call h5dcreate_f(file_id, 'bhat_re', H5T_NATIVE_DOUBLE, &
+                    dspace_coef, dset_coef, hdf_error)
+
+    call h5dcreate_f(file_id, 'bhat_im', H5T_NATIVE_DOUBLE, &
+                    dspace_coef, dset_coef2, hdf_error)
+
+    call h5dwrite_f(dset_coef, H5T_NATIVE_DOUBLE, real(bhat), &
+           dims_coef,hdf_error)
+
+    call h5dwrite_f(dset_coef2, H5T_NATIVE_DOUBLE, aimag(bhat), &
+           dims_coef,hdf_error)
+
+    call h5dclose_f(dset_coef, hdf_error)
+    call h5sclose_f(dspace_coef, hdf_error)
+
+
+    call h5fclose_f(file_id, hdf_error)
+
+    !filnambc = 'continuation/continua_bhat_im.h5'
+    !call h5fcreate_f(filnambc,H5F_ACC_TRUNC_F, file_id, hdf_error)
+    !call h5screate_simple_f(ndims, dims_coef, dspace_coef, hdf_error)
+    !call h5dcreate_f(file_id, 'bhat_im', H5T_NATIVE_DOUBLE, &
+    !                dspace_coef, dset_coef, hdf_error)
+    !call h5dwrite_f(dset_coef, H5T_NATIVE_DOUBLE, aimag(bhat), &
+    !       dims_coef,hdf_error)
+    !call h5dclose_f(dset_coef, hdf_error)
+    !call h5sclose_f(dspace_coef, hdf_error)
+    !call h5fclose_f(file_id, hdf_error)
+    
+    endif
+    
+    return                                    
+end      
+
+subroutine hdf_read_bhat
+    use hdf5
+    use mpih
+    use param
+    implicit none
+    character(200) :: dsetname,filename
+    integer(HID_T) :: file_id
+    integer(HID_T) :: dset
+    integer :: hdf_error
+    integer(HSIZE_T) :: dims(4)
+    real :: re_buffer(3,nmodes,nmodes,nmodes)
+    real :: im_buffer(3,nmodes,nmodes,nmodes)
+
+    
+    
+    if (myid.eq.0) then
+        dims(1) = 3
+        dims(2) = nmodes
+        dims(3) = nmodes
+        dims(4) = nmodes
+
+    !write(*,*) "Attempting to read bhat_re!"
+
+    filename = 'continuation/continua_bhat.h5'
+    call h5fopen_f(trim(filename), H5F_ACC_RDWR_F, file_id, hdf_error)
+    !write(*,*) "Finishing open_f!"
+
+    call h5dopen_f(file_id, 'bhat_re', dset, hdf_error)
+    call h5dread_f(dset, H5T_NATIVE_DOUBLE, &
+    re_buffer, dims, hdf_error)
+    call h5dclose_f(dset, hdf_error)
+
+
+    call h5dopen_f(file_id, 'bhat_im', dset, hdf_error)
+    call h5dread_f(dset, H5T_NATIVE_DOUBLE, &
+    im_buffer, dims, hdf_error)
+    call h5dclose_f(dset, hdf_error)
+
+
+    call h5fclose_f(file_id, hdf_error)
+
+    bhat = cmplx(1.0,0.0) * re_buffer + cmplx(0.0,1.0) * im_buffer
+    end if
+    end subroutine

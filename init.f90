@@ -63,13 +63,6 @@
       call AllocateReal3DArray(vz_rms,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(pr_rms,1,n1,1,n2,kstart,kend)
 
-      call AllocateCplx2DArray(term1a,1,n1,1,7) 
-      call AllocateCplx2DArray(term1b,1,n1,1,7) 
-      call AllocateCplx2DArray(term2a,1,n2,1,7) 
-      call AllocateCplx2DArray(term2b,1,n2,1,7) 
-      call AllocateCplx2DArray(term3a,kstart,kend,1,7) 
-      call AllocateCplx2DArray(term3b,kstart,kend,1,7) 
-
       call AllocateReal3DArray(for_xc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_yc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_zc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
