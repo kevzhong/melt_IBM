@@ -176,7 +176,6 @@ character(70) namfile
       call mpi_write_field
       call WriteRandForcCoef
       call continua_particle
-      !call continua_collision
      end if
 
      ti(2) = MPI_WTIME()

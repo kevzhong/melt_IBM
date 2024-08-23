@@ -3,6 +3,6 @@
  rhop/rhof
     1.0 
   GTSFX                    RAD       
- unitSphere_N3.gts         0.1
+ unitSphere_N4.gts         0.1
  IREMESH     PERCT_ETHRESH   V_ON_VE_THRESH
     0             0.7             27.0

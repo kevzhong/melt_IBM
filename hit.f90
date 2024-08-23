@@ -1,227 +1,238 @@
-      subroutine CalcHITRandomForce
+subroutine CalcHITRandomForce
       use param
-      use local_arrays, only: forcx,forcy,forcz
       use mpih
-      use mpi_param
-      use stat_arrays
+      use mpi_param, only: kstart, kend
+      use local_arrays, only: forcx, forcy, forcz
+
       implicit none
-      integer :: j,k,i,l,n,m
-      integer :: kc,jc,ic
-      real :: kl,kn,km
-      real :: wlow,whigh
-      real :: waven
-      real :: scalpr, scalpc
+      integer :: l, m, nn,ndir
+      integer :: i, j, k
+      real :: kl, km, kn, kmag, kf
       real :: u1, u2
-      real, dimension(6,7,7,7) :: fcoefs
-      complex :: fcoefsx,fcoefsy,fcoefsz
-      complex :: dummy1,dummy3,dummy1b,dummy2b,dummy3b
-
-      wlow=0.01 !kmin=0.0159 -> kmin*2*pi/xlen=0.01
-      !wlow = 2.0d0 * pi / xlen ! Lowest wavenumber <--> largest length scale to force set by box size
-      !wlow = 1.0e-10 ! Avoid zero wavenumber
-      whigh=kf_on_kmin*2*pi/xlen ! Prescribed highest threshold wavenumber <---> smallest length scale to force
-      fcoefs=0.0d0
-
-      if(myid.eq.0) then
-      do n=1,7
-       kn = float(n-4)*2*pi/xlen
-       do m=1,7
-        km = float(m-4)*2*pi/xlen
-        do l=1,4
-         kl = float(l-4)*2*pi/xlen
-         waven=sqrt(kl**2+km**2+kn**2)
-         if((waven.gt.wlow).and.(waven.lt.(whigh))) then
-         do i=1,3
-            ! Box-Muller transform
-          call random_number(u1)
-          call random_number(u2)
-          bcoefs(2*i-1,l,m,n) = bcoefs(2*i-1,l,m,n)*(1-dt/tl) +  & 
-     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*cos(2.0*pi*u2)
-          bcoefs(2*i,l,m,n) = bcoefs(2*i,l,m,n)*(1-dt/tl) +  & 
-     &     sqrt(2*epsstar*dt/(tl*tl))*sqrt(-2.0*log(u1))*sin(2.0*pi*u2)
-         end do
-         scalpr=bcoefs(1,l,m,n)*kl + bcoefs(2,l,m,n)*km + &
-     &          bcoefs(3,l,m,n)*kn
-         scalpc=bcoefs(4,l,m,n)*kl + bcoefs(5,l,m,n)*km + &
-     &          bcoefs(6,l,m,n)*kn
-         fcoefs(1,l,m,n) =bcoefs(1,l,m,n)-scalpr*kl/(waven**2)
-         fcoefs(2,l,m,n) =bcoefs(2,l,m,n)-scalpr*km/(waven**2)
-         fcoefs(3,l,m,n) =bcoefs(3,l,m,n)-scalpr*kn/(waven**2)
-         fcoefs(4,l,m,n) =bcoefs(4,l,m,n)-scalpc*kl/(waven**2)
-         fcoefs(5,l,m,n) =bcoefs(5,l,m,n)-scalpc*km/(waven**2)
-         fcoefs(6,l,m,n) =bcoefs(6,l,m,n)-scalpc*kn/(waven**2)
-         end if
-        end do
-       end do
-      end do
-
-!RO     Complex conjugate
-        do k=1,7
-        kc = 8-k
-        do j=1,7
-        jc = 8-j
-        do i=5,7
-         ic = 8-i
-         fcoefs(1,i,j,k) =fcoefs(1,ic,jc,kc)
-         fcoefs(2,i,j,k) =fcoefs(2,ic,jc,kc)
-         fcoefs(3,i,j,k) =fcoefs(3,ic,jc,kc)
-         fcoefs(4,i,j,k)=-fcoefs(4,ic,jc,kc)
-         fcoefs(5,i,j,k)=-fcoefs(5,ic,jc,kc)
-         fcoefs(6,i,j,k)=-fcoefs(6,ic,jc,kc)
-        end do
-        end do
-        end do
-
-!RO     Special case i=4 (k=0)
-        i=4 
-        do k=1,7
-         do j=1,7
-         fcoefs(4,i,j,k)=0.
-         fcoefs(5,i,j,k)=0.
-         fcoefs(6,i,j,k)=0.
-         end do
-        end do
-
-
-        do k=1,7
-         kc=8-k
-         do j=5,7
-         jc=8-j
-         fcoefs(1,i,j,k)=fcoefs(1,i,jc,kc)
-         fcoefs(2,i,j,k)=fcoefs(2,i,jc,kc)
-         fcoefs(3,i,j,k)=fcoefs(3,i,jc,kc)
-         end do
-        end do
-
-        j=4
-        do k=5,7
-         kc=8-k
-         fcoefs(1,i,j,k)=fcoefs(1,i,j,kc)
-         fcoefs(2,i,j,k)=fcoefs(2,i,j,kc)
-         fcoefs(3,i,j,k)=fcoefs(3,i,j,kc)
-        end do
-
-!RO    0 constant force
-
-       fcoefs(:,4,4,4) = 0.0d0
-
-       end if
-
-!RS    Check the data range that actually needs to be send in this routine
-       call mpi_globalsum_double_forc(fcoefs)
-
+      real :: kvec(3)
+      complex :: rand_complex
+      complex :: Fhat(3,nmodes,nmodes,nmodes)
+      complex :: buff1
   
-       forcx=0.0d0 ! Initial force as we are using these matrix elements to sum
-       do n=2,6 ! The ring values (n=1,n=7) are zero, so exclude from summation
-       do m=2,6 ! The ring values (m=1,m=7) are zero, so exclude from summation
-       do l=2,6 ! The ring values (l=1,l=7) are zero, so exclude from summation
-        fcoefsx=cmplx(fcoefs(1,l,m,n),fcoefs(4,l,m,n))
-         do k=kstart,kend
-         dummy1=term3a(k,n) ! use pre-allocated axial terms
-         do j=1,n2m
-          dummy1b=dummy1*term2a(j,m)!*term3a(k,n) ! use pre-allocated radial terms
-          do i=1,n1m
-           forcx(i,j,k) = forcx(i,j,k)+real(fcoefsx*dummy1b*term1b(i,l)) ! sum force
-          end do 
-         end do
-         end do
-        end do
-        end do
-        end do
-
-!      Seperate loops per component, seem to benefit data locality, could be system dependent
-       forcy=0.0d0 ! Initial force as we are using these matrix elements to sum
-       do n=2,6 ! The ring values (n=1,n=7) are zero, so exclude from summation
-       do m=2,6 ! The ring values (m=1,m=7) are zero, so exclude from summation
-       do l=2,6 ! The ring values (l=1,l=7) are zero, so exclude from summation
-        fcoefsy=cmplx(fcoefs(2,l,m,n),fcoefs(5,l,m,n))
-         do k=kstart,kend
-         dummy1=term3a(k,n) ! use pre-allocated axial terms
-         do j=1,n2m 
-         dummy2b=dummy1*term2b(j,m) ! use pre-allocated radial terms
-          do i=1,n1m
-           forcy(i,j,k)=forcy(i,j,k)+real(fcoefsy*dummy2b*term1a(i,l)) ! sum force
-          end do
-         end do
-         end do
-       end do
-       end do
-       end do
-
-!      Seperate loops per component, seem to benefit data locality, could be system dependent
-       forcz=0.0d0 ! Initial force as we are using these matrix elements to sum
-       do n=2,6 ! The ring values (n=1,n=7) are zero, so exclude from summation
-       do m=2,6 ! The ring values (m=1,m=7) are zero, so exclude from summation
-       do l=2,6 ! The ring values (l=1,l=7) are zero, so exclude from summation
-        fcoefsz=cmplx(fcoefs(3,l,m,n),fcoefs(6,l,m,n))
-         do k=kstart,kend
-         dummy3=term3b(k,n) ! use pre-allocated axial terms
-         do j=1,n2m
-          dummy3b=dummy3*term2a(j,m) ! use pre-allocated radial terms
-          do i=1,n1m
-           forcz(i,j,k)=forcz(i,j,k)+real(fcoefsz*dummy3b*term1a(i,l)) ! sum force
-          end do
-         end do
-         end do
-      end do
-      end do
-      end do
-
-      return
-      end
-
+      real :: tstart, tend
+          ! il, jm, knn
+  
+      kf = kf_on_kmin * 2.0 * pi / xlen
+  
+      if (ismaster) then ! Only for 1 process to sync random numbers
+          do l = 1,nmodes ! x wavenumber
+              kl = float(waveN(l))*2.0*pi / xlen
+              do m = 1,nmodes ! y wavenumber
+                  km = float(waveN(m))*2.0*pi / ylen
+                  do nn = 1,nmodes ! z wavenumber
+                      kn = float(waveN(nn))*2.0*pi / zlen
+                      kmag = sqrt(kl**2 + km**2 + kn**2)
+  
+                      if  ( (kmag .gt. 0.0 ) .and. (kmag .lt. kf) ) then
+                          do ndir = 1,3
+                              ! Box-Muller transform
+                              call random_number(u1)
+                              call random_number(u2)
+                              rand_complex = cmplx( sqrt(-2.0*log(u1))*cos(2.0*pi*u2) , &
+                                                     sqrt(-2.0*log(u1))*sin(2.0*pi*u2) )
+  
+                              !write(*,*) "factor:", 2.0*epsstar*dt/TL**2  
+  
+  
+                              bhat(ndir,l,m,nn) = bhat(ndir,l,m,nn) * (1.0 - dt / TL) + &
+                                                 rand_complex*sqrt(2.0*epsstar*dt/(TL**2))  
+                                              
+  
+                          enddo ! end 1:3
+  
+                                            ! Subtract projection along wavenumber: enforce solenoidality
+                      kvec = [kl,km,kn]
+                      Fhat(1:3,l,m,nn) = bhat(1:3,l,m,nn) - kvec * dot_product(kvec,  bhat(1:3,l,m,nn) ) / kmag**2
+                      !write(*,*) "Fhat(1:3,l,m,nn) is :", Fhat(1:3,l,m,nn)
+  
+                      endif ! end kmag
+    
+                  enddo ! end nn
+              enddo !end m
+          enddo !end l
+      endif
+  
+      ! Hard-set the zero mode to have no contribution
+      !Fhat(1:3,(nmodes-1)/2+1,(nmodes-1)/2+1,(nmodes-1)/2+1 ) = 0.0 !/
+      call MPI_BCAST(Fhat, 3*nmodes**3, MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, ierr)
+  
+  
+      ! Begin accmulation of terms
+  
+      forcx = 0.0
+      forcy = 0.0
+      forcz = 0.0
+  
+  
+  
+      ! x forcing
+      do nn = 1,nmodes
+          do m = 1,nmodes
+              do l = 1,nmodes
+                  do k = kstart,kend
+                      do j = 1,n2m
+                          buff1 = exp_I_km_yj(j,m) * exp_I_kn_zk(k,nn)
+                          do i = 1,n1m
+                              forcx(i,j,k) = forcx(i,j,k) + &
+                              real( Fhat(1,l,m,nn) * exp_I_kl_xsi(i,l) * buff1 )
+                          enddo
+                      enddo
+                  enddo
+              enddo
+          enddo
+      enddo
+  
+  
+      ! y forcing
+      do nn = 1,nmodes
+          do m = 1,nmodes
+              do l = 1,nmodes
+                  do k = kstart,kend
+                      do j = 1,n2m
+                          buff1 = exp_I_km_ysj(j,m) * exp_I_kn_zk(k,nn)
+                          do i = 1,n1m
+                              forcy(i,j,k) = forcy(i,j,k) + &
+                              real( Fhat(2,l,m,nn) * exp_I_kl_xi(i,l)  * buff1 )
+                          enddo
+                      enddo
+                  enddo
+              enddo
+          enddo
+      enddo
+  
+      ! z forcing
+      do nn = 1,nmodes
+          do m = 1,nmodes
+              do l = 1,nmodes
+                  do k = kstart,kend
+                      do j = 1,n2m
+                          buff1 = exp_I_km_yj(j,m) * exp_I_kn_zsk(k,nn)
+                          do i = 1,n1m
+                              forcz(i,j,k) = forcz(i,j,k) + &
+                              real( Fhat(3,l,m,nn) * exp_I_kl_xi(i,l)  * buff1 )
+                          enddo
+                      enddo
+                  enddo
+              enddo
+          enddo
+      enddo
+  
+  end subroutine CalcHITRandomForce
 
       subroutine InitRandomForce
-      use mpih
-      use mpi_param, only: kstart,kend
-      use param
-      use hdf5
-      IMPLICIT NONE
-      integer i,j,k,l,m,n
-      integer hdf_error, ndims
-      integer(HID_T) :: file_id
-      integer(HID_T) :: dset_coef
-      integer(HID_T) :: dspace_coef
-      integer(HSIZE_T) :: dims(4)
-      character(40) filnambc
-      real kl, km, kn
-      complex :: im=(0.,1.)
+            use param
+            use mpih
+            use mpi_param, only: kstart, kend
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Pre-allocation of Geometrical terms used in the forcing (calcforc.F90)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            implicit none
+            integer :: Nbuffer, i,j,k,nn, count
+            real :: kx, ky, kz
+            integer :: l,m
+            complex :: im=(0.,1.)
+            real :: kappa,kf, magK
+        
+        
+            ! First count the number of modes 
+        
+            ! {0, k1, k2, ........,  k_nmodes}    where k_nmodes < kf
+        
+            !Nbuffer counts the no. of positive wavenumbers + the zero mode
+            Nbuffer = floor(kf_on_kmin) + 1
+            
+            !nmodes counts all -ve and +ve wavenumbers in 1 direciton, including the zero mode
+            nmodes = (Nbuffer-1)*2 + 1
+        
+            allocate( waveN(nmodes) )
+        
+            ! Coefficient in forcing for later
+            allocate( bhat(3,nmodes,nmodes,nmodes) )
+            bhat = 0.0
+        
+        
+            ! Allocate zero wavneumbers
+            do i = 1,Nbuffer-1
+                waven(i) = -( Nbuffer - i)
+            enddo
+        
+            ! Allocate zero and positive wavenumbers
+            do i = 0,Nbuffer-1
+                waveN(Nbuffer+i) = i
+            enddo
+        
+            ! Exponential pre-factor terms in Fourier expansion
+            allocate( exp_I_kl_xi(n1m, nmodes) ) ! Nx x k_l
+            allocate( exp_I_km_yj(n2m, nmodes) ) ! Ny x k_m
+            allocate( exp_I_kn_zk(kstart:kend, nmodes) ) ! Nz x k_n
+        
+            ! Staggered array copies
+            allocate( exp_I_kl_xsi(n1m, nmodes) ) ! Nx x k_l
+            allocate( exp_I_km_ysj(n2m, nmodes) ) ! Ny x k_m
+            allocate( exp_I_kn_zsk(kstart:kend, nmodes) ) ! Nz x k_n
+        
+        
+            ! Duplicates needed for staggered grid
+        
+        
+            ! x-modes
+            do i = 1,n1m
+                do nn=1,nmodes
+                    kappa = float(waveN(nn))*2.0*pi / xlen
+                    exp_I_kl_xi(i,nn) = exp( im * kappa * xm(i) )
+                    exp_I_kl_xsi(i,nn) = exp( im * kappa * xc(i) )
+        
+                enddo
+            enddo
+        
+            ! y-modes
+            do j = 1,n2m
+                do nn=1,nmodes
+                    kappa = float(waveN(nn))*2.0*pi / ylen
+                    exp_I_km_yj(j,nn) = exp( im * kappa * ym(j) )
+                    exp_I_km_ysj(j,nn) = exp( im * kappa * yc(j) )
+        
+                enddo
+            enddo
+        
+        
+            ! z-modes
+            do k = kstart,kend
+                do nn=1,nmodes
+                    kappa = float(waveN(nn))*2.0*pi / zlen
+                    exp_I_kn_zk(k,nn) = exp( im * kappa * zm(k) )
+                    exp_I_kn_zsk(k,nn) = exp( im * kappa * zc(k) )
+                enddo
+            enddo
+        
+            !write(*,*) "waveN is: ", exp_I_kn_zsk(kstart,nmodes)
+        
+            ! Count the number of modes
+            count = 0
+        
+            kf = kf_on_kmin * 2*pi/xlen
+        
+            do l = 1,nmodes
+                kx = float( waveN(l) )*2.0*pi/xlen
+                do m=1,nmodes
+                    ky = float( waveN(m) )*2.0*pi/ylen
+                    do nn = 1,nmodes
+                        kz = float( waveN(nn) )*2.0*pi/zlen
+                        magK = sqrt( kx**2 + ky**2 + kz**2)
+                        if ( (magK .le. kf) .and. (magK .ne. 0)) then
+                            count = count + 1
+                        endif
+                enddo
+            enddo
+        enddo
+        
+        if (myid .eq. 0) write(*,*) count," wavenumber modes will be forced!"
+        
+        end subroutine InitRandomForce
 
-
-!! Azimuthal terms
-      do i=1,n1m
-       do l=1,7
-       kl = float(l-4)*2*pi
-       term1a(i,l)=exp(im*kl*xm(i)/xlen)
-       term1b(i,l)=exp(im*kl*xc(i)/xlen)
-       enddo
-      enddo
-
-!! Radial terms
-      do j=1,n2m
-       do m=1,7
-       km = float(m-4)*2*pi
-       term2a(j,m)=exp(im*km*ym(j)/ylen)
-       term2b(j,m)=exp(im*km*yc(j)/ylen)
-       enddo
-      enddo
-
-!! Axial terms
-      do k=kstart,kend
-       do n=1,7
-       kn = float(n-4)*2*pi
-       term3a(k,n)=exp(im*kn*zm(k)/zlen)
-       term3b(k,n)=exp(im*kn*zc(k)/zlen)
-       end do
-      end do
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! End pre-allocation of Geometrical terms used in the forcing (calcforc.F90)
-end
 
 subroutine WriteRandForcCoef
 use mpih
@@ -292,3 +303,15 @@ subroutine CalcABC_HITForce
 
       return
 end
+
+
+subroutine memDealloc_HIT
+
+      use param
+  
+      deallocate( waveN )
+      deallocate( bhat )
+      deallocate( exp_I_kl_xi, exp_I_km_yj, exp_I_kn_zk)
+      deallocate( exp_I_kl_xsi, exp_I_km_ysj, exp_I_kn_zsk)
+  
+  end subroutine memDealloc_HIT
