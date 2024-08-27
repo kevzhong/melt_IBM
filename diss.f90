@@ -110,9 +110,13 @@
       !dw/dz
        h33=( vz(ic,jc,kp)-vz(ic,jc,kc) )*udx3
 
-       kenerg = kenerg +  ((vx(ic,jc,kc)+vx(ip,jc,kc))*0.5)**2+ &
-       &                   ((vy(ic,jc,kc)+vy(ic,jp,kc))*0.5)**2 + &
-       &                   ((vz(ic,jc,kc)+vz(ic,jc,kp)*0.5))**2
+      !  kenerg = kenerg +  ((vx(ic,jc,kc)+vx(ip,jc,kc))*0.5)**2+ &
+      !  &                   ((vy(ic,jc,kc)+vy(ic,jp,kc))*0.5)**2 + &
+      !  &                   ((vz(ic,jc,kc)+vz(ic,jc,kp)*0.5))**2
+
+       kenerg = kenerg + (vx(ic,jc,kc)**2+vx(ip,jc,kc)**2+ &
+       &                   vy(ic,jc,kc)**2+vy(ic,jp,kc)**2 + &
+       &                   vz(ic,jc,kc)**2+vz(ic,jc,kp)**2)*0.5d0
 
 
        !dissipte = 2.0*(h11**2+h22**2+h33**2)+ &
@@ -131,9 +135,7 @@
        end do
        end do
        end do
-     
-    !  dx1=1/dx1
-      
+           
       call MpiAllSumRealScalar(diss_volAvg)
       call MpiAllSumRealScalar(kenerg)
       !kenerg =0.5d0* kenerg*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
