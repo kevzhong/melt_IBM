@@ -22,7 +22,7 @@
       real :: eta,re_lam
       real :: h11,h12,h13,h21,h22,h23,h31,h32,h33
       real :: diss_volAvg, nu, kmax_eta, Re_L,lambda_t
-      real :: udx1,udx2,dissipte,udx3, kenerg, urms
+      real :: udx1,udx2,dissipte,udx3, kenerg, urms, L_int
       character(70) namfile
       
       diss_volAvg = 0.0d0
@@ -153,6 +153,8 @@
 
       lambda_t = sqrt( 15.0 * nu * urms**2 / diss_volAvg )
       re_lam = urms * lambda_t / nu
+
+      L_int = sqrt(kenerg**3) / diss_volAvg ! Large-eddy length scale
       !re_lam = sqrt(20.0 / 3.0 * kenerg**2 / (diss_volAvg * nu) ) ! cf. eqn (6.59--6.65), Pope (2000)
       if(ismaster) then
             write(6,*) "Re_lambda", re_lam 
@@ -160,7 +162,7 @@
       
       open(unit=92,file=namfile, Access='append', Status='unknown')
       !write(92,'(100E15.7)') time,dt,diss_volAvg,kmax_eta,eta,re_lam!,nu,ren
-      write(92,'(100E15.7)') time, diss_volAvg, kenerg, urms, eta, lambda_t, Re_L, re_lam 
+      write(92,'(100E15.7)') time, diss_volAvg, kenerg, urms, eta, lambda_t, Re_L, re_lam, L_int
 
       close(92)
       end if

@@ -54,8 +54,8 @@ character(70) namfile
        cflm=0.d0
          
        !call inqpr_rotated
-       call inqpr
-       !call inqpr_taylorHIT
+       !call inqpr
+       call inqpr_taylorHIT
 
       else
 
