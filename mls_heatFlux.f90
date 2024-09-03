@@ -285,7 +285,7 @@ enddo !end k
     real, dimension(nv), intent(in)  :: Avert ! Area associated with vertices
 
     do i = 1,3 !vertices v1, v2, v3
-      qw_v( vert_of_face(i) ) = qw_v( vert_of_face(i) ) + qw_F * ( Atri / Avert( vert_of_face(i) ) )
+      qw_v( vert_of_face(i) ) = qw_v( vert_of_face(i) ) + qw_F * ( Atri / 3.0 / Avert( vert_of_face(i) ) )
     enddo
 
   end subroutine faceToVert_interp

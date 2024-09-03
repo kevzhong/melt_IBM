@@ -137,9 +137,9 @@ do i = 1,nf
                 v2=vert_of_face(2,i)
                 v3=vert_of_face(3,i)
 
-                Avert(v1) = Avert(v1) + sur(i)
-                Avert(v2) = Avert(v2) + sur(i)
-                Avert(v3) = Avert(v3) + sur(i)
+                Avert(v1) = Avert(v1) + sur(i) / 3.0
+                Avert(v2) = Avert(v2) + sur(i) / 3.0
+                Avert(v3) = Avert(v3) + sur(i) / 3.0
         endif
 enddo
 

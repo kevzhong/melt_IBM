@@ -156,7 +156,7 @@ character(70) namfile
            call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField
-           call mpi_write_field
+           call mpi_write_vel
          endif
          
         ! ASCII write
@@ -174,7 +174,7 @@ character(70) namfile
           call CalcDissipation
 
       time=time+dt
-      if((ntime.eq.ntst).or.(mod(ntime,10).eq.0)) then          !to perform when needed not only at the end
+      if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field
       call WriteRandForcCoef
