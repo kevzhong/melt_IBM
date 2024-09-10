@@ -322,11 +322,13 @@ enddo
 
 
 
-! if (ismaster) then
+ if (ismaster) then
 !  write(*,*) "Iresidual: ", Iresidual
-!  write(*,*) "int_prn_dA", int_prn_dA
-!  write(*,*) "int_tau_dA", int_tau_dA
-!  endif
+  write(*,*) "int_prn_dA_m1", int_r_x_prn_dA_m1
+  write(*,*) "int_tau_dA_m1", int_r_x_tau_dA_m1
+  write(*,*) "int_prn_dA", int_r_x_prn_dA
+  write(*,*) "int_tau_dA", int_r_x_tau_dA
+  endif
 end subroutine NE_MLS
 
 

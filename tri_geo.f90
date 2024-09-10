@@ -27,8 +27,6 @@ subroutine tri_geo
     do inp=1,Nparticle
       call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyz0(:,:), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
                               rm_flag(inp), E_thresh)
-      ! call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),&
-      !                   isGhostFace(:,inp),rm_flag(inp),A_thresh)
 
       call calculate_area(Surface(inp),maxnv,maxnf,xyz0(:,:), vert_of_face(:,:,inp),sur(:,inp),isGhostFace(:,inp))
 
