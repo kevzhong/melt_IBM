@@ -172,7 +172,6 @@ character(70) namfile
 
           call CalcInjection
           call CalcDissipation
-          call volAverages
 
       time=time+dt
       if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then          !to perform when needed not only at the end
