@@ -191,7 +191,7 @@ character(70) namfile
           call writeClock
 
        time=time+dt
-      if((ntime.eq.ntst).or.(mod(ntime,100).eq.0)) then          !to perform when needed not only at the end
+      if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then          !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field
       call WriteRandForcCoef
