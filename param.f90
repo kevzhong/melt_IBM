@@ -114,6 +114,7 @@
         implicit none
         include 'mpif.h'
         integer :: myid, numtasks, ierr
+        integer :: p_row, p_col, my_p_row, my_p_col
         integer, parameter :: master=0
         integer, parameter :: lvlhalo=1
         integer :: MDP = MPI_DOUBLE_PRECISION

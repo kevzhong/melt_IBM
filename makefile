@@ -1,6 +1,6 @@
 
-#FC = h5pfc -r8 -O3 -fpp -module $(OBJDIR) # FOR INTEL
-FC = h5pfc -cpp -fdefault-real-8 -fdefault-double-8 -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
+#FC = h5pfc -r8 -O3 -fpp -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
+FC = h5pfc -cpp -O3 -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
 
 ################################## UNCONMMENT BELOW FOR DISCOVERER #############################################
 #FC+=${FFTW3_FFLAGS}

@@ -2,6 +2,18 @@
   ! Using level-set scheme of Kempe & Frohlich (2012) eqns 32-33
   ! The signed distance function, phi, is evaluated as the distance from the Eulerian-cell-corner point to the plane of the closest triangle centroid
 
+  subroutine tagCells(ind,inp)
+    implicit none
+    integer, dimension(3,2) :: ind
+    integer :: inp
+
+    call convex_hull_qc2(ind,inp)
+    call convex_hull_q12(ind,inp)
+    call convex_hull_q22(ind,inp)
+    call convex_hull_q32(ind,inp)
+
+  end subroutine tagCells
+
   subroutine convex_hull_q12(ind,inp)
     use mls_param
     use mpih
