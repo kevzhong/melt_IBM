@@ -50,6 +50,7 @@
       endif
  
       call mem_dealloc
+      call dealloc_trigeo
       call FinalizeMPI
 
       endif

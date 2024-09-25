@@ -269,6 +269,44 @@ subroutine update_add_upper_ghost(q1)
 
 end subroutine update_add_upper_ghost
 !
+subroutine get_prow_pcol
+      ! KZ: auxilary pencil routine for pencil-accelerated ray-tagging
+      use mpih
+      implicit none
+      integer :: i, factor1, factor2
+      real :: aspect_ratio, best_aspect_ratio
+  
+      ! First, find the best choice of p_row * p_col given numtasks
+  
+      ! Initialize best aspect ratio to a large value
+      best_aspect_ratio = 1.0e30
+      p_row = 1
+      p_col = numtasks
+  
+      ! Loop over possible factors of numtasks
+      do i = 1, int(sqrt(real(numtasks, 8)))
+          if (mod(numtasks, i) == 0) then
+              ! i is a factor, so numtasks / i is the corresponding pair
+              factor1 = i
+              factor2 = numtasks / i
+  
+              ! Compute the aspect ratio and find the best one
+              aspect_ratio = abs(real(factor1, 8) / real(factor2, 8) - 1.0)
+              if (aspect_ratio < best_aspect_ratio) then
+                  best_aspect_ratio = aspect_ratio
+                  p_row = factor1
+                  p_col = factor2
+              end if
+          end if
+      end do
+  
+      my_p_row  = myid / p_col
+      my_p_col = mod(myid, p_col)
+  
+      !write(*,*) "Total prow, pcol: ", p_row, p_col
+  
+  end subroutine get_prow_pcol
+
 !==============================================
 
 
@@ -319,6 +357,8 @@ end subroutine mpi_globalsum_double_var
       use local_aux
       use mpi_param
       use stat_arrays
+      use mls_param
+      use mls_local
       implicit none
       
       if(allocated(vx)) deallocate(vx)
@@ -370,7 +410,27 @@ end subroutine mpi_globalsum_double_var
       deallocate( exp_I_kl_xi, exp_I_km_yj, exp_I_kn_zk)
       deallocate( exp_I_kl_xsi, exp_I_km_ysj, exp_I_kn_zsk)
 
-    
+
+      ! KZ: IBM stuff
+      ! Cell-tagging masks
+      if(allocated(VOFx)) deallocate(VOFx)
+      if(allocated(VOFy)) deallocate(VOFy)
+      if(allocated(VOFz)) deallocate(VOFz)
+      if(allocated(VOFp)) deallocate(VOFp)
+      if(allocated(d_UsolidT_dxj)) deallocate(d_UsolidT_dxj)
+      if(allocated(solid_mask)) deallocate(solid_mask)
+
+      ! HIT forcing field
+      if(allocated(forcx)) deallocate(forcx)
+      if(allocated(forcy)) deallocate(forcy)
+      if(allocated(forcz)) deallocate(forcz)
+
+      ! IBM force
+      if(allocated(for_xc)) deallocate(for_xc)
+      if(allocated(for_yc)) deallocate(for_yc)
+      if(allocated(for_zc)) deallocate(for_zc)
+      if(allocated(for_temp)) deallocate(for_temp)
+
       end subroutine mem_dealloc
 !================================================
       subroutine mpi_write_continua
@@ -1412,6 +1472,24 @@ end subroutine mpi_globalsum_double_var
             endif
             end subroutine mpi_write_tempField
 
+
+! KZ auxilary routines for timing code
+subroutine tic(tstart)
+      use mpih
+      implicit none
+      real :: tstart
+      call MPI_Barrier(MPI_COMM_WORLD, ierr)
+      tstart = MPI_WTIME()
+end subroutine tic
+
+subroutine toc(tstart,tend,elapsed)
+      use mpih
+      implicit none
+      real :: tstart, tend, elapsed
+          call MPI_Barrier(MPI_COMM_WORLD, ierr)
+          tend = MPI_WTIME()
+          elapsed = elapsed + (tend - tstart)
+end subroutine toc
 
 !======================================================
 

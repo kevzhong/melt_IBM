@@ -155,6 +155,10 @@
       endif
       
 !m======================================================
+      
+#ifdef TIMED
+      timeflag = .true.
+#endif
 
       call  gcurv
 

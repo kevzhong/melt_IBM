@@ -106,6 +106,11 @@ integer :: ii,jj,kk,nk
 
 integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
 
+! For LAPACK
+integer :: LWORK = 4
+real, dimension(4) :: WORK
+integer :: IPIV(4), INFO
+
 !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
 
 if(probe_inds(3).ge.kstart .and. probe_inds(3).le.kend) then
@@ -151,24 +156,37 @@ inw = 1
     k = k_inds(nk)
     norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
     Wt(3) = mls_gaussian( norp(3) , wcon )
-    dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
-    dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
+    if ( norp(3) .lt. EPSILON(1.0d0) ) then
+      dWz_dz = 0.0
+     else
+      dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
+      dWz_dz = dWz_dz * ( ( pos(3) - zm(k) ) / abs( pos(3) - zm(k)  ) /  (wscl/dx3) ) ! dWz/dz = ( dWz / dr_z ) * ( dr_z / dz )
+     endif
+
     do j=pind_i(2), pind_o(2)
   
         norp(2)=abs( pos(2) - ym(j) ) / (wscl / dx2)
         Wt(2) = mls_gaussian( norp(2) , wcon )
         Wt23 = Wt(2)*Wt(3)
   
-        dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
-        dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+        if ( norp(2) .lt. EPSILON(1.0d0) ) then
+          dWy_dy = 0.0
+        else
+          dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
+          dWy_dy = dWy_dy * ( ( pos(2) - ym(j) ) / abs( pos(2) - ym(j)  ) /  (wscl/dx2) ) ! dWy/dy = ( dWy / dr_y ) * ( dr_y / dy )
+        endif
         do i=pind_i(1), pind_o(1)
   
             norp(1)=abs(pos(1) - xm(i) ) / (wscl / dx1)
             Wt(1) = mls_gaussian( norp(1) , wcon )
             Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
 
-            dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
-            dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+            if ( norp(1) .lt. EPSILON(1.0d0) ) then
+              dWx_dx = 0.0
+            else
+              dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
+              dWx_dx = dWx_dx * ( ( pos(1) - xm(i) ) / abs( pos(1) - xm(i)  ) /  (wscl/dx1) ) ! dWx/dx = ( dWx / dr_x ) * ( dr_x / dx )
+            endif
 
             pxk(1)=1.0d0
             pxk(2)=xm(i)
@@ -211,7 +229,15 @@ enddo !end k
   
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-    call inverseLU(pinvA,invA)
+    !call inverseLU(pinvA,invA)
+
+    call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+    if (info /= 0) then
+    print *, "Error in dgetrf"
+    stop
+    end if
+    call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+    invA = pinvA
 
     !---------------------LIN-ALG ROUTINES----------------------------
     ! matrix multiplications for final interpolation
@@ -286,6 +312,8 @@ enddo !end k
 
     do i = 1,3 !vertices v1, v2, v3
       qw_v( vert_of_face(i) ) = qw_v( vert_of_face(i) ) + qw_F * ( Atri / 3.0 / Avert( vert_of_face(i) ) )
+      !qw_v( vert_of_face(i) ) = qw_v( vert_of_face(i) ) + qw_F * ( Atri / Avert( vert_of_face(i) ) )
+
     enddo
 
   end subroutine faceToVert_interp

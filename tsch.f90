@@ -22,16 +22,19 @@
       Torq_p(1:3) = 0.0d0
       Torq_tau(1:3) = 0.0d0
 
+      ! Code timing
+      wtime_vof = 0.
+      eul_solve_wtime = 0.
+      mls_wtime = 0.
+      pressure_wtime = 0.
+
+
       do ns=1,nsst                                                 
         al=alm(ns)
         ga=gam(ns)
         ro=rom(ns)
         
-        VOFx(:,:,:) = 1.
-        VOFy(:,:,:) = 1.
-        VOFz(:,:,:) = 1.
-        VOFp(:,:,:) = 1.
-        solid_mask(:,:,:) = .false.
+        if (timeflag) call tic(tstart)
 
         if(imlsfor.eq.1)then
           do inp=1,Nparticle
@@ -40,7 +43,11 @@
           enddo
         endif
 
+        if (timeflag) call toc(tstart,tend,wtime_vof)
+ 
         
+
+        if (timeflag) call tic(tstart)
 
         call hdnl1
         call hdnl2
@@ -52,7 +59,16 @@
         call invtr3
         call invtrte
 
+        if (timeflag) call toc(tstart,tend,eul_solve_wtime)
+
+        if (timeflag) call tic(tstart)
+
         call particle
+
+        if (timeflag) call toc(tstart,tend,mls_wtime)
+
+
+        if (timeflag) call tic(tstart)
 
         call divg
         call phcalc 
@@ -61,6 +77,8 @@
         
         call updvp  ! SOLENOIDAL VEL FIELD
         call prcalc  ! PRESSURE FIELD
+
+        if (timeflag) call toc(tstart,tend,pressure_wtime)
         
         call update_both_ghosts(n1,n2,vx,kstart,kend)
         call update_both_ghosts(n1,n2,vy,kstart,kend)
@@ -73,6 +91,6 @@
 !     ======================================================
 
 
-  enddo
+        enddo
 
       end

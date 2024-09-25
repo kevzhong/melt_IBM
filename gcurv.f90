@@ -16,6 +16,7 @@ integer :: inp
 real,dimension(3,2)     :: bbox_inds
 character(70) namfile
   call mpi_workdistribution
+  call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
 
   tin(1) = MPI_WTIME()
@@ -151,12 +152,13 @@ character(70) namfile
 
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           call mkmov_hdf_xcut
+           !call mkmov_hdf_xcut
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField
-           call mpi_write_vel
+           !call mpi_write_vel
+           call mpi_write_field
          endif
          
         ! ASCII write

@@ -105,6 +105,8 @@ do inp=1,Nparticle
   !   Volume(inp) ) ! Volume pre-factor for IBM force term
 
 
+
+
   vel_m1(:,inp)       = vel_cm(:,inp)
   pos_m1(:,inp)       = pos_cm(:,inp)
   om_m1(:,inp)        = omega_c(:,inp)
@@ -322,13 +324,16 @@ enddo
 
 
 
-!  if (ismaster) then
-! !  write(*,*) "Iresidual: ", Iresidual
-!   write(*,*) "int_prn_dA_m1", int_r_x_prn_dA_m1
-!   write(*,*) "int_tau_dA_m1", int_r_x_tau_dA_m1
-!   write(*,*) "int_prn_dA", int_r_x_prn_dA
-!   write(*,*) "int_tau_dA", int_r_x_tau_dA
-!   endif
+  ! if (ismaster) then
+  !   !write(*,*) "om_cm", omega_c
+  !   !write(*,*) "Iinv: ", I_inv
+  !  !write(*,*) "int_prn_dA_m1", int_r_x_prn_dA_m1
+  !  !write(*,*) "int_tau_dA_m1", int_r_x_tau_dA_m1
+  !   write(*,*) "int_prn_dA", int_prn_dA
+  !   write(*,*) "int_tau_dA", int_tau_dA
+  !  write(*,*) "int_r_x_prn_dA", int_r_x_prn_dA
+  !  write(*,*) "int_r_x_tau_dA", int_r_x_tau_dA
+  !  endif
 end subroutine NE_MLS
 
 

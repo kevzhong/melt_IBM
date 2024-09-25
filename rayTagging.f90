@@ -20,6 +20,36 @@
  ! - "Essential Mathematics for Games and Interactive Applications" (Van Verth & Bishop, 2016, §12.3.5.2)
  ! - "Real-time Rendering" (Akenine-Möller et al., 2018, §22.8)
 
+   subroutine tagCells(ind,inp)
+    use param, only: VOFx, VOFy, VOFz, VOFp, solid_mask, dx1, dx2,dx3
+    use mls_param, only: celvol
+    use mpih
+    use mpi_param
+    implicit none
+    integer, dimension(3,2) :: ind
+    integer :: inp
+    real(8) :: vol_sphere
+
+
+    VOFx(:,:,:) = 1.
+    VOFy(:,:,:) = 1.
+    VOFz(:,:,:) = 1.
+    VOFp(:,:,:) = 1.
+    solid_mask(:,:,:) = .false.
+
+    call convex_hull_qc2(ind,inp)
+    call convex_hull_q12(ind,inp)
+    call convex_hull_q22(ind,inp)
+    call convex_hull_q32(ind,inp)
+
+    vol_sphere = sum( 1.0 - VOFp(:,:,kstart:kend) ) * celvol
+    call MPI_ALLREDUCE(MPI_IN_PLACE,vol_sphere,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+    if (myid .eq. 0) then
+     write(*,*) "Vsphere = ", vol_sphere
+    endif
+
+  end subroutine tagCells
+
   subroutine convex_hull_q12(ind,inp)
     ! Tagging for x-staggered vx grid
   use mls_param
@@ -626,9 +656,9 @@ subroutine interp_vof
   integer :: ic,jc,kc
   integer :: km,kp,jm,jp,im,ip
 
-  call update_both_ghosts(n1,n2,VOFx,kstart,kend)
-  call update_both_ghosts(n1,n2,VOFy,kstart,kend)
-  call update_both_ghosts(n1,n2,VOFz,kstart,kend)
+  !call update_both_ghosts(n1,n2,VOFx,kstart,kend)
+  !call update_both_ghosts(n1,n2,VOFy,kstart,kend)
+  !call update_both_ghosts(n1,n2,VOFz,kstart,kend)
   call update_both_ghosts(n1,n2,VOFp,kstart,kend)
 
   do kc=kstart,kend
@@ -648,38 +678,3 @@ subroutine interp_vof
       enddo
   enddo
 end subroutine interp_vof
-
-! subroutine compute_interface_VOF(VOF,xx,yy,zz,nhat,V0)
-!     !use param
-!     !use mls_param
-!     use geom
-!     implicit none
-
-!     real :: sumPhi, alpha, phi,VOF
-!     real, dimension(2) :: xx, yy, zz
-!     real, dimension(3) :: x0, V0, nhat
-!     integer :: i,j,k
-
-! ! Estimate volume-of-fluid of an interface cell based on the signed distance at each cell corner
-! ! Signed distance computed as the signed distance to the triangle plane
-
-!     sumPhi = 0.0
-!     alpha = 0.0
-!     ! Loop over cell corners
-!     do i = 1,2
-!         x0(1) = xx(i)
-!         do j = 1,2
-!             x0(2) = yy(j)
-!             do k = 1,2
-!                 x0(3) = zz(k)
-
-!                 phi = -dot_product(nhat,x0 - V0)
-!                 alpha = alpha - phi * heaviside(-phi)
-!                 sumPhi = sumPhi + abs(phi)
-!             enddo
-!         enddo
-!     enddo
-
-!     alpha = alpha / sumPhi
-!     VOF = 1.0 - alpha
-! end subroutine

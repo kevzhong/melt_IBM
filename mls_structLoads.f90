@@ -266,6 +266,12 @@ subroutine mls_structLoads
 
     Torq_p(1:3) = Torq_p(1:3) + int_r_x_prn_dA(:,1)
     Torq_tau(1:3) = Torq_tau(1:3) + int_r_x_tau_dA(:,1)
+
+
+    !call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !call MPI_Finalize(ierr)
+
+
     end subroutine mls_structLoads
 
 
@@ -286,6 +292,12 @@ subroutine wght_press(pos,ptx,press_probe,probe_inds)
         real :: Wtx, Wt23
         integer :: inp,ntr,inw,i,j,k,k1, ii, jj, kk
         integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds
+
+        ! For LAPACK
+        integer :: LWORK = 4
+        real, dimension(4) :: WORK
+        integer :: IPIV(4), INFO
+
         
         !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
         
@@ -348,7 +360,15 @@ subroutine wght_press(pos,ptx,press_probe,probe_inds)
           
             ! calling routine to compute inverse
             ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-            call inverseLU(pinvA,invA)
+            !call inverseLU(pinvA,invA)
+
+            call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+            if (info /= 0) then
+            print *, "Error in dgetrf"
+            stop
+            end if
+            call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+            invA = pinvA
                   
             !------------------------------------------------------
             ! matrix multiplications for final interpolation
@@ -408,6 +428,12 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
     integer :: ii,jj,kk,nk,nf
     
     integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+
+    ! For LAPACK
+    integer :: LWORK = 4
+    real, dimension(4) :: WORK
+    integer :: IPIV(4), INFO
+
     
     !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
     
@@ -455,7 +481,7 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
        norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
        Wt(3) = mls_gaussian( norp(3) , wcon )
 
-       if ( norp(3) .lt. 1.0e-15 ) then
+       if ( norp(3) .lt. EPSILON(1.0d0) ) then
         dWz_dz = 0.0
        else
         dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
@@ -468,7 +494,7 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
            Wt(2) = mls_gaussian( norp(2) , wcon )
            Wt23 = Wt(2)*Wt(3)
 
-           if ( norp(2) .lt. 1.0e-15 ) then
+           if ( norp(2) .lt. EPSILON(1.0d0) ) then
             dWy_dy = 0.0
            else
             dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
@@ -481,7 +507,7 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
                Wt(1) = mls_gaussian( norp(1) , wcon )
                Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
 
-               if ( norp(1) .lt. 1.0e-15 ) then
+               if ( norp(1) .lt. EPSILON(1.0d0) ) then
                 dWx_dx = 0.0
                else
                 dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
@@ -529,7 +555,15 @@ subroutine wght_gradP(pos,ptx,gradP,probe_inds,nf)
               
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-    call inverseLU(pinvA,invA)
+    !call inverseLU(pinvA,invA)
+
+    call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+    if (info /= 0) then
+    print *, "Error in dgetrf"
+    stop
+    end if
+    call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+    invA = pinvA
 
     !---------------------LIN-ALG ROUTINES----------------------------
     ! matrix multiplications for final interpolation
@@ -617,6 +651,11 @@ end subroutine wght_gradP
         integer :: ii,jj,kk,nk,nf
         
         integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+
+        ! For LAPACK
+        integer :: LWORK = 4
+        real, dimension(4) :: WORK
+        integer :: IPIV(4), INFO
         
         !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
         
@@ -664,7 +703,7 @@ end subroutine wght_gradP
            norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
            Wt(3) = mls_gaussian( norp(3) , wcon )
     
-           if ( norp(3) .lt. 1.0e-15 ) then
+           if ( norp(3) .lt. EPSILON(1.0d0) ) then
             dWz_dz = 0.0
            else
             dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
@@ -677,7 +716,7 @@ end subroutine wght_gradP
                Wt(2) = mls_gaussian( norp(2) , wcon )
                Wt23 = Wt(2)*Wt(3)
     
-               if ( norp(2) .lt. 1.0e-15 ) then
+               if ( norp(2) .lt. EPSILON(1.0d0) ) then
                 dWy_dy = 0.0
                else
                 dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
@@ -690,7 +729,7 @@ end subroutine wght_gradP
                    Wt(1) = mls_gaussian( norp(1) , wcon )
                    Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
     
-                   if ( norp(1) .lt. 1.0e-15 ) then
+                   if ( norp(1) .lt. EPSILON(1.0d0) ) then
                     dWx_dx = 0.0
                    else
                     dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
@@ -738,8 +777,22 @@ end subroutine wght_gradP
                   
         ! calling routine to compute inverse
         ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-        call inverseLU(pinvA,invA)
+        !invA = 0.0d0
+        !call inverseLU(pinvA,invA)
+
+        call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+        if (info /= 0) then
+        print *, "Error in dgetrf"
+        stop
+        end if
+        call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+        invA = pinvA
     
+        !  if (nf .eq. 3) then
+        !      write(*,*) "nf: ", nf, "pinvA: ", pinvA
+        !      write(*,*) "nf: ", nf, "invA: ", invA
+        !  endif
+
         !---------------------LIN-ALG ROUTINES----------------------------
         ! matrix multiplications for final interpolation
         !DGEMM(transA,transB,numRowsA,numColsB,numColsA,alpha,  A   ,numRowsA,  B     , numRowsB, beta , C/result, numRowsC)
@@ -761,7 +814,8 @@ end subroutine wght_gradP
     
         ! Eq. (3.139 / 3.140) Compute gamma = invA * p  , result gamvec = size(4) vector
         call DGEMV('N',    4, 4, 1.0d0, invA, 4, ptx, 1, 0.0d0, gamvec, 1 ) 
-    
+
+
         ! Now compute derivatives of gamma for use in (3.141)
     
         !---------------------- x derivative ddx_ptxAB-------------------------------------------
@@ -795,8 +849,7 @@ end subroutine wght_gradP
     
         gradU(1) = sum( ddx_PtxAB * Unel) !dU dx
         gradU(2) = sum( ddy_PtxAB * Unel) !dU dy
-        gradU(3) = sum( ddz_PtxAB * Unel) !dU dz
-    
+        gradU(3) = sum( ddz_PtxAB * Unel) !dU dz    
     
         endif
     end subroutine wght_gradU
@@ -827,6 +880,11 @@ subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
     integer :: ii,jj,kk,nk,nf
     
     integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+
+    ! For LAPACK
+    integer :: LWORK = 4
+    real, dimension(4) :: WORK
+    integer :: IPIV(4), INFO
     
     !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
     
@@ -874,7 +932,7 @@ subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
        norp(3)=abs( pos(3) - zm(k) ) / (wscl / dx3)
        Wt(3) = mls_gaussian( norp(3) , wcon )
 
-       if ( norp(3) .lt. 1.0e-15 ) then
+       if ( norp(3) .lt. EPSILON(1.0d0) ) then
         dWz_dz = 0.0
        else
         dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
@@ -887,7 +945,7 @@ subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
            Wt(2) = mls_gaussian( norp(2) , wcon )
            Wt23 = Wt(2)*Wt(3)
 
-           if ( norp(2) .lt. 1.0e-15 ) then
+           if ( norp(2) .lt. EPSILON(1.0d0) ) then
             dWy_dy = 0.0
            else
             dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
@@ -900,7 +958,7 @@ subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
                Wt(1) = mls_gaussian( norp(1) , wcon )
                Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
 
-               if ( norp(1) .lt. 1.0e-15 ) then
+               if ( norp(1) .lt. EPSILON(1.0d0) ) then
                 dWx_dx = 0.0
                else
                 dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
@@ -948,7 +1006,14 @@ subroutine wght_gradV(pos,ptx,gradV,probe_inds,nf)
               
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-    call inverseLU(pinvA,invA)
+    !call inverseLU(pinvA,invA)
+    call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+    if (info /= 0) then
+    print *, "Error in dgetrf"
+    stop
+    end if
+    call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+    invA = pinvA
 
     !---------------------LIN-ALG ROUTINES----------------------------
     ! matrix multiplications for final interpolation
@@ -1036,6 +1101,11 @@ subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
     integer :: ii,jj,kk,nk,nf
     
     integer, dimension(3) :: pind_i, pind_o, probe_inds, keul_inds, k_inds
+
+    ! For LAPACK
+    integer :: LWORK = 4
+    real, dimension(4) :: WORK
+    integer :: IPIV(4), INFO
     
     !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
     
@@ -1083,7 +1153,7 @@ subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
        norp(3)=abs( pos(3) - zc(k) ) / (wscl / dx3)
        Wt(3) = mls_gaussian( norp(3) , wcon )
 
-       if ( norp(3) .lt. 1.0e-15 ) then
+       if ( norp(3) .lt. EPSILON(1.0d0) ) then
         dWz_dz = 0.0
        else
         dWz_dz = mls_gauss_deriv(norp(3),wcon) ! dWz / dr_z
@@ -1096,7 +1166,7 @@ subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
            Wt(2) = mls_gaussian( norp(2) , wcon )
            Wt23 = Wt(2)*Wt(3)
 
-           if ( norp(2) .lt. 1.0e-15 ) then
+           if ( norp(2) .lt. EPSILON(1.0d0) ) then
             dWy_dy = 0.0
            else
             dWy_dy = mls_gauss_deriv(norp(2),wcon) ! dWy / dr_y
@@ -1109,7 +1179,7 @@ subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
                Wt(1) = mls_gaussian( norp(1) , wcon )
                Wtx = Wt(1)*Wt23 !Eq. (3.165) Liu & Gu (2005)
 
-               if ( norp(1) .lt. 1.0e-15 ) then
+               if ( norp(1) .lt. EPSILON(1.0d0) ) then
                 dWx_dx = 0.0
                else
                 dWx_dx = mls_gauss_deriv(norp(1),wcon) ! dWx / dr_x
@@ -1157,7 +1227,15 @@ subroutine wght_gradW(pos,ptx,gradW,probe_inds,nf)
               
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-    call inverseLU(pinvA,invA)
+    !call inverseLU(pinvA,invA)
+
+    call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+    if (info /= 0) then
+    print *, "Error in dgetrf"
+    stop
+    end if
+    call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+    invA = pinvA
 
     !---------------------LIN-ALG ROUTINES----------------------------
     ! matrix multiplications for final interpolation

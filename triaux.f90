@@ -140,6 +140,10 @@ do i = 1,nf
                 Avert(v1) = Avert(v1) + sur(i) / 3.0
                 Avert(v2) = Avert(v2) + sur(i) / 3.0
                 Avert(v3) = Avert(v3) + sur(i) / 3.0
+
+                !Avert(v1) = Avert(v1) + sur(i) 
+                !Avert(v2) = Avert(v2) + sur(i) 
+                !Avert(v3) = Avert(v3) + sur(i) 
         endif
 enddo
 
@@ -390,63 +394,63 @@ end subroutine cross
 
 !     ----------------------------------------------------------------
 
-subroutine inverseLU(a,c)
-implicit none
-real :: a(4,4), c(4,4)
-real :: L(4,4), U(4,4)
-real :: b(4), d(4), x(4)
-real :: coeff
-integer i,j,k
+! subroutine inverseLU(a,c)
+! implicit none
+! real :: a(4,4), c(4,4)
+! real :: L(4,4), U(4,4)
+! real :: b(4), d(4), x(4)
+! real :: coeff
+! integer i,j,k
 
-!L = 0.0 ; U = 0.0 ; b = 0.0
+! !L = 0.0 ; U = 0.0 ; b = 0.0
 
-!forward elimination
-do k=1,3
- do i=k+1,4
-  coeff=a(i,k)/a(k,k)
-  L(i,k) = coeff
-  do j=k+1,4
-   a(i,j)=a(i,j)-coeff*a(k,j)
-  end do
- end do
-end do
+! !forward elimination
+! do k=1,3
+!  do i=k+1,4
+!   coeff=a(i,k)/a(k,k)
+!   L(i,k) = coeff
+!   do j=k+1,4
+!    a(i,j)=a(i,j)-coeff*a(k,j)
+!   end do
+!  end do
+! end do
 
-!prepare L U
-do i=1,4
- L(i,i) = 1.0
-end do
-do j=1,4
- do i=1,j
-  U(i,j) = a(i,j)
- end do
-end do
+! !prepare L U
+! do i=1,4
+!  L(i,i) = 1.0
+! end do
+! do j=1,4
+!  do i=1,j
+!   U(i,j) = a(i,j)
+!  end do
+! end do
 
-!compute columns of c
-do k=1,4
- b(k)=1.0
- d(1)=b(1)
- do i=2,4
-  d(i)=b(i)
-  do j=1,i-1
-   d(i) = d(i)-L(i,j)*d(j)
-  end do
- end do
- !solve ux=d with back subs.
- x(4)=d(4)/U(4,4)
- do i=3,1,-1
-  x(i) = d(i)
-   do j=4,i+1,-1
-    x(i)=x(i)-U(i,j)*x(j)
-   end do
-   x(i) = x(i)/u(i,i)
-  end do
- !fill solns of x(n) to k of C
-  do i=1,4
-   c(i,k)=x(i)
-  end do
-  b(k) = 0.0
-end do
+! !compute columns of c
+! do k=1,4
+!  b(k)=1.0
+!  d(1)=b(1)
+!  do i=2,4
+!   d(i)=b(i)
+!   do j=1,i-1
+!    d(i) = d(i)-L(i,j)*d(j)
+!   end do
+!  end do
+!  !solve ux=d with back subs.
+!  x(4)=d(4)/U(4,4)
+!  do i=3,1,-1
+!   x(i) = d(i)
+!    do j=4,i+1,-1
+!     x(i)=x(i)-U(i,j)*x(j)
+!    end do
+!    x(i) = x(i)/u(i,i)
+!   end do
+!  !fill solns of x(n) to k of C
+!   do i=1,4
+!    c(i,k)=x(i)
+!   end do
+!   b(k) = 0.0
+! end do
 
-return
-end
+! return
+! end subroutine inverseLU
 

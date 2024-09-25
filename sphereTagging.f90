@@ -3,14 +3,32 @@
   ! The signed distance function, phi, is evaluated as the distance from the Eulerian-cell-corner point to the plane of the closest triangle centroid
 
   subroutine tagCells(ind,inp)
+    use param, only: VOFx, VOFy, VOFz, VOFp, solid_mask, dx1, dx2,dx3
+    use mls_param, only: celvol
+    use mpih
+    use mpi_param
     implicit none
     integer, dimension(3,2) :: ind
     integer :: inp
+    real(8) :: vol_sphere
+
+
+    VOFx(:,:,:) = 1.
+    VOFy(:,:,:) = 1.
+    VOFz(:,:,:) = 1.
+    VOFp(:,:,:) = 1.
+    solid_mask(:,:,:) = .false.
 
     call convex_hull_qc2(ind,inp)
     call convex_hull_q12(ind,inp)
     call convex_hull_q22(ind,inp)
     call convex_hull_q32(ind,inp)
+
+    ! vol_sphere = sum( 1.0 - VOFp(:,:,kstart:kend) ) * celvol
+    ! call MPI_ALLREDUCE(MPI_IN_PLACE,vol_sphere,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+    ! if (myid .eq. 0) then
+    !  write(*,*) "Vsphere = ", vol_sphere
+    ! endif
 
   end subroutine tagCells
 
@@ -530,42 +548,6 @@
     end do
   
   alpha = alpha / phi_tot
-  end subroutine
-  
-  subroutine find_closestTri_ind(tri_ind,x_grid,tri_bar,isGhostFace,nf)
-  
-    ! Find the index of the triangle centroid which lies closest in space to some point in space, x_grid
-  
-    use param
-    implicit none
-    integer :: i, nf, tri_ind
-    real :: mindist
-    real    :: x_grid(3)
-    real, dimension(3,nf) :: tri_bar
-    logical, dimension(nf) :: isGhostFace
-    real  :: dist
-  
-    mindist = 1.0e6
-    tri_ind = 0
-  
-    ! This needs a periodicity correction as well
-  
-    do i = 1,nf
-      if (isGhostFace(i) .eqv. .false.) then
-        dist = norm2( x_grid - tri_bar(:,i) )
-  
-        if (dist .lt. mindist) then
-          mindist = dist
-          tri_ind = i
-        endif
-      endif
-    enddo
-  
-    !if (tri_ind .eq. 0 ) then
-    !  write(*,*) "Something went wrong finding the closest centroid"
-    !  exit
-    !endif
-  
   end subroutine
   
   subroutine get_bbox_inds(bbox_inds,inp)

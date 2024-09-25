@@ -24,9 +24,7 @@ call update_both_ghosts(n1,n2,vz,kstart,kend)
  call update_add_lower_ghost(for_zc)
 
  !-------------------- Re-tag cells --------------------------
- VOFp(:,:,:) = 1.
- solid_mask = .false. 
- if (  (imlsstr .eq. 1 ) ) then
+ if (  (imlsfor .eq. 1 ) ) then
  do inp=1,Nparticle
    call get_bbox_inds(bbox_inds,inp)
    call tagCells(bbox_inds, inp)

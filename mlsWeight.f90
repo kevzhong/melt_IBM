@@ -60,6 +60,11 @@ real :: Wtx, Wt23
 integer :: inp,ntr,inw,i,j,k,k1
 integer, dimension(3) :: pind_i, pind_o
 
+! For LAPACK
+integer :: LWORK = 4
+real, dimension(4) :: WORK
+integer :: IPIV(4), INFO
+
 if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 
   !-------------FORCING FUNCTION------------------------
@@ -111,7 +116,14 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 enddo !end k
 
   ! calling routine to compute inverse
-  call inverseLU(pinvA,invA)
+  !call inverseLU(pinvA,invA)
+  call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+  if (info /= 0) then
+  print *, "Error in dgetrf"
+  stop
+  end if
+  call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+  invA = pinvA
         
   !------------------------------------------------------
   ! matrix multiplications for final interpolation
@@ -140,6 +152,11 @@ real,dimension(nel) :: ptxAB(nel)
 real :: Wtx, Wt23
 integer :: inp,ntr,inw,i,j,k,k1
 integer, dimension(3) :: pind_i, pind_o
+
+! For LAPACK
+integer :: LWORK = 4
+real, dimension(4) :: WORK
+integer :: IPIV(4), INFO
 
 
 if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
@@ -188,8 +205,15 @@ if(pind(3,ntr,inp).ge.kstart .and. pind(3,ntr,inp).le.kend) then
 enddo !end k
 
   ! calling routine to compute inverse
-  call inverseLU(pinvA,invA)
-        
+  !call inverseLU(pinvA,invA)
+  call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+  if (info /= 0) then
+  print *, "Error in dgetrf"
+  stop
+  end if
+  call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+  invA = pinvA       
+
   !------------------------------------------------------
   ! matrix multiplications for final interpolation
   ! DGEMM(transA,transB,m,n,k,alpha,A,LDA,b,LDB,beta,c,LDC)
@@ -215,6 +239,11 @@ real,dimension(nel) :: ptxAB(nel)
 real :: Wtx,Wt23
 integer :: inp,ntr,inw,i,j,k,kst
 integer, dimension(3) :: pind_i, pind_o
+
+! For LAPACK
+integer :: LWORK = 4
+real, dimension(4) :: WORK
+integer :: IPIV(4), INFO
 
 if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
 
@@ -263,7 +292,15 @@ if (pind(6,ntr,inp).ge.kstart .and. pind(6,ntr,inp).le.kend) then
 enddo !end k
 
   ! calling routine to compute inverse
-  call inverseLU(pinvA,invA)
+  !call inverseLU(pinvA,invA)
+
+  call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+  if (info /= 0) then
+  print *, "Error in dgetrf"
+  stop
+  end if
+  call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+  invA = pinvA
         
   !------------------------------------------------------
   ! matrix multiplications for final interpolation
@@ -290,6 +327,11 @@ real,dimension(nel) :: ptxAB(nel)
 real :: Wtx, Wt23
 integer :: inp,ntr,inw,i,j,k,k1
 integer, dimension(3) :: pind_i, pind_o
+
+! For LAPACK
+integer :: LWORK = 4
+real, dimension(4) :: WORK
+integer :: IPIV(4), INFO
 
 !-------------Shape function for cell centres (temp. or pressure cells) -------------------------
 
@@ -346,7 +388,15 @@ enddo !end k
   
     ! calling routine to compute inverse
     ! SPD matrix for uniform grids, we can use Cholesky decomp. instead: dpotrf
-    call inverseLU(pinvA,invA)
+    !call inverseLU(pinvA,invA)
+
+    call dgetrf(4, 4, pinvA, 4, IPIV, INFO) ! Compute the LU factorization of I_ij
+    if (info /= 0) then
+    print *, "Error in dgetrf"
+    stop
+    end if
+    call dgetri(4, pinvA, 4, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+    invA = pinvA
           
     !------------------------------------------------------
     ! matrix multiplications for final interpolation

@@ -33,6 +33,8 @@
         !real, allocatable, dimension(:,:,:) :: usolid_x, usolid_y, usolid_z
         real, allocatable, dimension(:,:,:) :: d_UsolidT_dxj
         logical, allocatable, dimension(:,:,:) :: solid_mask
+
+        logical :: timeflag
         
 
 !==========================================================
