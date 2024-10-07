@@ -14,7 +14,7 @@ For MacOS, dependendices can be installed simply:
 `brew install fftw hdf5-mpi open-mpi openblas lapack gcc`
 
 # Usage
-Simulation parameters are specified in `bou.in` and `part.in`.
+Simulation parameters are specified in `bou.in` and `part.in`. HIT parameters specified in `HITForcing.in`. 
 
 # Key features
 - Incompressible Navier--Stokes + temperature equation, with optional coupling through thermal Boussinesq driving
