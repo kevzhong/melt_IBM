@@ -1,5 +1,7 @@
 
-# Lagrangian melting front-tracking IBM documentation
+# Home
+
+## Lagrangian melting front-tracking IBM documentation
 
 This documentation provides a few technical details on the implementation of the `melt_IBM` code.
 
