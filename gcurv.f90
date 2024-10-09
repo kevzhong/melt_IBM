@@ -55,8 +55,8 @@ character(70) namfile
        cflm=0.d0
          
        !call inqpr_rotated
-       !call inqpr
-       call inqpr_taylorHIT
+       call inqpr
+       !call inqpr_taylorGreen
 
       else
 
@@ -158,7 +158,7 @@ character(70) namfile
            call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel
-           call mpi_write_field
+           !call mpi_write_field
          endif
          
         ! ASCII write

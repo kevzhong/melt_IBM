@@ -1,7 +1,7 @@
  IMLSFOR     IMLSSTR       IMELT
     1           1            0
  rhop/rhof
-    4.0 
+    10.0 
   GTSFX                    RAD       
  unitSphere_N4.gts         0.1
  IREMESH     PERCT_ETHRESH   V_ON_VE_THRESH

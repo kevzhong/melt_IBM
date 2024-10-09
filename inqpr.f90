@@ -133,7 +133,7 @@ subroutine restart_temperature
 end                      
 
 
-subroutine inqpr_taylorHIT
+subroutine inqpr_taylorGreen
       use local_arrays, only: vy,vz,vx,temp
       use param, only: xm, ym, zm, xc,yc,zc,n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1, pi
       use mpi_param

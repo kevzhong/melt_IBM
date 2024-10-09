@@ -15,13 +15,17 @@ call update_both_ghosts(n1,n2,vx,kstart,kend)
 call update_both_ghosts(n1,n2,vy,kstart,kend)
 call update_both_ghosts(n1,n2,vz,kstart,kend)
 
- call update_add_upper_ghost(for_xc)
- call update_add_upper_ghost(for_yc)
- call update_add_upper_ghost(for_zc)
+ !call update_add_upper_ghost(for_xc)
+ !call update_add_upper_ghost(for_yc)
+ !call update_add_upper_ghost(for_zc)
 
- call update_add_lower_ghost(for_xc)
- call update_add_lower_ghost(for_yc)
- call update_add_lower_ghost(for_zc)
+ !call update_add_lower_ghost(for_xc)
+ !call update_add_lower_ghost(for_yc)
+ !call update_add_lower_ghost(for_zc)
+
+call update_both_ghosts(n1,n2,for_xc,kstart,kend)
+call update_both_ghosts(n1,n2,for_yc,kstart,kend)
+call update_both_ghosts(n1,n2,for_zc,kstart,kend)
 
  !-------------------- Re-tag cells --------------------------
  if (  (imlsfor .eq. 1 ) ) then

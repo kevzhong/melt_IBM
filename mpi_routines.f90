@@ -262,6 +262,7 @@ subroutine update_add_upper_ghost(q1)
 
    call MPI_Waitall(2,req,status,ierr)
 
+   write(*,*) "myid starting loop", myid
    kc=kend
    do ii=1,n2
      q1(:,ii,kc) = q1(:,ii,kc) + buf(:,ii)
