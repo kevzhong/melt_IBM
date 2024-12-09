@@ -10,13 +10,13 @@ subroutine velforce
  real :: for_x_mean, for_y_mean, for_z_mean
  character(70) namfile
 
- !call update_add_upper_ghost(for_xc)
- !call update_add_upper_ghost(for_yc)
- !call update_add_upper_ghost(for_zc)
+ call update_add_upper_ghost(for_xc)
+ call update_add_upper_ghost(for_yc)
+ call update_add_upper_ghost(for_zc)
 
- !call update_add_lower_ghost(for_xc)
- !call update_add_lower_ghost(for_yc)
- !call update_add_lower_ghost(for_zc)
+ call update_add_lower_ghost(for_xc)
+ call update_add_lower_ghost(for_yc)
+ call update_add_lower_ghost(for_zc)
  
  for_x_mean=0.
  for_y_mean=0.

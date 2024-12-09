@@ -236,13 +236,14 @@ subroutine update_add_upper_ghost(q1)
   use mpi_param, only: kstart,kend
   use mpih
   implicit none
-  real,intent(inout) :: q1(n1,n2,kstart-1:kend+1)
+  real,intent(inout) :: q1(n1,n2,kstart-lvlhalo:kend+lvlhalo)
   real :: buf(n1,n2)
   integer :: mydata
   integer :: my_down, my_up,tag
   integer :: kc,ii
 
 
+  !write(*,*) "proc", myid, "entering upperGhost routine"
   mydata= n1*n2
   
   my_down= myid-1
@@ -262,7 +263,7 @@ subroutine update_add_upper_ghost(q1)
 
    call MPI_Waitall(2,req,status,ierr)
 
-   write(*,*) "myid starting loop", myid
+   !write(*,*) "myid starting loop", myid
    kc=kend
    do ii=1,n2
      q1(:,ii,kc) = q1(:,ii,kc) + buf(:,ii)

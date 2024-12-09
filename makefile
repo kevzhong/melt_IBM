@@ -1,6 +1,6 @@
 
-#FC = h5pfc -r8 -O3 -fpp -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
-FC = h5pfc -cpp -O3 -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
+#FC = h5pfc -r8 -O3 -fpp -C -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
+FC = h5pfc -cpp -O3 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
 
 ################################## UNCONMMENT BELOW FOR DISCOVERER #############################################
 #FC+=${FFTW3_FFLAGS}
@@ -27,7 +27,7 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \
           tridiag_periodic.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
-          diss.f90 vorticity.f90 injection.f90               \
+          diss.f90 vorticity.f90 injection.f90  calcSlipVels.f90            \
 		  sphereTagging.f90
 
 FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f90 remesh_coarsen.f90 remesh_smooth.f90 findProbeIndices.f90 \

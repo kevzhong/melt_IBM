@@ -1,4 +1,4 @@
-site_name: obsidian-mkdocs template
+site_name: Lagrangian Melting (meltIBM) Documentation
 
 theme:
     name: 'material'

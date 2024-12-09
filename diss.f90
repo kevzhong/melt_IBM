@@ -19,6 +19,7 @@
       implicit none
       integer :: ic,jc,kc
       integer :: im,ip,jm,jp,kp,km
+      integer :: nfluid
       real :: eta,re_lam
       real :: h11,h12,h13,h21,h22,h23,h31,h32,h33
       real :: diss_volAvg, nu, kmax_eta, Re_L,lambda_t
@@ -27,6 +28,8 @@
       
       diss_volAvg = 0.0d0
       kenerg=0.0d0
+
+      nfluid = 0
 
       udx1=dx1
       udx2=dx2
@@ -72,6 +75,8 @@
       !     (VOFz(ic,jc,kp).eq.1).and.(VOFz(ic,jc,kc).eq.1))then
 
       if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
+
+      nfluid = nfluid + 1
 
        !du/dx
        h11=( vx(ip,jc,kc)-vx(ic,jc,kc) )*udx1
@@ -138,12 +143,17 @@
            
       call MpiAllSumRealScalar(diss_volAvg)
       call MpiAllSumRealScalar(kenerg)
-      !kenerg =0.5d0* kenerg*(xlen*ylen*zlen)/(dble(n1m*n2m*n3m))
-      kenerg =0.5d0* kenerg / (dble(n1m*n2m*n3m))
 
+      ! kenerg =0.5d0* kenerg / (dble(n1m*n2m*n3m))
+      ! nu=1.0d0/ren
+      ! diss_volAvg = 2.0d0 * nu*diss_volAvg / (dble(n1m*n2m*n3m))
+
+
+      ! Fluid-domain average
+      kenerg =0.5d0* kenerg / (dble(nfluid))
       nu=1.0d0/ren
-      diss_volAvg = 2.0d0 * nu*diss_volAvg / (dble(n1m*n2m*n3m))
-      !diss_volAvg =  nu*diss_volAvg/((dx1*dx2*dx3)*(xlen*ylen*zlen))
+      diss_volAvg = 2.0d0 * nu*diss_volAvg / (dble(nfluid))
+
 
       urms = sqrt( 2.0 / 3.0 * kenerg )
 

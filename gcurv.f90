@@ -152,7 +152,7 @@ character(70) namfile
 
  
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           !call mkmov_hdf_xcut
+           call mkmov_hdf_xcut
            call mkmov_hdf_ycut
            call mkmov_hdf_zcut
            call write_tecplot_geom
@@ -175,8 +175,12 @@ character(70) namfile
           call CalcInjection
           call CalcDissipation
 
+          ! KZ: relative Lagrangian motion tracking
+          call calcRelBoxVel
+          call calcRelShellVel
+
       time=time+dt
-      if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then          !to perform when needed not only at the end
+      if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then !to perform when needed not only at the end
       call mpi_write_continua
       call mpi_write_field
       call WriteRandForcCoef
