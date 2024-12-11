@@ -93,6 +93,23 @@
 
       return
       end subroutine MpiAllSumRealScalar
+
+
+      !==============================================================================
+
+      subroutine MpiAllSumIntScalar(var)
+            use mpih
+            implicit none
+            integer, intent(inout) :: var
+            integer :: buf
+            
+             call MPI_ALLREDUCE(var,buf,1, &
+              MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,ierr)
+      
+             var = buf
+      
+            return
+      end subroutine MpiAllSumIntScalar
 !==============================================================================
 
       subroutine MpiMaxRealScalar(var)

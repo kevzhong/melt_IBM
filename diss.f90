@@ -143,6 +143,7 @@
            
       call MpiAllSumRealScalar(diss_volAvg)
       call MpiAllSumRealScalar(kenerg)
+      call MpiAllSumIntScalar(nfluid)
 
       ! kenerg =0.5d0* kenerg / (dble(n1m*n2m*n3m))
       ! nu=1.0d0/ren
