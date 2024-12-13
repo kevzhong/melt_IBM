@@ -26,6 +26,13 @@
       call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
       call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
 
+      ! Default values for single-phase
+      VOFx(:,:,:) = 1.
+      VOFy(:,:,:) = 1.
+      VOFz(:,:,:) = 1.
+      VOFp(:,:,:) = 1.
+      solid_mask(:,:,:) = .false.
+
       ! Auxilary fractional-step pseudo-pressure
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &
           kstart-lvlhalo,kend+lvlhalo)

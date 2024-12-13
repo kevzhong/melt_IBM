@@ -51,6 +51,9 @@
  
       call mem_dealloc
       call dealloc_trigeo
+
+      if (specflag) call dealloc_spec
+      
       call FinalizeMPI
 
       endif

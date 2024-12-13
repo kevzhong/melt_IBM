@@ -160,6 +160,10 @@
       timeflag = .true.
 #endif
 
+#ifdef SPEC
+      specflag = .true.
+#endif
+
       call  gcurv
 
       errorcode = 1

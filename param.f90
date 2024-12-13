@@ -34,8 +34,9 @@
         real, allocatable, dimension(:,:,:) :: d_UsolidT_dxj
         logical, allocatable, dimension(:,:,:) :: solid_mask
 
-        logical :: timeflag
-        
+        logical :: timeflag = .false.
+        logical :: specflag = .false.
+
 
 !==========================================================
 !******* Grid indices**************************************
@@ -254,4 +255,12 @@
         implicit none
         real, dimension(:,:,:), allocatable :: for_xc, for_yc, for_zc, for_temp
       end module mls_local
+
+module modspec
+        implicit none
+        integer*8 :: specplan
+        complex, allocatable :: uhat(:,:,:)
+        !complex, allocatable :: uhat(:)
+
+end module modspec
 

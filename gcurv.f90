@@ -19,6 +19,8 @@ character(70) namfile
   call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
 
+  if (specflag) call initSpectra
+
   tin(1) = MPI_WTIME()
 
   call HdfStart
@@ -55,8 +57,8 @@ character(70) namfile
        cflm=0.d0
          
        !call inqpr_rotated
-       call inqpr
-       !call inqpr_taylorGreen
+       !call inqpr
+       call inqpr_taylorGreen
 
       else
 
@@ -157,8 +159,10 @@ character(70) namfile
            call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField
-           !call mpi_write_vel
+           call mpi_write_vel
            !call mpi_write_field
+
+           if (specflag) call compute_1d_spectra
          endif
          
         ! ASCII write
@@ -176,8 +180,8 @@ character(70) namfile
           call CalcDissipation
 
           ! KZ: relative Lagrangian motion tracking
-          call calcRelBoxVel
-          call calcRelShellVel
+          !call calcRelBoxVel
+          !call calcRelShellVel
 
       time=time+dt
       !if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then !to perform when needed not only at the end
