@@ -148,9 +148,9 @@
                     jj = modulo(j-1,n2m) + 1
 
                     ! Abs distances to centroid from the (i,j,k) cell
-                    rr_x =  norm2 (  [ xc(i), ym(j), zm(k) ]  - pos_CM(:,1)  ) 
-                    rr_y =  norm2 (  [ xm(i), yc(j), zm(k) ]  - pos_CM(:,1)  ) 
-                    rr_z =  norm2 (  [ xm(i), ym(j), zc(k) ]  - pos_CM(:,1)  )
+                    rr_x =  norm2 (  [ xc(i), ym(j), zm(kk) ]  - pos_CM(:,1)  ) 
+                    rr_y =  norm2 (  [ xm(i), yc(j), zm(kk) ]  - pos_CM(:,1)  ) 
+                    rr_z =  norm2 (  [ xm(i), ym(j), zc(kk) ]  - pos_CM(:,1)  )
 
                     do nshell = 1,6 ! loop over each shell
 
