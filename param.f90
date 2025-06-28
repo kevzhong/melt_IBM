@@ -139,6 +139,8 @@
         integer, allocatable, dimension(:) :: countjp
         integer, allocatable, dimension(:) :: countf
         integer(8), allocatable, dimension(:) :: offsetf 
+
+        real, allocatable, dimension(:,:) :: buf_n1n2
       end module mpi_param
 
       module local_aux
@@ -161,6 +163,8 @@
       real      :: inert_fac, ref_pos_fac
       character(50)  gtsfx
       real      :: rad_p
+      integer :: tagType
+      logical :: is_stationarySolid = .true.
       !integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
       !=================================================
       !       end of input file

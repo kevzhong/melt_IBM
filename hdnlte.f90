@@ -23,8 +23,8 @@ subroutine hdnlte
     !   |  vx(i,j,k)                           |
     ! ----->                               ------>  vx(i+1,j,k)
     !   |                  O                   |
-    !   |             temp(i,j,k)              |
-    !   |                                      |
+    !   |              temp(i,j,k)             |
+    !   |              or p(i,j,k)             |
     !   |                                      |
     !   |                                      |
     !   |                  ^                   |

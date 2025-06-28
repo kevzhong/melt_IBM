@@ -29,6 +29,11 @@ character(70) namfile
   call phini
   call tri_geo
 
+
+  ! Initial cell-tagging operation at start of runtime if IBM is active
+  ! the most expensive full tagging of ALL cells
+  if (imlsfor .eq. 1) call computeIndicator
+
   time=0.d0
   vmax=0.0d0
 
@@ -146,26 +151,14 @@ character(70) namfile
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
           write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
-          write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
+          !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
+          write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
           write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
           endif
         !endif
 
 
- 
-          if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           call mkmov_hdf_xcut
-           call mkmov_hdf_ycut
-           call mkmov_hdf_zcut
-           call write_tecplot_geom
-           !call mpi_write_tempField
-           call mpi_write_vel
-           !call mpi_write_field
-
-           if (specflag) call compute_1d_spectra
-         endif
-         
-        ! ASCII write
+          !------ ASCII write -----------------
           call writePartVol
           call writeInertTens
           call write_partrot
@@ -180,17 +173,38 @@ character(70) namfile
           call CalcDissipation
 
           ! KZ: relative Lagrangian motion tracking
-          !call calcRelBoxVel
-          !call calcRelShellVel
+          call calcFluidVelAvgs
+          call calcRelShellVel
+          call vorticity
+          !------ END ASCII -----------------
+
+
+          if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
+           !call mkmov_hdf_xcut
+           call mkmov_hdf_ycut
+           !call mkmov_hdf_zcut
+           call write_tecplot_geom
+           !call mpi_write_tempField
+           !call mpi_write_vel
+           !call mpi_write_field
+
+           if (specflag) call compute_1d_spectra
+         endif
+         
+
 
       time=time+dt
+
+      ! KZ: These are executed at the end by QuitRoutine() instead
+      !-------------------------------------------------------------------------------------------------
       !if((ntime.eq.ntst).or.(mod(ntime,1000).eq.0)) then !to perform when needed not only at the end
-      if( (ntime.eq.ntst) ) then !to perform when needed not only at the end
-      call mpi_write_continua
-      call mpi_write_field
-      call WriteRandForcCoef
-      call continua_particle
-     end if
+    !   if( (ntime.eq.ntst) ) then !to perform when needed not only at the end
+    !   call mpi_write_continua
+    !   !call mpi_write_field
+    !   call WriteRandForcCoef
+    !   call continua_particle
+    !  end if
+    !-------------------------------------------------------------------------------------------------
 
      ti(2) = MPI_WTIME()
      wtime_total = ti(2) - ti(1)

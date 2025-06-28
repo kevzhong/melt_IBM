@@ -8,7 +8,7 @@
       !use stat_arrays, only: vxvyvz_rms_vol
       implicit none
       !real,dimension(3,3)     :: AA, AAT
-      real,dimension(3,2)     :: bbox_inds
+      integer,dimension(3,2)     :: bbox_inds
       real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
       real :: tstart, tend
 
@@ -36,11 +36,14 @@
         
         if (timeflag) call tic(tstart)
 
-        if(imlsfor.eq.1)then
-          do inp=1,Nparticle
-            call get_bbox_inds(bbox_inds,inp)
-            call tagCells(bbox_inds,inp)
-          enddo
+        !if(imlsfor.eq.1)then
+        !  do inp=1,Nparticle
+        !    call get_bbox_inds(bbox_inds,inp)
+        !    call tagCells(bbox_inds,inp)
+        !  enddo
+        !endif
+        if( .not. is_stationarySolid ) then
+          call computeIndicator
         endif
 
         if (timeflag) call toc(tstart,tend,wtime_vof)

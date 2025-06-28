@@ -62,7 +62,7 @@
         read(15,301) dummy
         read(15,*) dens_ratio
         read(15,301) dummy       
-        read(15,*) gtsfx, rad_p
+        read(15,*) gtsfx, rad_p, tagType
         read(15,301) dummy       
         read(15,*) iremesh, PERC_Ethresh, V_ON_VE_PERC
         !read(15,*) iremesh, PERC_Athresh, skew_thresh, V_ON_VE_PERC
@@ -87,6 +87,15 @@
             if(imlsfor.ne.1) then
             write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
             call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            endif
+      endif
+
+      ! Logical flag for solid
+      ! If object is stationary (true by default on on initialization), only need to tag cells once
+      is_stationarySolid = .true.
+      if (imlsfor .eq. 1) then
+            if ( (imlsstr .eq. 1) .or. (imelt .eq. 1) ) then ! non-stationary if melting or FSI enabled
+                  is_stationarySolid = .false.
             endif
       endif
 

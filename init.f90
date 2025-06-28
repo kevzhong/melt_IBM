@@ -3,7 +3,7 @@
       use param
       use local_arrays
       use local_aux, only: vorx, vory, vorz
-      use mpi_param, only: kstart,kend
+      use mpi_param, only: kstart,kend, buf_n1n2
       use mpih, only: lvlhalo
       use stat_arrays
       use mls_local
@@ -74,5 +74,8 @@
       call AllocateReal3DArray(for_yc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_zc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(for_temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+
+      ! KZ: for add ghost routines: store memory in heap rather than stack for performance and large problems
+      call AllocateReal2DArray(buf_n1n2,1,n1,1,n2)
 
       end   

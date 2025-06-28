@@ -28,12 +28,15 @@ call update_both_ghosts(n1,n2,for_yc,kstart,kend)
 call update_both_ghosts(n1,n2,for_zc,kstart,kend)
 
  !-------------------- Re-tag cells --------------------------
- if (  (imlsfor .eq. 1 ) ) then
- do inp=1,Nparticle
-   call get_bbox_inds(bbox_inds,inp)
-   call tagCells(bbox_inds, inp)
- enddo
- endif
+!  if (  (imlsfor .eq. 1 ) ) then
+!  do inp=1,Nparticle
+!    call get_bbox_inds(bbox_inds,inp)
+!    call tagCells(bbox_inds, inp)
+!  enddo
+!  endif
+if ( .not. is_stationarySolid ) then
+  call computeIndicator
+endif
  !-------------------- End re-tag cells --------------------------
 
       eps_in=0.0d0

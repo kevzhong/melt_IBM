@@ -40,12 +40,13 @@
       !write(*,*) "myid:  ",myid, "kstart is: ", kstart, "kend is: ", kend
 
 #ifdef DEBUG
-      write(*,*) "jstart: ",jstart
-      write(*,*) "jend: ",jend
-      write(*,*) "jstartp: ",jstart
-      write(*,*) "jendp: ",jend
-      write(*,*) "kstart: ",kstart
-      write(*,*) "kend: ",kend
+      write(*,*) "myid:  ",myid, "(jstart,jend): ", jstart, jend, "(kstart,kend): ", kstart, kend
+      !write(*,*) "jstart: ",jstart
+      !write(*,*) "jend: ",jend
+      !write(*,*) "jstartp: ",jstart
+      !write(*,*) "jendp: ",jend
+      !write(*,*) "kstart: ",kstart
+      !write(*,*) "kend: ",kend
 #endif
 
       if( dj .lt. 1 ) then            
@@ -195,22 +196,27 @@
 !=========================================
 subroutine update_add_lower_ghost(q1)
   use param, only: n1, n2
-  use mpi_param, only: kstart,kend
+  use mpi_param, only: kstart,kend, buf_n1n2
   use mpih
   implicit none
   real,intent(inout) :: q1(n1,n2,kstart-1:kend+1)
-  real :: buf(n1,n2)
+  !real :: buf(n1,n2)
+  !real, allocatable :: buf(:,:)
+
   integer :: mydata
   integer :: my_down, my_up,tag
   integer :: kc,ii
 
   mydata= n1*n2
+
+  !allocate(buf(n1,n2))    ! <<--- now on the heap
+
   
   my_down= myid-1
   
   my_up= myid+1
 
-  buf=0.0d0
+  buf_n1n2=0.0d0
 
   if(myid .eq. 0) my_down= numtasks-1
   if(myid .eq. numtasks-1) my_up= 0
@@ -220,24 +226,27 @@ subroutine update_add_lower_ghost(q1)
   
   call MPI_ISEND(q1(1,1,kend+1),mydata,MDP, my_up, tag, MPI_COMM_WORLD, req(1), ierr)
 
-  call MPI_IRECV(buf(1,1), mydata, MDP, my_down,tag, MPI_COMM_WORLD, req(2), ierr)
+  call MPI_IRECV(buf_n1n2(1,1), mydata, MDP, my_down,tag, MPI_COMM_WORLD, req(2), ierr)
 
   call MPI_Waitall(2,req,status,ierr)
 
   kc = kstart
   do ii = 1,n2
-    q1(:,ii,kc) = q1(:,ii,kc) + buf(:,ii)
+    q1(:,ii,kc) = q1(:,ii,kc) + buf_n1n2(:,ii)
   end do
+
+     !deallocate(buf)
 
 end subroutine update_add_lower_ghost
 
 subroutine update_add_upper_ghost(q1)
   use param, only: n1, n2
-  use mpi_param, only: kstart,kend
+  use mpi_param, only: kstart,kend,buf_n1n2
   use mpih
   implicit none
   real,intent(inout) :: q1(n1,n2,kstart-lvlhalo:kend+lvlhalo)
-  real :: buf(n1,n2)
+  !real :: buf(n1,n2)
+  !real, allocatable :: buf(:,:)
   integer :: mydata
   integer :: my_down, my_up,tag
   integer :: kc,ii
@@ -246,11 +255,13 @@ subroutine update_add_upper_ghost(q1)
   !write(*,*) "proc", myid, "entering upperGhost routine"
   mydata= n1*n2
   
+  !allocate(buf(n1,n2))    ! <<--- now on the heap
+
   my_down= myid-1
   
   my_up= myid+1
 
-  buf=0.0d0
+  buf_n1n2=0.0d0
 
   if(myid .eq. 0) my_down= numtasks-1
   if(myid .eq. numtasks-1) my_up= 0
@@ -259,15 +270,17 @@ subroutine update_add_upper_ghost(q1)
 
    call MPI_ISEND(q1(1,1,kstart-1),mydata,MDP, my_down, tag, MPI_COMM_WORLD, req(1), ierr)
    
-   call MPI_IRECV(buf(1,1), mydata, MDP, my_up,tag, MPI_COMM_WORLD, req(2), ierr)
+   call MPI_IRECV(buf_n1n2(1,1), mydata, MDP, my_up,tag, MPI_COMM_WORLD, req(2), ierr)
 
    call MPI_Waitall(2,req,status,ierr)
 
    !write(*,*) "myid starting loop", myid
    kc=kend
    do ii=1,n2
-     q1(:,ii,kc) = q1(:,ii,kc) + buf(:,ii)
+     q1(:,ii,kc) = q1(:,ii,kc) + buf_n1n2(:,ii)
    enddo
+
+   !deallocate(buf)
 
 end subroutine update_add_upper_ghost
 !
@@ -314,18 +327,18 @@ subroutine get_prow_pcol
 
 
 
-        subroutine mpi_globalsum_double_arr(var,nvar)
-        use mpih
-          implicit none
-          real,intent(inout),dimension(nvar) :: var
-          real,dimension(nvar) :: var2
-          integer,intent(in) :: nvar
+      !   subroutine mpi_globalsum_double_arr(var,nvar)
+      !   use mpih
+      !     implicit none
+      !     real,intent(inout),dimension(nvar) :: var
+      !     real,dimension(nvar) :: var2
+      !     integer,intent(in) :: nvar
 
-          call MPI_ALLREDUCE(var,var2,nvar,MPI_DOUBLE_PRECISION, &
-              MPI_SUM,MPI_COMM_WORLD,ierr)          
-          var = var2
+      !     call MPI_ALLREDUCE(var,var2,nvar,MPI_DOUBLE_PRECISION, &
+      !         MPI_SUM,MPI_COMM_WORLD,ierr)          
+      !     var = var2
 
-        end subroutine mpi_globalsum_double_arr
+      !   end subroutine mpi_globalsum_double_arr
 
 subroutine mpi_globalsum_double_var(var)
 use mpih
@@ -333,7 +346,7 @@ use mpih
   real,intent(inout) :: var
   real :: var2
 
-  call MPI_ALLREDUCE(var,var2,1,MPI_DOUBLE_PRECISION, MPI_SUM,MPI_COMM_WORLD,ierr)
+  call MPI_ALLREDUCE([var],[var2],1,MPI_DOUBLE_PRECISION, MPI_SUM,MPI_COMM_WORLD,ierr)
   var = var2
 
 end subroutine mpi_globalsum_double_var
@@ -433,244 +446,906 @@ end subroutine mpi_globalsum_double_var
       if(allocated(for_zc)) deallocate(for_zc)
       if(allocated(for_temp)) deallocate(for_temp)
 
+
+      ! MPI buffer
+      if(allocated(buf_n1n2)) deallocate(buf_n1n2)
+
       end subroutine mem_dealloc
 !================================================
-      subroutine mpi_write_continua
-      use param
-      use mpih
-      use mpi_param, only: kstart,kend
-      use local_arrays, only: vy,vz,vx,pr,temp
-      use hdf5
-      implicit none
+!       subroutine mpi_write_continua
+!       use param
+!       use mpih
+!       use mpi_param, only: kstart,kend
+!       use local_arrays, only: vy,vz,vx,pr,temp
+!       use hdf5
+!       implicit none
 
-      integer hdf_error
+!       integer hdf_error
 
-      integer(HID_T) :: file_id
-      integer(HID_T) :: filespace
-      integer(HID_T) :: slabspace
-      integer(HID_T) :: memspace
+!       integer(HID_T) :: file_id
+!       integer(HID_T) :: filespace
+!       integer(HID_T) :: slabspace
+!       integer(HID_T) :: memspace
 
-      integer(HID_T) :: dset_vx
-      integer(HID_T) :: dset_vy
-      integer(HID_T) :: dset_vz
-      integer(HID_T) :: dset_pr
-      integer(HID_T) :: dset_temp
-      integer(HID_T) :: dset_enst
+!       integer(HID_T) :: dset_vx
+!       integer(HID_T) :: dset_vy
+!       integer(HID_T) :: dset_vz
+!       integer(HID_T) :: dset_pr
+!       integer(HID_T) :: dset_temp
+!       integer(HID_T) :: dset_enst
 
-      integer(HSIZE_T) :: dims(3)
+!       integer(HSIZE_T) :: dims(3)
 
-      integer(HID_T) :: plist_id
-      integer(HSIZE_T), dimension(3) :: data_count  
-      integer(HSSIZE_T), dimension(3) :: data_offset 
+!       integer(HID_T) :: plist_id
+!       integer(HSIZE_T), dimension(3) :: data_count  
+!       integer(HSSIZE_T), dimension(3) :: data_offset 
 
-      integer(HSIZE_T) :: dims_grid(1)
-      integer(HID_T) :: dset_grid
-      integer(HID_T) :: dspace_grid
+!       integer(HSIZE_T) :: dims_grid(1)
+!       integer(HID_T) :: dset_grid
+!       integer(HID_T) :: dspace_grid
 
-      integer :: comm, info
-      integer :: ndims
+!       integer :: comm, info
+!       integer :: ndims
 
-      character(40) filnam2,filnam3,filnam4
-      character(40) filnamgrid,filnam5,filnam6
+!       character(40) filnam2,filnam3,filnam4
+!       character(40) filnamgrid,filnam5,filnam6
 
-!RO   Sort out MPI definitions
+! !RO   Sort out MPI definitions
 
-      comm = MPI_COMM_WORLD
-      info = MPI_INFO_NULL
+!       comm = MPI_COMM_WORLD
+!       info = MPI_INFO_NULL
 
-!RO   Form the name of the file
+! !RO   Form the name of the file
 
-      filnam2 = 'continuation/continua_vx.h5'
-      filnam3 = 'continuation/continua_vy.h5'
-      filnam4 = 'continuation/continua_vz.h5'
-      filnam5 = 'continuation/continua_pr.h5'
-      filnam6 = 'continuation/continua_temp.h5'
+!       filnam2 = 'continuation/continua_vx.h5'
+!       filnam3 = 'continuation/continua_vy.h5'
+!       filnam4 = 'continuation/continua_vz.h5'
+!       filnam5 = 'continuation/continua_pr.h5'
+!       filnam6 = 'continuation/continua_temp.h5'
 
-!RO   Set offsets and element counts
+! !RO   Set offsets and element counts
    
-      ndims = 3
+!       ndims = 3
 
-      dims(1)=n1
-      dims(2)=n2
-      dims(3)=n3m
+!       dims(1)=n1
+!       dims(2)=n2
+!       dims(3)=n3m
 
-      call h5screate_simple_f(ndims, dims, filespace, hdf_error)
+!       call h5screate_simple_f(ndims, dims, filespace, hdf_error)
 
-      data_count(1) = n1
-      data_count(2) = n2
-      data_count(3) = kend-kstart+1
+!       data_count(1) = n1
+!       data_count(2) = n2
+!       data_count(3) = kend-kstart+1
 
-      data_offset(1) = 0
-      data_offset(2) = 0
-      data_offset(3) = kstart-1
+!       data_offset(1) = 0
+!       data_offset(2) = 0
+!       data_offset(3) = kstart-1
 
-!RO   pressure
+! !RO   pressure
 
-      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, &
-          hdf_error)
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, &
+!           hdf_error)
 
-      call h5pset_fapl_mpio_f(plist_id, comm, info, &
-        hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, &
+!         hdf_error)
 
-      call h5fcreate_f(filnam5, H5F_ACC_TRUNC_F, file_id, &
-       hdf_error, access_prp=plist_id)
+!       call h5fcreate_f(filnam5, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
 
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'pr', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_pr, hdf_error)
+!       call h5dcreate_f(file_id, 'pr', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_pr, hdf_error)
 
-      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
 
-      call h5dget_space_f(dset_pr, slabspace, hdf_error)
-      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F,&
-                            data_offset, data_count, hdf_error)
-      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
-      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
-                              hdf_error)
-       call h5dwrite_f(dset_pr, H5T_NATIVE_DOUBLE, &
-         pr(1:n1,1:n2,kstart:kend), dims,  &
-         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
-         xfer_prp = plist_id)
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5dget_space_f(dset_pr, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F,&
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!        call h5dwrite_f(dset_pr, H5T_NATIVE_DOUBLE, &
+!          pr(1:n1,1:n2,kstart:kend), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dclose_f(dset_pr, hdf_error)
+!       call h5dclose_f(dset_pr, hdf_error)
 
-      call h5sclose_f(memspace, hdf_error)
-      call h5fclose_f(file_id, hdf_error)
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
 
-!EP   vx
+! !EP   vx
 
-      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
 
-      call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
 
-      call h5fcreate_f(filnam2, H5F_ACC_TRUNC_F, file_id, &
-       hdf_error, access_prp=plist_id)
+!       call h5fcreate_f(filnam2, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
 
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'Vx', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_vx, hdf_error)
+!       call h5dcreate_f(file_id, 'Vx', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vx, hdf_error)
 
-      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
 
-      call h5dget_space_f(dset_vx, slabspace, hdf_error)
-      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
-                            data_offset, data_count, hdf_error)
-      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
-      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
-                              hdf_error)
-       call h5dwrite_f(dset_vx, H5T_NATIVE_DOUBLE, &
-         vx(1:n1,1:n2,kstart:kend), dims,  &
-         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
-         xfer_prp = plist_id)
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5dget_space_f(dset_vx, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!        call h5dwrite_f(dset_vx, H5T_NATIVE_DOUBLE, &
+!          vx(1:n1,1:n2,kstart:kend), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dclose_f(dset_vx, hdf_error)
+!       call h5dclose_f(dset_vx, hdf_error)
 
-      call h5sclose_f(memspace, hdf_error)
-      call h5fclose_f(file_id, hdf_error)
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
 
-!EP   vy
+! !EP   vy
 
-      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
 
-      call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
 
-      call h5fcreate_f(filnam3, H5F_ACC_TRUNC_F, file_id, &
-       hdf_error, access_prp=plist_id)
+!       call h5fcreate_f(filnam3, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
 
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'Vy', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_vy, hdf_error)
+!       call h5dcreate_f(file_id, 'Vy', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vy, hdf_error)
 
-      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
 
-      call h5dget_space_f(dset_vy, slabspace, hdf_error)
-      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
-                            data_offset, data_count, hdf_error)
-      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
-      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
-                              hdf_error)
-       call h5dwrite_f(dset_vy, H5T_NATIVE_DOUBLE, &
-         vy(1:n1,1:n2,kstart:kend), dims,  &
-         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
-         xfer_prp = plist_id)
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5dget_space_f(dset_vy, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!        call h5dwrite_f(dset_vy, H5T_NATIVE_DOUBLE, &
+!          vy(1:n1,1:n2,kstart:kend), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dclose_f(dset_vy, hdf_error)
+!       call h5dclose_f(dset_vy, hdf_error)
 
-      call h5sclose_f(memspace, hdf_error)
-      call h5fclose_f(file_id, hdf_error)
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
 
-!EP   vz
+! !EP   vz
 
-      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
 
-      call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
 
-      call h5fcreate_f(filnam4, H5F_ACC_TRUNC_F, file_id, &
-       hdf_error, access_prp=plist_id)
+!       call h5fcreate_f(filnam4, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
 
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'Vz', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_vz, hdf_error)
+!       call h5dcreate_f(file_id, 'Vz', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vz, hdf_error)
 
-      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
 
-      call h5dget_space_f(dset_vz, slabspace, hdf_error)
-      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
-                            data_offset, data_count, hdf_error)
-      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
-      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
-                              hdf_error)
-       call h5dwrite_f(dset_vz, H5T_NATIVE_DOUBLE, &
-         vz(1:n1,1:n2,kstart:kend), dims,  &
-         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
-         xfer_prp = plist_id)
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5dget_space_f(dset_vz, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!        call h5dwrite_f(dset_vz, H5T_NATIVE_DOUBLE, &
+!          vz(1:n1,1:n2,kstart:kend), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dclose_f(dset_vz, hdf_error)
+!       call h5dclose_f(dset_vz, hdf_error)
 
-      call h5sclose_f(memspace, hdf_error)
-      call h5fclose_f(file_id, hdf_error)
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
 
-! Temperature
+! ! Temperature
 
-      call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
 
-      call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
 
-      call h5fcreate_f(filnam6, H5F_ACC_TRUNC_F, file_id, &
-       hdf_error, access_prp=plist_id)
+!       call h5fcreate_f(filnam6, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
 
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
-                      filespace, dset_temp, hdf_error)
+!       call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_temp, hdf_error)
 
-      call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
 
-      call h5dget_space_f(dset_temp, slabspace, hdf_error)
-      call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
-                            data_offset, data_count, hdf_error)
-      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
-      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
-                              hdf_error)
-       call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
-         temp(1:n1,1:n2,kstart:kend), dims,  &
-         hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
-         xfer_prp = plist_id)
-      call h5pclose_f(plist_id, hdf_error)
+!       call h5dget_space_f(dset_temp, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!        call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+!          temp(1:n1,1:n2,kstart:kend), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
 
-      call h5dclose_f(dset_temp, hdf_error)
+!       call h5dclose_f(dset_temp, hdf_error)
 
-      call h5sclose_f(memspace, hdf_error)
-      call h5fclose_f(file_id, hdf_error)
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
  
+!       if (myid .eq. 0) then
+!        open(13,file='continuation/continua_grid.dat',status='unknown')
+!        rewind(13)                                                      
+!        write(13,*) n1,n2,n3,time
+!        close(13)
+!       endif
+      
+! !RO   Write the grid & statistics information
+! !RO   only if master process
+
+!       if (myid.eq.0) then
+
+!       ndims=1
+
+!       filnamgrid = 'continuation/continua_master.h5'
+!       call h5fcreate_f(filnamgrid,H5F_ACC_TRUNC_F, file_id, hdf_error)
+
+! !RO   Write Reynolds number
+
+!       dims_grid(1)=1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Re', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, ren, &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+           
+
+! !EP   Write Prandtl number
+
+!       dims_grid(1)=1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, pra, &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+           
+
+! !RO   Write the grid information 
+
+!       dims_grid(1)=n1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'X_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, xc(1:n1), &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+!       dims_grid(1)=n2
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Y_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, yc(1:n2), &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+!       dims_grid(1)=n3m
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+!       call h5dcreate_f(file_id, 'Z_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, zm(1:n3m), &
+!               dims_grid, hdf_error)
+
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+! !RO   Close file
+
+!       call h5fclose_f(file_id, hdf_error)
+
+!       endif
+!       end subroutine mpi_write_continua
+
+! ! THIS VERSION CORRECTS FOR LARGE-MEMORY BUFFERS
+! subroutine mpi_write_continua
+!       use param
+!       use mpih
+!       use mpi_param, only: kstart,kend
+!       use local_arrays, only: vy,vz,vx,pr,temp
+!       use hdf5
+!       implicit none
+
+!       integer hdf_error
+
+!       integer(HID_T) :: file_id
+!       integer(HID_T) :: filespace
+!       integer(HID_T) :: slabspace
+!       integer(HID_T) :: memspace
+
+!       integer(HID_T) :: dset_vx
+!       integer(HID_T) :: dset_vy
+!       integer(HID_T) :: dset_vz
+!       integer(HID_T) :: dset_pr
+!       integer(HID_T) :: dset_temp
+!       integer(HID_T) :: dset_enst
+
+!       integer(HSIZE_T) :: dims(3)
+
+!       integer(HID_T) :: plist_id
+!       integer(HSIZE_T), dimension(3) :: data_count  
+!       integer(HSSIZE_T), dimension(3) :: data_offset 
+
+!       integer(HSIZE_T) :: dims_grid(1)
+!       integer(HID_T) :: dset_grid
+!       integer(HID_T) :: dspace_grid
+
+!       integer :: comm, info
+!       integer :: ndims
+
+!       character(40) filnam2,filnam3,filnam4
+!       character(40) filnamgrid,filnam5,filnam6
+
+! !RO   Sort out MPI definitions
+
+!       comm = MPI_COMM_WORLD
+!       info = MPI_INFO_NULL
+
+! !RO   Form the name of the file
+
+!       filnam2 = 'continuation/continua_vx.h5'
+!       filnam3 = 'continuation/continua_vy.h5'
+!       filnam4 = 'continuation/continua_vz.h5'
+!       filnam5 = 'continuation/continua_pr.h5'
+!       filnam6 = 'continuation/continua_temp.h5'
+
+! !RO   Set offsets and element counts
+   
+!       ndims = 3
+
+!       !dims(1)=n1
+!       !dims(2)=n2
+!       !dims(3)=n3m
+
+!       data_count(1) = n1
+!       data_count(2) = n2
+!       data_count(3) = kend-kstart+1
+
+!       data_offset(1) = 0
+!       data_offset(2) = 0
+!       data_offset(3) = kstart-1
+
+!       dims = data_count ! KZ local slice size
+
+!       call h5screate_simple_f(ndims, dims, filespace, hdf_error)
+
+
+
+! !RO   pressure
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, &
+!           hdf_error)
+
+
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, &
+!         hdf_error)
+
+!       call h5fcreate_f(filnam5, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
+
+
+!       call h5pclose_f(plist_id, hdf_error)
+
+
+!       call h5dcreate_f(file_id, 'pr', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_pr, hdf_error)
+
+
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+!       call h5dget_space_f(dset_pr, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F,&
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!       !  call h5dwrite_f(dset_pr, H5T_NATIVE_DOUBLE, &
+!       !    pr(1:n1,1:n2,kstart:kend), dims,  &
+!       !    hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!       !    xfer_prp = plist_id)
+!       call h5dwrite_f(dset_pr, H5T_NATIVE_DOUBLE, &
+!          pr(1,1,kstart), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_pr, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+
+! !EP   vx
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+!       call h5fcreate_f(filnam2, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
+
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Vx', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vx, hdf_error)
+
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+!       call h5dget_space_f(dset_vx, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!       !  call h5dwrite_f(dset_vx, H5T_NATIVE_DOUBLE, &
+!       !    vx(1:n1,1:n2,kstart:kend), dims,  &
+!       !    hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!       !    xfer_prp = plist_id)
+!       call h5dwrite_f(dset_vx, H5T_NATIVE_DOUBLE, &
+!          vx(1,1,kstart), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_vx, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+
+! !EP   vy
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+!       call h5fcreate_f(filnam3, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
+
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Vy', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vy, hdf_error)
+
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+!       call h5dget_space_f(dset_vy, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!       !  call h5dwrite_f(dset_vy, H5T_NATIVE_DOUBLE, &
+!       !    vy(1:n1,1:n2,kstart:kend), dims,  &
+!       !    hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!       !    xfer_prp = plist_id)
+!       call h5dwrite_f(dset_vy, H5T_NATIVE_DOUBLE, &
+!          vy(1,1,kstart), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_vy, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+
+! !EP   vz
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+!       call h5fcreate_f(filnam4, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
+
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Vz', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_vz, hdf_error)
+
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+!       call h5dget_space_f(dset_vz, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!       !  call h5dwrite_f(dset_vz, H5T_NATIVE_DOUBLE, &
+!       !    vz(1:n1,1:n2,kstart:kend), dims,  &
+!       !    hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!       !    xfer_prp = plist_id)
+!       call h5dwrite_f(dset_vz, H5T_NATIVE_DOUBLE, &
+!          vz(1,1,kstart), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_vz, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+
+! ! Temperature
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+!       call h5fcreate_f(filnam6, H5F_ACC_TRUNC_F, file_id, &
+!        hdf_error, access_prp=plist_id)
+
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Temp', H5T_NATIVE_DOUBLE, &
+!                       filespace, dset_temp, hdf_error)
+
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error) 
+
+!       call h5dget_space_f(dset_temp, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, &
+!                             data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, &
+!                               hdf_error)
+!       !  call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+!       !    temp(1:n1,1:n2,kstart:kend), dims,  &
+!       !    hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!       !    xfer_prp = plist_id)
+!       call h5dwrite_f(dset_temp, H5T_NATIVE_DOUBLE, &
+!          temp(1,1,kstart), dims,  &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace,  &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_temp, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+ 
+!       if (myid .eq. 0) then
+!        open(13,file='continuation/continua_grid.dat',status='unknown')
+!        rewind(13)                                                      
+!        write(13,*) n1,n2,n3,time
+!        close(13)
+!       endif
+      
+! !RO   Write the grid & statistics information
+! !RO   only if master process
+
+!       if (myid.eq.0) then
+
+!       ndims=1
+
+!       filnamgrid = 'continuation/continua_master.h5'
+!       call h5fcreate_f(filnamgrid,H5F_ACC_TRUNC_F, file_id, hdf_error)
+
+! !RO   Write Reynolds number
+
+!       dims_grid(1)=1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Re', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, ren, &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+           
+
+! !EP   Write Prandtl number
+
+!       dims_grid(1)=1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Pr', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, pra, &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+           
+
+! !RO   Write the grid information 
+
+!       dims_grid(1)=n1
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'X_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, xc(1:n1), &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+!       dims_grid(1)=n2
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+
+!       call h5dcreate_f(file_id, 'Y_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, yc(1:n2), &
+!              dims_grid,hdf_error)
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+!       dims_grid(1)=n3m
+!       call h5screate_simple_f(ndims, dims_grid, dspace_grid, hdf_error)
+!       call h5dcreate_f(file_id, 'Z_cordin', H5T_NATIVE_DOUBLE, &
+!                       dspace_grid, dset_grid, hdf_error)
+
+!       call h5dwrite_f(dset_grid, H5T_NATIVE_DOUBLE, zm(1:n3m), &
+!               dims_grid, hdf_error)
+
+
+!       call h5dclose_f(dset_grid, hdf_error)
+!       call h5sclose_f(dspace_grid, hdf_error)
+
+! !RO   Close file
+
+!       call h5fclose_f(file_id, hdf_error)
+
+!       endif
+!       end subroutine mpi_write_continua
+
+
+subroutine mpi_write_continua
+  use param
+  use mpih
+  use mpi_param, only: kstart, kend
+  use local_arrays, only: vx, vy, vz, pr, temp
+  use hdf5
+  implicit none
+
+  integer            :: hdf_error, comm, info, ndims
+  integer(HID_T)     :: file_id, filespace, slabspace, memspace
+  integer(HID_T)     :: dset_vx, dset_vy, dset_vz, dset_pr, dset_temp
+  integer(HID_T)     :: plist_id
+  integer(HSIZE_T)   :: file_dims(3), mem_dims(3)
+  integer(HSIZE_T)   :: data_count(3)
+  integer(HSSIZE_T)  :: data_offset(3)
+
+  character(40)      :: filnam_vx, filnam_vy, filnam_vz
+  character(40)      :: filnam_pr, filnam_temp
+  character(40)      :: filnamgrid
+
+  integer(HSIZE_T) :: dims_grid(1)
+  integer(HID_T) :: dset_grid
+  integer(HID_T) :: dspace_grid
+
+  ! MPI‐IO setup
+  comm = MPI_COMM_WORLD
+  info = MPI_INFO_NULL
+
+  ! file names
+  filnam_vx   = 'continuation/continua_vx.h5'
+  filnam_vy   = 'continuation/continua_vy.h5'
+  filnam_vz   = 'continuation/continua_vz.h5'
+  filnam_pr   = 'continuation/continua_pr.h5'
+  filnam_temp = 'continuation/continua_temp.h5'
+
+  ndims = 3
+
+  ! full on-disk dimensions 
+  file_dims = (/ n1, n2, n3m /)
+
+  ! local slab dimensions in k
+  data_count  = (/ n1, n2, kend - kstart + 1 /)
+  data_offset = (/ 0,  0,  kstart - 1       /)
+
+  ! memory dims = local slab size
+  mem_dims = data_count
+
+!   ! Optional debug print
+!   if (myid .eq. 0) then
+!     write(*,*) ' file_dims(3)=', file_dims(3),        &
+!                ' offset=',   data_offset(3),         &
+!                ' count=',    data_count(3),          &
+!                ' sum=',      data_offset(3)+data_count(3)
+!   end if
+
+  ! ————————————————
+  ! Pressure dataset
+  ! ————————————————
+  ! create file dataspace
+  call h5screate_simple_f(ndims, file_dims, filespace, hdf_error)
+
+  ! setup MPI‐IO FAPL and open file
+  call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+  call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+  call h5fcreate_f(filnam_pr, H5F_ACC_TRUNC_F, file_id, hdf_error, &
+                   access_prp=plist_id)
+  call h5pclose_f(plist_id, hdf_error)
+
+  ! create the dataset
+  call h5dcreate_f(file_id, 'pr', H5T_NATIVE_DOUBLE, filespace, dset_pr, hdf_error)
+
+  ! create memory dataspace
+  call h5screate_simple_f(ndims, mem_dims, memspace, hdf_error)
+
+  ! select slab on file
+  call h5dget_space_f(dset_pr, slabspace, hdf_error)
+  call h5sselect_hyperslab_f(slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+
+  ! collective‐IO setup
+  call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+  call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+  ! **write only the local slab** into the file hyperslab
+  call h5dwrite_f(dset_pr, H5T_NATIVE_DOUBLE,        &
+                  pr(1,1,kstart),                    & ! buffer start
+                  mem_dims,                          & ! local slab shape
+                  hdf_error,                         &
+                  file_space_id=slabspace,           &
+                  mem_space_id=memspace,             &
+                  xfer_prp=plist_id)
+  call h5pclose_f(plist_id, hdf_error)
+
+  call h5dclose_f(dset_pr, hdf_error)
+  call h5sclose_f(memspace, hdf_error)
+  call h5fclose_f(file_id, hdf_error)
+  call h5sclose_f(filespace, hdf_error)
+
+  ! — Repeat the above block for vx, vy, vz, temp —  
+  ! simply replace filnam_pr→filnam_vx, dset_pr→dset_vx, 
+  ! pr→vx, etc., and you get parallel writes of each dataset.
+
+  ! … (VX) …
+  call h5screate_simple_f(ndims, file_dims, filespace, hdf_error)
+  call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+  call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+  call h5fcreate_f(filnam_vx, H5F_ACC_TRUNC_F, file_id, hdf_error, &
+                   access_prp=plist_id)
+  call h5pclose_f(plist_id, hdf_error)
+  call h5dcreate_f(file_id, 'Vx', H5T_NATIVE_DOUBLE, filespace, dset_vx, hdf_error)
+  call h5screate_simple_f(ndims, mem_dims,   memspace,   hdf_error)
+  call h5dget_space_f(dset_vx, slabspace, hdf_error)
+  call h5sselect_hyperslab_f(slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+  call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+  call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+  call h5dwrite_f(dset_vx, H5T_NATIVE_DOUBLE, vx(1,1,kstart), mem_dims, hdf_error, &
+                  file_space_id=slabspace, mem_space_id=memspace, xfer_prp=plist_id)
+  call h5pclose_f(plist_id, hdf_error)
+  call h5dclose_f(dset_vx, hdf_error)
+  call h5sclose_f(memspace, hdf_error)
+  call h5fclose_f(file_id, hdf_error)
+  call h5sclose_f(filespace, hdf_error)
+
+!———————————————————————————————————————————————————————————————
+! Vy
+!———————————————————————————————————————————————————————————————
+call h5screate_simple_f(ndims, file_dims,  filespace, hdf_error)
+call h5pcreate_f    (H5P_FILE_ACCESS_F, plist_id, hdf_error)
+call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+call h5fcreate_f    (filnam_vy, H5F_ACC_TRUNC_F, file_id, hdf_error, access_prp=plist_id)
+call h5pclose_f     (plist_id, hdf_error)
+
+call h5dcreate_f    (file_id, 'Vy', H5T_NATIVE_DOUBLE, filespace, dset_vy, hdf_error)
+call h5screate_simple_f(ndims, mem_dims, memspace, hdf_error)
+
+call h5dget_space_f (dset_vy, slabspace, hdf_error)
+call h5sselect_hyperslab_f(slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+
+call h5pcreate_f    (H5P_DATASET_XFER_F, plist_id, hdf_error)
+call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+call h5dwrite_f     (dset_vy, H5T_NATIVE_DOUBLE, &
+                     vy(1,1,kstart), mem_dims, hdf_error, &
+                     file_space_id=slabspace, mem_space_id=memspace, xfer_prp=plist_id)
+
+call h5pclose_f     (plist_id, hdf_error)
+call h5dclose_f     (dset_vy, hdf_error)
+call h5sclose_f     (memspace, hdf_error)
+call h5fclose_f     (file_id, hdf_error)
+call h5sclose_f     (filespace, hdf_error)
+
+
+!———————————————————————————————————————————————————————————————
+! Vz
+!———————————————————————————————————————————————————————————————
+call h5screate_simple_f(ndims, file_dims,  filespace, hdf_error)
+call h5pcreate_f    (H5P_FILE_ACCESS_F, plist_id, hdf_error)
+call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+call h5fcreate_f    (filnam_vz, H5F_ACC_TRUNC_F, file_id, hdf_error, access_prp=plist_id)
+call h5pclose_f     (plist_id, hdf_error)
+
+call h5dcreate_f    (file_id, 'Vz', H5T_NATIVE_DOUBLE, filespace, dset_vz, hdf_error)
+call h5screate_simple_f(ndims, mem_dims, memspace, hdf_error)
+
+call h5dget_space_f (dset_vz, slabspace, hdf_error)
+call h5sselect_hyperslab_f(slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+
+call h5pcreate_f    (H5P_DATASET_XFER_F, plist_id, hdf_error)
+call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+call h5dwrite_f     (dset_vz, H5T_NATIVE_DOUBLE, &
+                     vz(1,1,kstart), mem_dims, hdf_error, &
+                     file_space_id=slabspace, mem_space_id=memspace, xfer_prp=plist_id)
+
+call h5pclose_f     (plist_id, hdf_error)
+call h5dclose_f     (dset_vz, hdf_error)
+call h5sclose_f     (memspace, hdf_error)
+call h5fclose_f     (file_id, hdf_error)
+call h5sclose_f     (filespace, hdf_error)
+
+
+!———————————————————————————————————————————————————————————————
+! Temp
+!———————————————————————————————————————————————————————————————
+call h5screate_simple_f(ndims, file_dims,  filespace, hdf_error)
+call h5pcreate_f    (H5P_FILE_ACCESS_F, plist_id, hdf_error)
+call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+call h5fcreate_f    (filnam_temp, H5F_ACC_TRUNC_F, file_id, hdf_error, access_prp=plist_id)
+call h5pclose_f     (plist_id, hdf_error)
+
+call h5dcreate_f    (file_id, 'Temp', H5T_NATIVE_DOUBLE, filespace, dset_temp, hdf_error)
+call h5screate_simple_f(ndims, mem_dims, memspace, hdf_error)
+
+call h5dget_space_f (dset_temp, slabspace, hdf_error)
+call h5sselect_hyperslab_f(slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+
+call h5pcreate_f    (H5P_DATASET_XFER_F, plist_id, hdf_error)
+call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+call h5dwrite_f     (dset_temp, H5T_NATIVE_DOUBLE, &
+                     temp(1,1,kstart), mem_dims, hdf_error, &
+                     file_space_id=slabspace, mem_space_id=memspace, xfer_prp=plist_id)
+
+call h5pclose_f     (plist_id, hdf_error)
+call h5dclose_f     (dset_temp, hdf_error)
+call h5sclose_f     (memspace, hdf_error)
+call h5fclose_f     (file_id, hdf_error)
+call h5sclose_f     (filespace, hdf_error)
+
       if (myid .eq. 0) then
        open(13,file='continuation/continua_grid.dat',status='unknown')
        rewind(13)                                                      
@@ -761,10 +1436,13 @@ end subroutine mpi_globalsum_double_var
       call h5fclose_f(file_id, hdf_error)
 
       endif
-      end subroutine mpi_write_continua
+
+end subroutine mpi_write_continua
+
       
 !================================================
-      
+
+
     subroutine mpi_read_continua(n1o,n2o,n3o,ks,ke,intvar,qua)
       use mpih
       use param
@@ -821,11 +1499,6 @@ end subroutine mpi_globalsum_double_var
    
       ndims = 3
 
-      dims(1)=n1o
-      dims(2)=n2o
-      dims(3)=n3o-1
-
-
       data_count(1) = n1o
       data_count(2) = n2o
       data_count(3) = ke-ks+1
@@ -833,6 +1506,8 @@ end subroutine mpi_globalsum_double_var
       data_offset(1) = 0
       data_offset(2) = 0
       data_offset(3) = ks-1
+
+      dims = data_count ! KZ local slice size
 
 
 
@@ -851,10 +1526,16 @@ end subroutine mpi_globalsum_double_var
       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
-       call h5dread_f(dset_qua, H5T_NATIVE_DOUBLE,  &
-         qua(1:n1o,1:n2o,ks:ke), dims,              &
+      !  call h5dread_f(dset_qua, H5T_NATIVE_DOUBLE,  &
+      !    qua(1:n1o,1:n2o,ks:ke), dims,              &
+      !    hdf_error, file_space_id = slabspace, mem_space_id = memspace, &
+      !    xfer_prp = plist_id)
+
+             call h5dread_f(dset_qua, H5T_NATIVE_DOUBLE,  &
+         qua(1,1,ks), dims,              &
          hdf_error, file_space_id = slabspace, mem_space_id = memspace, &
          xfer_prp = plist_id)
+
       call h5pclose_f(plist_id, hdf_error)
 
       call h5dclose_f(dset_qua, hdf_error)
@@ -867,6 +1548,110 @@ end subroutine mpi_globalsum_double_var
 
       end subroutine mpi_read_continua
 !================================================
+
+
+!     subroutine mpi_read_continua(n1o,n2o,n3o,ks,ke,intvar,qua)
+!       use mpih
+!       use param
+!       use hdf5
+!       implicit none
+!       integer, intent(in) :: ks,ke,n2o,n1o,n3o
+!       real, dimension(1:n1o,1:n2o,ks-1:ke+1)::qua
+
+!       integer hdf_error
+
+!       integer(HID_T) :: file_id
+!       integer(HID_T) :: slabspace
+!       integer(HID_T) :: memspace
+
+!       integer(HID_T) :: dset_qua
+
+!       integer(HSIZE_T) :: dims(3)
+
+!       integer(HID_T) :: plist_id
+!       integer(HSIZE_T), dimension(3) :: data_count
+!       integer(HSSIZE_T), dimension(3) :: data_offset
+
+!       integer :: comm, info
+!       integer :: ndims
+
+!       integer, intent(in) :: intvar
+!       character*70 :: filnam1
+!       character*10 :: dsetname
+
+!       comm = MPI_COMM_WORLD
+!       info = MPI_INFO_NULL
+
+! !EP   Select file and dataset based on intvar
+
+!       select case (intvar)
+!         case (1)
+!           dsetname = trim('Vx')
+!           filnam1 = trim('continuation/continua_vx.h5')
+!         case (2)
+!           dsetname = trim('Vy')
+!           filnam1 = trim('continuation/continua_vy.h5')
+!         case (3)
+!           dsetname = trim('Vz')
+!           filnam1 = trim('continuation/continua_vz.h5')
+!         case (4)
+!           dsetname = trim('pr')
+!           filnam1 = trim('continuation/continua_pr.h5')
+!         case (5)
+!           dsetname = trim('Temp')
+!           filnam1 = trim('continuation/continua_temp.h5')
+!       end select
+
+! !RO   Set offsets and element counts
+   
+!       ndims = 3
+
+!       dims(1)=n1o
+!       dims(2)=n2o
+!       dims(3)=n3o-1
+
+
+!       data_count(1) = n1o
+!       data_count(2) = n2o
+!       data_count(3) = ke-ks+1
+
+!       data_offset(1) = 0
+!       data_offset(2) = 0
+!       data_offset(3) = ks-1
+
+
+
+! !     call h5open_f(hdf_error)
+
+!       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
+!       call h5pset_fapl_mpio_f(plist_id, comm, info, hdf_error)
+
+!       call h5fopen_f(filnam1, H5F_ACC_RDONLY_F, file_id, hdf_error, access_prp=plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dopen_f(file_id, dsetname, dset_qua, hdf_error)
+!       call h5screate_simple_f(ndims, data_count, memspace, hdf_error)
+
+!       call h5dget_space_f(dset_qua, slabspace, hdf_error)
+!       call h5sselect_hyperslab_f (slabspace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+!       call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+!       call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+!        call h5dread_f(dset_qua, H5T_NATIVE_DOUBLE,  &
+!          qua(1:n1o,1:n2o,ks:ke), dims,              &
+!          hdf_error, file_space_id = slabspace, mem_space_id = memspace, &
+!          xfer_prp = plist_id)
+!       call h5pclose_f(plist_id, hdf_error)
+
+!       call h5dclose_f(dset_qua, hdf_error)
+
+!       call h5sclose_f(memspace, hdf_error)
+!       call h5fclose_f(file_id, hdf_error)
+! !     call h5close_f(hdf_error)
+
+!       if(myid.eq.0)write(*,'(5x,a)')'reading complete: '//filnam1
+
+!       end subroutine mpi_read_continua
+! !================================================
 
       subroutine mpi_write_field
       use param

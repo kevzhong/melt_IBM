@@ -181,6 +181,11 @@ do inp = 1,Nparticle
     xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
 enddo
 
+! Update triangle velocities if any remeshing relabelling was done
+if  ( (did_remesh .eqv. .true.) ) then
+    call update_tri_velocity
+endif
+
 ! Update Eulerian < -- > Lagrangian forcing transfer coefficient
 if (imelt .eq. 1) then
     ! Tri area only changes if melting
@@ -195,6 +200,15 @@ if (did_remesh .eqv. .true.) then
     !if (ismaster) then
     !  write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
     !endif
+
+   ! Error catching for remeshing residual
+   if ( abs(vol_melt - vol_smooth)  .gt. 1.e-10   ) then
+    write(*,*) "Non-zero remeshing residual detected. Writing geometry and exiting now!"
+    call write_tecplot_geom
+    call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    call MPI_Finalize(ierr)
+   endif
+   
 endif
 
 
@@ -206,5 +220,7 @@ if (Volume(1) .lt. V_thresh ) then
     call MPI_Finalize(ierr)
 endif
 !--------------------------------------------------------------------------------------------
+
+
 
  end

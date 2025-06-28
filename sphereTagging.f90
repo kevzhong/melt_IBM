@@ -2,7 +2,7 @@
   ! Using level-set scheme of Kempe & Frohlich (2012) eqns 32-33
   ! The signed distance function, phi, is evaluated as the distance from the Eulerian-cell-corner point to the plane of the closest triangle centroid
 
-  subroutine tagCells(ind,inp)
+  subroutine sphereTagging(ind,inp)
     use param, only: VOFx, VOFy, VOFz, VOFp, solid_mask, dx1, dx2,dx3
     use mls_param, only: celvol
     use mpih
@@ -30,7 +30,7 @@
     !  write(*,*) "Vsphere = ", vol_sphere
     ! endif
 
-  end subroutine tagCells
+  end subroutine sphereTagging
 
   subroutine convex_hull_q12(ind,inp)
     use mls_param
@@ -549,56 +549,3 @@
   
   alpha = alpha / phi_tot
   end subroutine
-  
-  subroutine get_bbox_inds(bbox_inds,inp)
-    ! Retrieve the xyz indices of the bounding box for a given particle
-    use param
-    use mls_param
-    implicit none
-    integer :: i, nf, tri_ind
-    real, dimension(3,2) :: lim
-    integer, dimension(3,2) :: bbox_inds
-    integer  :: inp, padSize
-  
-    ! Padding size indices for safety
-    padSize = 2
-  
-  ! get bounding box
-    do i = 1,3
-      lim(i,1) = minval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
-      lim(i,2) = maxval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
-    end do
-  
-    bbox_inds = floor(lim*dx1) + 1 ! compute indices cell centered
-  
-    ! expanding bounding box to be extra safe
-    bbox_inds(:,1) = bbox_inds(:,1) - padSize
-    bbox_inds(:,2) = bbox_inds(:,2) + padSize
-  
-    ! Hard code vertical for testing free-fall
-    !bbox_inds(3,1) = 1
-    !bbox_inds(3,2) = n3m
-  
-  
-    !! Hard-code the full domain for testing
-    !bbox_inds(:,1) = [1, 1, 1] 
-    !bbox_inds(:,2) = [n1m, n2m, n3m]
-  
-end subroutine
-
-subroutine get_periodic_indices(k,x)
-  use param
-  implicit none
-  integer :: k
-  real    :: x(3)
-
-  if (k .ge. n3) then
-     k = k - n3m
-    x(3) = x(3) - zlen
-  end if
-
-  if (k .lt. 1) then
-     k = k + n3m
-     x(3) = x(3) + zlen
-  end if
-end subroutine

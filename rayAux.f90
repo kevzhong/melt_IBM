@@ -16,6 +16,7 @@ module rayAux
     implicit none
     real, dimension(3) :: V0, V1, V2, Q,C,Cprime, r, e1, e2, s, p, q1, intPoint
     real ::  a, f, u , v, t
+    real ::  EPS = 1.e-18
     logical :: intersect
 
     intersect = .true.
@@ -33,18 +34,19 @@ module rayAux
     a = dot_product(e1,p)
 
     !Parallel ray, change query point and recursively call 
-    !if ( (a .gt. -EPS) .and. (a .le. EPS ) ) then
-    if (abs(a) .lt. EPSILON(1.0d0) ) then
+    if ( (a .gt. -EPS) .and. (a .le. EPS ) ) then
+    !if (abs(a) .lt. EPSILON(1.0d0) ) then
         Cprime = [C(1) , C(2) + 0.1/dx2, C(3) -0.1/dx3 ] ! Slightly perturb the C-point: still contained in pencil, but centre-aligned
         call rayTriangle_intersect(intersect,intPoint,Cprime,Q,V0,V1,V2)
-        write(*,*) "Warning: parallel ray detected!"
+        !write(*,*) "Warning: parallel ray detected!"
     endif
 
     f = 1.0d0 / a
 
     ! First Barycentric limit u[0,1]
     u = f * dot_product(s,p) 
-    if ( (u < EPSILON(1.0d0) ) .or. (u .gt. 1.0) ) then
+    !if ( (u < EPSILON(1.0d0) ) .or. (u .gt. 1.0) ) then
+    if ( (u < EPS ) .or. (u .gt. 1.0) ) then
         intersect = .false.
     endif
 
@@ -52,7 +54,8 @@ module rayAux
     call cross(q1, s, e1)
     v = f * dot_product(r, q1)
 
-    if (  (v .lt. EPSILON(1.0d0)) .or. ( (u + v) .gt. 1.0  ) ) then
+    !if (  (v .lt. EPSILON(1.0d0)) .or. ( (u + v) .gt. 1.0  ) ) then
+    if (  (v .lt. EPS) .or. ( (u + v) .gt. 1.0  ) ) then
         intersect = .false.
     endif
 

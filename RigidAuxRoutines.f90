@@ -2,18 +2,18 @@ subroutine update_part_pos()
 use param
 use mls_param
 use mpih
-!use coll_mod ! KZ: no collisions for now
+use coll_mod ! KZ: no collisions for now
 implicit none
 integer :: inp,i
 real,dimension(3,3) :: AA, AAT
 
-! set flag to false
-!is_coll = .false.
+!set flag to false
+is_coll = .false.
 
-! check for collision
-!coll_check = .false.
-!call collision
-!coll_check = .false.
+!check for collision
+coll_check = .false.
+call collision
+coll_check = .false.
 
 
 ! KZ: ---- pre-compute COM-relative, world-aligned coordinates
@@ -36,13 +36,11 @@ do inp=1,Nparticle
 enddo
 
 call update_regular
-!call update_substepping
+call update_substepping
 
 do inp=1,nParticle
-    ! KZ: need to re-orient inertia tensor / principal axes post-rotation
-  !AAT = transpose(AA)
-  !tail_head(:,inp) = AAT(:,3) 
 
+  ! KZ: periodicity corrections
  if (pos_cm(1,inp).lt.0.)   pos_cm(1,inp) = pos_cm(1,inp) + xlen
  if (pos_cm(1,inp).gt.xlen) pos_cm(1,inp) = pos_cm(1,inp) - xlen
 
@@ -51,9 +49,9 @@ do inp=1,nParticle
 
  if (pos_cm(3,inp).lt.0.)   pos_cm(3,inp) = pos_cm(3,inp) + zlen
  if (pos_cm(3,inp).gt.zlen) pos_cm(3,inp) = pos_cm(3,inp) - zlen
+
 enddo
 
-! KZ replace this, and make use of updated xyzv_b above
 call update_xyz
 
 end subroutine
@@ -111,16 +109,16 @@ do inp=1,Nparticle
   pos_m1(:,inp)       = pos_cm(:,inp)
   om_m1(:,inp)        = omega_c(:,inp)
 
-  call NE_MLS(int_prn_dA(1:3,inp),        int_tau_dA(1:3,inp),        &
-              int_prn_dA_m1(1:3,inp),     int_tau_dA_m1(1:3,inp),     &
-              int_r_x_prn_dA(1:3,inp),    int_r_x_tau_dA(1:3,inp),    &
-              int_r_x_prn_dA_m1(1:3,inp), int_r_x_tau_dA_m1(1:3,inp), &
-              vel_CM(:,inp),              vel_m1(:,inp),              &
-              pos_CM(:,inp),              pos_m1(:,inp),              &
-              omega_c(:,inp),             om_m1(:,inp),               &
-              InertTensor(:,:,inp),       quat(:,inp),                &
-              inp,                                                    &
-              Volume(inp) )
+  call newton_euler(int_prn_dA(1:3,inp),        int_tau_dA(1:3,inp),        &
+                    int_prn_dA_m1(1:3,inp),     int_tau_dA_m1(1:3,inp),     &
+                    int_r_x_prn_dA(1:3,inp),    int_r_x_tau_dA(1:3,inp),    &
+                    int_r_x_prn_dA_m1(1:3,inp), int_r_x_tau_dA_m1(1:3,inp), &
+                    vel_CM(:,inp),              vel_m1(:,inp),              &
+                    pos_CM(:,inp),              pos_m1(:,inp),              &
+                    omega_c(:,inp),             om_m1(:,inp),               &
+                    InertTensor(:,:,inp),       quat(:,inp),                &
+                    inp,                                                    &
+                    Volume(inp) )
 enddo
 
 end subroutine
@@ -139,16 +137,16 @@ end subroutine
 !                         alpha_b,  acm_m1,      &
 !                         Volume)
 
-subroutine NE_MLS(int_prn_dA,         int_tau_dA,        &
-                  int_prn_dA_m1,      int_tau_dA_m1,     &
-                  int_r_x_prn_dA,     int_r_x_tau_dA,    &
-                  int_r_x_prn_dA_m1,  int_r_x_tau_dA_m1, &
-                  vel_CM,   vel_cmm1,                    &
-                  pos_CM,   pos_cmm1,                    &
-                  omega_c,  omega_c_m1,                  &
-                  I_ij,     quat,                        &
-                  inp,                                   &
-                  Volume)
+subroutine newton_euler(int_prn_dA,         int_tau_dA,        &
+                        int_prn_dA_m1,      int_tau_dA_m1,     &
+                        int_r_x_prn_dA,     int_r_x_tau_dA,    &
+                        int_r_x_prn_dA_m1,  int_r_x_tau_dA_m1, &
+                        vel_CM,   vel_cmm1,                    &
+                        pos_CM,   pos_cmm1,                    &
+                        omega_c,  omega_c_m1,                  &
+                        I_ij,     quat,                        &
+                        inp,                                   &
+                        Volume)
 
 ! Given total force and total torque acting on the body, it evolves
 ! the newton equation for center of mass and
@@ -175,6 +173,8 @@ real,dimension(3) :: pos_CMm1            ! position of the center of mass
 real,dimension(3) :: omega_c_m1          ! angular vel body frame
 integer :: inp
 real :: Volume, angle_buffer, magOM, pre_fac
+real :: smallnumber = 1.e-15
+integer :: max_iter = 10000
 
 ! Iterative inertia tensor update (Ardekani et al. 2016)
 real :: tolerance, Iresidual ! Iteration tolerance for the lhs inertia tensor
@@ -197,7 +197,11 @@ integer :: IPIV(3), INFO
 !              Translation
 ! -------------------------------------
 
-e_z = 0.; e_z(3) = -1.0
+!e_z = 0.; e_z(1) = -1.0 ! x
+!e_z = 0.; e_z(2) = -1.0 ! y
+e_z = 0.; e_z(3) = -1.0 ! z
+!e_z = 0.; e_z(1) = -1.0 / sqrt(2.0) ; e_z(3) = -1.0 / sqrt(2.0) ! xz
+!e_z(:) = -1.0 / sqrt(3.0) ! xyz
 
 pre_fac = 1.0 / Volume / dens_ratio
 ! translation
@@ -206,598 +210,363 @@ pre_fac = 1.0 / Volume / dens_ratio
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
-!vel_CM = vel_CMm1 + al * dt * pre_fac * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
-!                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
-
-vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
-                  +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
-                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+!vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
+!                  +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
+!                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
+vel_CM(1) = 1.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 0.0 ! Fixed translational motion
 
-!vel_CM=0.0d0
+
 pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
 
 
-!if (ismaster) then
-!  write(*,*) "POS_CM: ", pos_CM
-!endif
 ! ------------------------------------- 
 !               Rotation
 ! ------------------------------------- 
 
+! Iterative scheme of Ardekani et al. (2016, IJMF)
+! 1) Set intial guess of inertia tensor, I_ij, calculate its inverse
+! 2) Solve for provisional estimate of omega_c
+! 3) Calculate angle of rotation 0.5 | omega_c^n + omega_c^n-1 | al dt. Axis of rotation is 0.5 (omega_c^n + omega_c^n-1)
+! 4) Calculate rotation matrix from the axis of rotation and angle of rotation. e.g. using Quaternions
+! 5) Update inertia tensor estimate Inew = A Iold A^T
+! 6) Use Inew for step 2, repeat until |Iold - Inew| < eps
 
-!dr_x_u_b = r_x_u - r_x_u_m1
 
-!omega_b = omega_b_m1 + matmul(I_inv, -(dt/dens_ratio)*torq_b + & ! IBM force term
-!                                 dr_x_u_b)  & ! Torque impulse term
-!                              + dt*al*matmul(I_inv2, omega_b_m1_squared) ! Non-inertial reference frame correction
 I_LHS(:,:) = I_ij
+
+tolerance = smallnumber
+Iresidual = 1.0
+n_iter = 1
+
+do while(  (n_iter .le. max_iter ) .and.  (Iresidual .gt. tolerance)   )
+
 I_inv = I_LHS
-call dgetrf(3, 3, I_inv, 3, IPIV, INFO) ! Compute the LU factorization of I_ij
-if (info /= 0) then
-print *, "Error in dgetrf"
-stop
-end if
-call dgetri(3, I_inv, 3, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
-
-if (info /= 0) then
-print *, "Error in dgetri"
-stop
-end if
-
-!tolerance = 1e-13
-!Iresidual = 1.0
-!n_iter = 1
-!do while(  (n_iter .le. 10000 ) .or.  (Iresidual .gt. tolerance)   )
-
-
-do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
-
-  !omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-  !                  + al * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA ) )
-
-   omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-                     +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
-                     +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
-
-
-  ! No rotation
-  !omega_c = 0.0
-
-  ! Ardekani et al. (2016) iterative update method
-  om_buffer = 0.5* (omega_c + omega_c_m1 )
-  magOM = norm2(om_buffer)
-
-  angle_buffer = magOM * al* dt
-
-  if (magOM .lt. EPSILON(1.0d0) ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
-    om_buffer(1:3) = 0.0
-  if (ismaster) then
-    write(*,*) "Div. by zero avoided for rotation axis!"
-  endif
-  else
-    om_buffer(1:3) = om_buffer(1:3) / magOM
-  endif
-
-  ! Set provisional quarternion from this new axis-angle representation
-  quat(1) = cos( 0.5 * angle_buffer )
-  quat(2) = sin( 0.5 * angle_buffer ) * om_buffer(1)
-  quat(3) = sin( 0.5 * angle_buffer ) * om_buffer(2)
-  quat(4) = sin( 0.5 * angle_buffer ) * om_buffer(3)
-  quat = quat / norm2(quat)
-
-  call calc_rot_matrix(quat,AA)
-
-  !----- New iteratively-updated estimate of inertia tensor -------
-  I_prev = I_LHS
-
-  buffer_3x3 = matmul(I_ij,transpose(AA))
-  I_LHS = matmul(AA, buffer_3x3)
-
-  !buffer_3x3 = matmul(I_LHS,transpose(AA))
-  !I_LHS = matmul(AA, buffer_3x3)
-
-  !buffer_3x3 = matmul(I_LHS,AA)
-  !I_LHS = matmul(transpose(AA), buffer_3x3)
-
-  Iresidual = maxval (abs (I_LHS - I_prev) )
-
-  I_inv = I_LHS
-  call dgetrf(3, 3, I_inv, 3, IPIV, INFO) ! Compute the LU factorization of I_ij
-  if (info /= 0) then
-  print *, "Error in dgetrf"
-  stop
-  end if
-  call dgetri(3, I_inv, 3, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
-
-  if (info /= 0) then
-  print *, "Error in dgetri"
-  stop
-  end if
-
-!n_iter = n_iter + 1
-enddo
-
-!vel_CM = vel_CMm1 - al * dt * ( -int_prn_dA + int_tau_dA )         & ! Hydrodynamic loads
-!                  + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
-
-
-
-  ! if (ismaster) then
-  !   !write(*,*) "om_cm", omega_c
-  !   !write(*,*) "Iinv: ", I_inv
-  !  !write(*,*) "int_prn_dA_m1", int_r_x_prn_dA_m1
-  !  !write(*,*) "int_tau_dA_m1", int_r_x_tau_dA_m1
-  !   write(*,*) "int_prn_dA", int_prn_dA
-  !   write(*,*) "int_tau_dA", int_tau_dA
-  !  write(*,*) "int_r_x_prn_dA", int_r_x_prn_dA
-  !  write(*,*) "int_r_x_tau_dA", int_r_x_tau_dA
-  !  endif
-end subroutine NE_MLS
-
-
-! subroutine newton_euler(For_tot,  torq_surf,   &
-!                         vel_CM,   vel_cmm1,    &
-!                         pos_CM,   pos_cmm1,    &
-!                         omega_c,  omega_c_m1,  &
-!                         quat,                  &
-!                         I_ij,                  &
-!                         u_tot,    u_tot_m1,    &
-!                         r_x_u,    r_x_u_m1,    &
-!                         inp,      a_CM,        &
-!                         alpha_b,  acm_m1,      &
-!                         Volume)
-
-
-
-! ! Given total force and total torque acting on the body, it evolves
-! ! the newton equation for center of mass and
-! ! the Euler equation for rotation (quaternion notation Allen Tildesley pag 103)
-! ! Breugem 2012 (JCP)
-!   use param, only: pi,ntime,al,ga,ro,dt, ismaster
-!   use mls_param,only: dens_ratio
-!   use mpih
-!   implicit none
-
-!   real,dimension(3) :: For_tot       ! total force actin on the rigid body
-!   real,dimension(3) :: a_CM          ! acceleration of the center of mass
-!   real,dimension(3) :: vel_CM        ! velocity of the center of mass
-!   real,dimension(3) :: pos_CM        ! position of the center of mass
-!   real              :: pre_fac       ! prefactor
-!   real,dimension(3) :: torq_b        ! torque actin on the rigid body
-!   real,dimension(3) :: dr_x_u_b      ! torque actin on the rigid body
-!                                      ! (with respect to mass center and represented
-!                                      !  in space frame)
-!   real,dimension(4)   :: quat        ! quaternions
-!   real,dimension(3)   :: alpha_b     ! angular acc body frame
-!   real,dimension(3)   :: omega_c     ! angular vel body frame
-!   real,dimension(3,3) :: I_ij    ! rotation matrix "body  = AA  space "
-!   real,dimension(3)   :: u_tot       ! <u>_V over the particle
-!   real,dimension(3)   :: torq_surf, r_x_u, r_x_u_m1
-!   real ,dimension(3)  :: e_z
-! ! local variables
-!   real,dimension(3) :: acm_m1            ! velocity of the center of mass
-!   real,dimension(3) :: vel_CMm1            ! velocity of the center of mass
-!   real,dimension(3) :: pos_CMm1            ! position of the center of mass
-!   real,dimension(3) :: omega_c_m1          ! angular vel body frame
-!   real,dimension(3) :: u_tot_m1            ! <u>_V over the particle
-!   integer :: inp
-!   real :: Volume, angle_buffer, magOM
-
-!   ! Iterative inertia tensor update (Ardekani et al. 2016)
-!   real :: tolerance, Iresidual ! Iteration tolerance for the lhs inertia tensor
-!   integer :: n_iter
-!   real, dimension(3,3) :: I_prev, I_LHS, AA, buffer_3x3, I_inv
-!   real, dimension(3)  :: om_buffer
-!   ! For LAPACK
-!   integer :: LWORK = 3
-!   real, dimension(3) :: WORK
-!   integer :: IPIV(3), INFO
-
-! ! Coefficienti
-! ! RK3 coeff here, alm(ns), are two times alpha(k) in Rai & Moin (JCP) 1991
-! ! In Rai and moin:     HERE               BREUGEM 2012 (JCP)
-! ! alpha(1) = 4/15      alpha(1) = 8/15    a(1)+b(1) = 8/15
-! ! alpha(2) = 1/15      alpha(2) = 2/15    a(2)+b(2) = 2/15
-! ! alpha(3) = 1/6       alpha(3) = 2/6     a(3)+b(3) = 2/6
-
-! ! -------------------------------------
-! !              Translation
-! ! -------------------------------------
-
-!   e_z = 0.; e_z(3) = -1.0
-  
-!   pre_fac = 1.0 / Volume / dens_ratio
-! ! translation
-!   !a_CM = - pre_fac * for_tot &
-!    !      + e_z / dens_ratio &
-!    !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
-
-
-!   vel_CM = vel_CMm1 - dt * pre_fac * For_tot           & ! IBM force term
-!                    + dt * al * (1.0 - ( 1.0 / dens_ratio ) ) * e_z       & ! Gravity term
-!                    + (u_tot - u_tot_m1) / dens_ratio    ! Impulse term, already normalised on VOF-computed particle volume
-
-
-! !vel_CM=0.0d0
-! pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
-
-
-!   !if (ismaster) then
-!   !  write(*,*) "POS_CM: ", pos_CM
-!   !endif
-!   ! ------------------------------------- 
-!   !               Rotation
-!   ! ------------------------------------- 
-  
-
-!   dr_x_u_b = r_x_u - r_x_u_m1
-
-!   !omega_b = omega_b_m1 + matmul(I_inv, -(dt/dens_ratio)*torq_b + & ! IBM force term
-!   !                                 dr_x_u_b)  & ! Torque impulse term
-!   !                              + dt*al*matmul(I_inv2, omega_b_m1_squared) ! Non-inertial reference frame correction
-!   I_LHS(:,:) = I_ij
-!   I_inv = I_LHS
-!   call dgetrf(3, 3, I_inv, 3, IPIV, INFO) ! Compute the LU factorization of I_ij
-!   if (info /= 0) then
-!     print *, "Error in dgetrf"
-!     stop
-!   end if
-!   call dgetri(3, I_inv, 3, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
-
-!   if (info /= 0) then
-!     print *, "Error in dgetri"
-!     stop
-!   end if
-  
-!   !tolerance = 1e-13
-!   !Iresidual = 1.0
-!   !n_iter = 1
-!   !do while(  (n_iter .le. 10000 ) .or.  (Iresidual .gt. tolerance)   )
-
-
-!   do n_iter = 1,10 ! Iterative update of inertia tensor post-rotation
-
-!     omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-!     - dt *torq_surf  &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
-!     +  dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
-
-!    ! omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) ) &
-!    !            - matmul(I_inv, - dt *torq_surf  ) &   ! IBM force term:  density ratio pre-factors are not needed since absorbed into inertia tensor
-!    !            + matmul(I_inv,   dr_x_u_b  )   ! Torque impulse term: density ratio pre-factors are not needed since absorbed into inertia tensor
-  
-!   ! No rotation
-!   !omega_c = 0.0
-
-!  ! Ardekani et al. (2016) iterative update method
-!   om_buffer = 0.5* (omega_c + omega_c_m1 )
-!   magOM = norm2(om_buffer)
-
-!   angle_buffer = magOM * al* dt
-
-!   if (magOM .lt. 1.0e-16 ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
-!     om_buffer(1:3) = 0.0
-!     if (ismaster) then
-!       write(*,*) "Div. by zero avoided for rotation axis!"
-!     endif
-!   else
-!     om_buffer(1:3) = om_buffer(1:3) / magOM
-!   endif
-
-!   ! Set provisional quarternion from this new axis-angle representation
-!   quat(1) = cos( 0.5 * angle_buffer )
-!   quat(2) = sin( 0.5 * angle_buffer ) * om_buffer(1)
-!   quat(3) = sin( 0.5 * angle_buffer ) * om_buffer(2)
-!   quat(4) = sin( 0.5 * angle_buffer ) * om_buffer(3)
-!   quat = quat / norm2(quat)
-
-!   call calc_rot_matrix(quat,AA)
-
-!   !----- New iteratively-updated estimate of inertia tensor -------
-!   I_prev = I_LHS
-
-!   buffer_3x3 = matmul(I_ij,transpose(AA))
-!   I_LHS = matmul(AA, buffer_3x3)
-
-!   !buffer_3x3 = matmul(I_LHS,transpose(AA))
-!   !I_LHS = matmul(AA, buffer_3x3)
-
-!   !buffer_3x3 = matmul(I_LHS,AA)
-!   !I_LHS = matmul(transpose(AA), buffer_3x3)
-
-!   Iresidual = maxval (abs (I_LHS - I_prev) )
-
-!   I_inv = I_LHS
-!   call dgetrf(3, 3, I_inv, 3, IPIV, INFO) ! Compute the LU factorization of I_ij
-!   if (info /= 0) then
-!     print *, "Error in dgetrf"
-!     stop
-!   end if
-!   call dgetri(3, I_inv, 3, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
-
-!   if (info /= 0) then
-!     print *, "Error in dgetri"
-!     stop
-!   end if
-  
-!   !n_iter = n_iter + 1
-!   enddo
-
-
-!   !omega_c =  + matmul(I_inv, matmul(I_ij,omega_c_m1) &
-!   !- (dt/dens_ratio)*torq_surf  &   ! IBM force term
-!   !+ (1.0 / dens_ratio) * dr_x_u_b  )   ! Torque impulse term
-!                              ! No rotation
-
-
-!   if (ismaster) then
-!     write(*,*) "Iresidual: ", Iresidual
-!     !write(*,*) "-------------------------"
-!     !write(*,*) -1.0*dt * pre_fac * For_tot, " IBM translation"
-!     !write(*,*) (u_tot - u_tot_m1) / dens_ratio, " Impulse translation"
-!     !write(*,*) "-------------------------"
-!     !write(*,*) matmul(I_inv, matmul(I_ij,omega_c_m1) ), "I_ij x om_m1"
-!     !rite(*,*) -1.0*matmul(I_inv, - dt *torq_surf  ), "IBM rotation"
-!     !write(*,*) matmul(I_inv,   dr_x_u_b  ), "Rotation impulse"
-!     !write(*,*) "-------------------------"
-!   endif
-
-
-
-! end subroutine newton_euler
-
-!===========================================================================
-! collision
-!===========================================================================
-
-! subroutine update_substepping
-! use param
-! use mls_param
-! use coll_mod
-! implicit none
-! integer :: i,inp
-! real,dimension(3,3)          :: AA, AAT
-! real,dimension(Nparticle)    :: error
-! integer,dimension(Nparticle) :: step
-! real,dimension(3,Nparticle)  :: vel_m1,pos_m1,pos_k,om_m1
-! real :: pos_new(3)
-! integer :: iter,nIter
-
-
-
-! nIter = 50
-! dt_p = dt / dble(nIter)
-
-! do iter=1,nIter
-
-!   do inp=1,Nparticle
-!       quat_m1(:,inp) = quat(:,inp)
-!       vel_m1(:,inp)  = vel_cm(:,inp)
-!       pos_m1(:,inp)  = pos_cm(:,inp)
-!       om_m1(:,inp)   = omega_c(:,inp)
-!       !-- force & torque
-!       fp_m1(:,inp)   = fp(:,inp)
-!       tp_m1(:,inp)   = tp(:,inp)
-!       !-- collision vars
-!       coll_vel_m1(:,inp)      = coll_vel(:,inp)
-!       coll_om_b_m1(:,inp)     = coll_om_b(:,inp)
-!       coll_quat_dot_m1(:,inp) = coll_quat_dot(:,inp)
-
-!     if (is_coll(inp).eqv. .false.) then
-!       !-- reset vars
-!       coll_vel(:,inp)      = 0.d0
-!       coll_om_b(:,inp)     = 0.d0
-!       coll_quat_dot(:,inp) = 0.d0
-!     endif
-
-!   enddo
-
-!   error = 1e6
-!   step  = 0
-
-
-
-!   do while ( maxval(error) .gt. zlen/n3m .and. maxval(step) .lt. 10)
-
-!        do inp = 1,Nparticle
-!            if (is_coll(inp).eqv. .true. ) then
-
-!            ! update fp and tp
-!            call collision
-
-!            ! get latest rotation matrix
-!            call calc_rot_matrix(quat(:,inp),AA)
-!            AAT = transpose(AA)
-
-!            ! store pos
-!            pos_k(:,inp) = pos_cm(1:3,inp) + matmul(AAT, dxyz_CM_b(:,1,inp))
-
-!            ! update vel, pos, omega and quat
-!            call newton_coll(  vel_CM(:,inp), vel_m1(:,inp),                          &
-!                               pos_CM(:,inp), pos_m1(:,inp),                          &
-!                               omega_c(:,inp), om_m1(:,inp),                          &
-!                               quat(:,inp), quat_m1(:,inp),                           & 
-!                               AA(:,:),                                               &    
-!                               coll_vel(:,inp), coll_vel_m1(:,inp),                   &
-!                               coll_om_b(:,inp),                                      &
-!                               coll_quat_dot(:,inp), coll_quat_dot_m1(:,inp),         &
-!                               fp(:,inp), fp_m1(:,inp), tp(:,inp), tp_m1(:,inp),      & 
-!                               dt_p) 
-
-
-!            ! update rotation matrix
-!            call calc_rot_matrix(quat(:,inp),AA)
-!            AAT = transpose(AA)
-
-!            pos_new = pos_cm(1:3,inp) + matmul(AAT, dxyz_CM_b(:,1,inp))
-
-!            error(inp) = norm2(pos_k(:,inp) - pos_new)
-!            step(inp) = step(inp) + 1
-
-!            else
-
-!              error(inp) = 0.d0
-
-!            endif
-!            enddo
-!   enddo
-! enddo
-! end subroutine
-
-
-! subroutine newton_coll ( vel_CM, vel_m1,                    &
-!                          pos_CM, pos_m1,                    &
-!                          omega_c, omega_c_m1,               &
-!                          quat, quat_m1,                     &
-!                          AA,                                &
-!                          coll_vel, coll_vel_m1,             &
-!                          coll_om_b,                         &
-!                          coll_quat_dot, coll_quat_dot_m1,   &
-!                          fp, fp_m1, tp, tp_m1,              &
-!                          dt )
-
-! ! Given total force and total torque acting on the body, it evolves
-! ! the newton equation for center of mass and
-! ! the Euler equation for rotation (quaternion notation Allen Tildesley pag 103)
-! ! Breugem 2012 (JCP)
-!   use param, only: al
-!   use mls_param,only: dens_ratio, i_inv
-!   implicit none
-
-!   real,dimension(3)   :: vel_CM            ! velocity of the center of mass 
-!   real,dimension(3)   :: pos_CM            ! position of the center of mass 
-!   real,dimension(3)   :: omega_c           ! angular vel body frame
-!   real,dimension(4)   :: quat              ! quaternions
-!   real,dimension(3,3) :: AA                ! rotation matrix "body  = AA  space "
-!   real,dimension(3)   :: fp,fp_m1
-!   real,dimension(3)   :: tp,tp_m1
-!   real                :: dt
-!   real,dimension(3)   :: coll_vel
-!   real,dimension(3)   :: coll_om_b
-!   real,dimension(4)   :: coll_quat_dot
-!   ! local variables 
-!   real,dimension(3) :: vel_m1              ! velocity of the center of mass 
-!   real,dimension(3) :: pos_m1              ! position of the center of mass 
-!   real,dimension(3) :: omega_c_m1          ! angular vel body frame
-!   real,dimension(4) :: quat_m1             ! quaternions previous time step
-!   real,dimension(3) :: tp_b                ! collision torque in body frame
-!   real,dimension(3) :: coll_vel_m1
-!   real,dimension(4) :: coll_quat_dot_m1
- 
-
-!   ! ---------------------------------------------------- 
-!   !              Translation
-!   ! ---------------------------------------------------- 
-
-!   coll_vel = 0.5*dt*al*(fp + fp_m1) 
-
-!   pos_cm = pos_m1  +  0.5*dt*al*(coll_vel + coll_vel_m1)
-
-
-!   ! ---------------------------------------------------- 
-!   !               Rotation
-!   ! ---------------------------------------------------- 
-
-!   tp_b = tp + tp_m1
-
-!   coll_om_b = 0.5*dt*al*matmul(I_inv, tp_b)
-
-
-!   call quatMul(quat, coll_om_b, coll_quat_dot)
-
-!   quat = quat_m1 + 0.25*dt*al*( coll_quat_dot + coll_quat_dot_m1 )
-
-!   ! ---------------------------------------------------- 
-!   !               Adding back to main vars
-!   ! ---------------------------------------------------- 
-!   vel_cm   = vel_m1      + coll_vel
-!   omega_c  = omega_c_m1  + coll_om_b 
-
-! end subroutine newton_coll
-
-
-
-
-
-
-subroutine quatMul(quat,omega,result)
-implicit none
-real,dimension(4,4) :: QMAT            ! Allen Tildedley 3.37 ({qdot} = 0.5[Q]{wb})
-real,dimension(4) :: result,quat,Wquat
-real,dimension(3) :: omega 
-
+call invert_3x3_matrix(I_inv)
+
+
+omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+                  +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
+                  +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
+
+! No rotation
+!omega_c = 0.0
+
+om_buffer = 0.5* (omega_c + omega_c_m1 )
+magOM = norm2(om_buffer)
+
+angle_buffer = magOM * al* dt
+
+if (magOM .lt. smallnumber ) then ! Axis vector from rotation is zero-vector, avoid div-by-zero
+  om_buffer(1:3) = 0.0
+if (ismaster) then
+  write(*,*) "Div. by zero avoided for rotation axis!"
+endif
+else
+  om_buffer(1:3) = om_buffer(1:3) / magOM
+endif
+
+! Set provisional quarternion from this new axis-angle representation
+quat(1) = cos( 0.5 * angle_buffer )
+quat(2) = sin( 0.5 * angle_buffer ) * om_buffer(1)
+quat(3) = sin( 0.5 * angle_buffer ) * om_buffer(2)
+quat(4) = sin( 0.5 * angle_buffer ) * om_buffer(3)
 quat = quat / norm2(quat)
 
-QMAT(1,1) = quat(1)
-QMAT(1,2) =-quat(2)
-QMAT(1,3) =-quat(3)
-QMAT(1,4) =-quat(4)
+call calc_rot_matrix(quat,AA)
 
-QMAT(2,1) = quat(2)
-QMAT(2,2) = quat(1)
-QMAT(2,3) =-quat(4)
-QMAT(2,4) = quat(3)
+!----- New iteratively-updated estimate of inertia tensor -------
+I_prev = I_LHS
 
-QMAT(3,1) = quat(3)
-QMAT(3,2) = quat(4)
-QMAT(3,3) = quat(1)
-QMAT(3,4) =-quat(2)
+! buffer_3x3 = I^{n-1} A^T
+! Inew = A I^{n-1} A^T
+buffer_3x3 = matmul(I_ij,transpose(AA))
+I_LHS = matmul(AA, buffer_3x3)
 
-QMAT(4,1) = quat(4)
-QMAT(4,2) =-quat(3)
-QMAT(4,3) = quat(2)
-QMAT(4,4) = quat(1)
+Iresidual = maxval (abs (I_LHS - I_prev) )
 
-Wquat = 0.d0
-Wquat(2:4) = omega(1:3)
-result = matmul(QMAT,Wquat)
+n_iter = n_iter + 1
+
+enddo
+
+I_ij = I_LHS
+
+! if (ismaster) then
+!   write(*,*) "Rotation finished after", n_iter, " iterations with residual ", Iresidual
+! endif
+
+if ( (n_iter .eq. max_iter ) .and. (Iresidual .lt. tolerance) ) then
+  if (ismaster) then
+    write(*,*) "Warning: max iteration reached for inertia tensor calculation!"
+    write(*,*) "Iresidual: ", Iresidual
+  endif
+endif
+
+end subroutine newton_euler
 
 
+! ===========================================================================
+! collision
+! ===========================================================================
+
+subroutine update_substepping
+use param
+use mls_param
+use coll_mod
+implicit none
+integer :: i,inp
+real,dimension(3,3)          :: AA, AAT
+real,dimension(Nparticle)    :: error
+integer,dimension(Nparticle) :: step
+real,dimension(3,Nparticle)  :: vel_m1,pos_m1,pos_k,om_m1
+real :: pos_new(3)
+integer :: iter,nIter
+
+real,dimension(4,Nparticle)          :: quat_m1 ! KZ: temporary
+
+nIter = 50
+dt_p = dt / dble(nIter)
+
+do iter=1,nIter
+
+  do inp=1,Nparticle
+      quat_m1(:,inp) = quat(:,inp)
+      vel_m1(:,inp)  = vel_cm(:,inp)
+      pos_m1(:,inp)  = pos_cm(:,inp)
+      om_m1(:,inp)   = omega_c(:,inp)
+      !-- force & torque
+      fp_m1(:,inp)   = fpc(:,inp)
+      tp_m1(:,inp)   = tp(:,inp)
+      !-- collision vars
+      coll_vel_m1(:,inp)      = coll_vel(:,inp)
+      !coll_om_b_m1(:,inp)     = coll_om_b(:,inp)
+      !coll_quat_dot_m1(:,inp) = coll_quat_dot(:,inp)
+
+    if (is_coll(inp).eqv. .false.) then
+      !-- reset vars
+      coll_vel(:,inp)      = 0.d0
+      !coll_om_b(:,inp)     = 0.d0
+      coll_quat_dot(:,inp) = 0.d0
+    endif
+
+  enddo
+
+  error = 1e6
+  step  = 0
+
+
+
+  do while ( maxval(error) .gt. zlen/n3m .and. maxval(step) .lt. 10)
+
+       do inp = 1,Nparticle
+           if (is_coll(inp).eqv. .true. ) then
+
+           ! update fp and tp
+           call collision
+           ! get latest rotation matrix
+           call calc_rot_matrix(quat(:,inp),AA)
+           AAT = transpose(AA)
+
+           ! store pos
+           !pos_k(:,inp) = pos_cm(1:3,inp) + matmul(AAT, dxyz_CM_b(:,1,inp))
+
+           ! KZ: Any position that isn't a ghost node: for later 1 is OK
+           !do ng = 1,maxnv
+           ! if (.not. isGhostFace(ng,inp) ) exit
+           !enddo
+
+           pos_k(:,inp) = pos_cm(1:3,inp) + matmul(AAT, dxyzv_s(:,1,inp))
+
+           ! update vel, pos, omega and quat
+           call newton_coll(  vel_CM(:,inp), vel_m1(:,inp),                          &
+                              pos_CM(:,inp), pos_m1(:,inp),                          &
+                              omega_c(:,inp), om_m1(:,inp),                          &
+                              quat(:,inp), quat_m1(:,inp),                           & 
+                              AA(:,:),                                               &    
+                              coll_vel(:,inp), coll_vel_m1(:,inp),                   &
+                              coll_om_b(:,inp),                                      &
+                              coll_quat_dot(:,inp), coll_quat_dot_m1(:,inp),         &
+                              fpc(:,inp), fp_m1(:,inp), tp(:,inp), tp_m1(:,inp),      & 
+                              dt_p) 
+
+
+           ! update rotation matrix
+           call calc_rot_matrix(quat(:,inp),AA)
+           AAT = transpose(AA)
+
+           !pos_new = pos_cm(1:3,inp) + matmul(AAT, dxyz_CM_b(:,1,inp))
+
+           pos_new = pos_cm(1:3,inp) + matmul(AAT, dxyzv_s(:,1,inp))
+
+
+           error(inp) = norm2(pos_k(:,inp) - pos_new)
+           step(inp) = step(inp) + 1
+
+           else
+
+             error(inp) = 0.d0
+
+           endif
+           enddo
+  enddo
+enddo
 end subroutine
 
-subroutine quatMul2(quat,omega,result)
+
+subroutine newton_coll ( vel_CM, vel_m1,                    &
+                         pos_CM, pos_m1,                    &
+                         omega_c, omega_c_m1,               &
+                         quat, quat_m1,                     &
+                         AA,                                &
+                         coll_vel, coll_vel_m1,             &
+                         coll_om_b,                         &
+                         coll_quat_dot, coll_quat_dot_m1,   &
+                         fp, fp_m1, tp, tp_m1,              &
+                         dt )
+
+! Given total force and total torque acting on the body, it evolves
+! the newton equation for center of mass and
+! the Euler equation for rotation (quaternion notation Allen Tildesley pag 103)
+! Breugem 2012 (JCP)
+  use param, only: al
+  !use mls_param,only: dens_ratio, i_inv
+  use mls_param,only: dens_ratio
   implicit none
-  real,dimension(4,4) :: QMAT            
-  real,dimension(4) :: result,quat,Wquat
-  real,dimension(3) :: omega 
 
-  ! Allen Tildedley 3.37
-  
-  ! Space-fixed version!!!!
-!      _
-!    d q(t)     1   _     _
-!  --------- = ---  W(t)  q(t)  
-!     d t       2
-!
-  quat = quat / norm2(quat)
+  real,dimension(3)   :: vel_CM            ! velocity of the center of mass 
+  real,dimension(3)   :: pos_CM            ! position of the center of mass 
+  real,dimension(3)   :: omega_c           ! angular vel body frame
+  real,dimension(4)   :: quat              ! quaternions
+  real,dimension(3,3) :: AA                ! rotation matrix "body  = AA  space "
+  real,dimension(3)   :: fp,fp_m1
+  real,dimension(3)   :: tp,tp_m1
+  real                :: dt
+  real,dimension(3)   :: coll_vel
+  real,dimension(3)   :: coll_om_b
+  real,dimension(4)   :: coll_quat_dot
+  ! local variables 
+  real,dimension(3) :: vel_m1              ! velocity of the center of mass 
+  real,dimension(3) :: pos_m1              ! position of the center of mass 
+  real,dimension(3) :: omega_c_m1          ! angular vel body frame
+  real,dimension(4) :: quat_m1             ! quaternions previous time step
+  real,dimension(3) :: tp_b                ! collision torque in body frame
+  real,dimension(3) :: coll_vel_m1
+  real,dimension(4) :: coll_quat_dot_m1
+ 
 
-  QMAT(1,1) = quat(1)
-  QMAT(1,2) =-quat(2)
-  QMAT(1,3) =-quat(3)
-  QMAT(1,4) =-quat(4)
+  ! ---------------------------------------------------- 
+  !              Translation
+  ! ---------------------------------------------------- 
+
+  coll_vel = 0.5*dt*al*(fp + fp_m1) 
+
+  pos_cm = pos_m1  +  0.5*dt*al*(coll_vel + coll_vel_m1)
+
+
+  ! ! ---------------------------------------------------- 
+  ! !               Rotation
+  ! ! ---------------------------------------------------- 
+
+  ! tp_b = tp + tp_m1
+
+  ! coll_om_b = 0.5*dt*al*matmul(I_inv, tp_b)
+
+
+  ! call quatMul(quat, coll_om_b, coll_quat_dot)
+
+  ! quat = quat_m1 + 0.25*dt*al*( coll_quat_dot + coll_quat_dot_m1 )
+
+  ! ---------------------------------------------------- 
+  !               Adding back to main vars
+  ! ---------------------------------------------------- 
+  vel_cm   = vel_m1      + coll_vel
+  !omega_c  = omega_c_m1  + coll_om_b 
+
+end subroutine newton_coll
+
+
+
+
+
+
+! subroutine quatMul(quat,omega,result)
+! implicit none
+! real,dimension(4,4) :: QMAT            ! Allen Tildedley 3.37 ({qdot} = 0.5[Q]{wb})
+! real,dimension(4) :: result,quat,Wquat
+! real,dimension(3) :: omega 
+
+! quat = quat / norm2(quat)
+
+! QMAT(1,1) = quat(1)
+! QMAT(1,2) =-quat(2)
+! QMAT(1,3) =-quat(3)
+! QMAT(1,4) =-quat(4)
+
+! QMAT(2,1) = quat(2)
+! QMAT(2,2) = quat(1)
+! QMAT(2,3) =-quat(4)
+! QMAT(2,4) = quat(3)
+
+! QMAT(3,1) = quat(3)
+! QMAT(3,2) = quat(4)
+! QMAT(3,3) = quat(1)
+! QMAT(3,4) =-quat(2)
+
+! QMAT(4,1) = quat(4)
+! QMAT(4,2) =-quat(3)
+! QMAT(4,3) = quat(2)
+! QMAT(4,4) = quat(1)
+
+! Wquat = 0.d0
+! Wquat(2:4) = omega(1:3)
+! result = matmul(QMAT,Wquat)
+
+
+! end subroutine
+
+! subroutine quatMul2(quat,omega,result)
+!   implicit none
+!   real,dimension(4,4) :: QMAT            
+!   real,dimension(4) :: result,quat,Wquat
+!   real,dimension(3) :: omega 
+
+!   ! Allen Tildedley 3.37
   
-  QMAT(2,1) = quat(2)
-  QMAT(2,2) = quat(1)
-  QMAT(2,3) = quat(4) ! Changed
-  QMAT(2,4) = -quat(3) ! Changed
+!   ! Space-fixed version!!!!
+! !      _
+! !    d q(t)     1   _     _
+! !  --------- = ---  W(t)  q(t)  
+! !     d t       2
+! !
+!   quat = quat / norm2(quat)
+
+!   QMAT(1,1) = quat(1)
+!   QMAT(1,2) =-quat(2)
+!   QMAT(1,3) =-quat(3)
+!   QMAT(1,4) =-quat(4)
   
-  QMAT(3,1) = quat(3)
-  QMAT(3,2) = -quat(4) !Changed
-  QMAT(3,3) = quat(1)
-  QMAT(3,4) = quat(2) ! Changed
+!   QMAT(2,1) = quat(2)
+!   QMAT(2,2) = quat(1)
+!   QMAT(2,3) = quat(4) ! Changed
+!   QMAT(2,4) = -quat(3) ! Changed
   
-  QMAT(4,1) = quat(4) 
-  QMAT(4,2) = quat(3) ! Changed
-  QMAT(4,3) = -quat(2) ! Changed
-  QMAT(4,4) = quat(1)
+!   QMAT(3,1) = quat(3)
+!   QMAT(3,2) = -quat(4) !Changed
+!   QMAT(3,3) = quat(1)
+!   QMAT(3,4) = quat(2) ! Changed
   
-  Wquat = 0.d0
-  Wquat(2:4) = omega(1:3)
-  result = matmul(QMAT,Wquat)
+!   QMAT(4,1) = quat(4) 
+!   QMAT(4,2) = quat(3) ! Changed
+!   QMAT(4,3) = -quat(2) ! Changed
+!   QMAT(4,4) = quat(1)
+  
+!   Wquat = 0.d0
+!   Wquat(2:4) = omega(1:3)
+!   result = matmul(QMAT,Wquat)
   
   
-  end subroutine
+!   end subroutine
 
 
 subroutine calc_rot_matrix(quat,AA)
@@ -829,52 +598,52 @@ subroutine calc_rot_matrix(quat,AA)
 
 end subroutine calc_rot_matrix
 
-subroutine calc_quat_from_rotMatrix(quat,AA)
-  ! Given rotation/orientation matrix, calculate quaternion
-    implicit none
+! subroutine calc_quat_from_rotMatrix(quat,AA)
+!   ! Given rotation/orientation matrix, calculate quaternion
+!     implicit none
   
-    real,dimension(4) :: quat        ! quaternions
-    real,dimension(3,3) :: AA        ! rotation matrix "body  = AA  space "
+!     real,dimension(4) :: quat        ! quaternions
+!     real,dimension(3,3) :: AA        ! rotation matrix "body  = AA  space "
   
 
-    ! §6.5 of "Representing Attitude: Euler Angles, Unit Quaternions, and Rotation Vectors (Dibel, 2005)
+!     ! §6.5 of "Representing Attitude: Euler Angles, Unit Quaternions, and Rotation Vectors (Dibel, 2005)
     
-    if ( ( AA(2,2) .gt. -AA(3,3) ) .and. ( AA(1,1) .gt. -AA(2,2) ) .and. ( AA(1,1) .gt. -AA(3,3) ) ) then
-      !q0
-      quat(1) = sqrt( 1.0 + AA(1,1) + AA(2,2) + AA(3,3) )
-      quat(2) = ( AA(2,3) - AA(3,2) ) / quat(1)
-      quat(3) = ( AA(3,1) - AA(1,3) ) / quat(1)
-      quat(4) = ( AA(1,2) - AA(2,1) ) / quat(1)
-      quat(1:4) = quat(1:4) * 0.5
-    elseif ( ( AA(2,2) .lt. -AA(3,3) ) .and. ( AA(1,1) .gt. AA(2,2) ) .and. ( AA(1,1) .gt. AA(3,3) ) ) then
-      !q1 
-      quat(2) = sqrt( 1.0 + AA(1,1) - AA(2,2) - AA(3,3) ) 
-      quat(1) = ( AA(2,3) - AA(3,2) ) / quat(2)
-      quat(3) = ( AA(1,2) + AA(2,1) ) / quat(2)
-      quat(4) = ( AA(3,1) + AA(1,3) ) / quat(2)
-      quat(1:4) = quat(1:4) * 0.5
-    elseif ( ( AA(2,2) .gt. AA(3,3) ) .and. ( AA(1,1) .lt. AA(2,2) ) .and. ( AA(1,1) .lt. -AA(3,3) ) ) then
-      !q2
-      quat(3) = sqrt( 1.0 - AA(1,1) + AA(2,2) - AA(3,3) )
-      quat(1) = ( AA(3,1) - AA(1,3) ) / quat(3)
-      quat(2) = ( AA(1,2) - AA(2,1) ) / quat(3)
-      quat(4) = ( AA(2,3) - AA(3,2) ) / quat(3)
-      quat(1:4) = quat(1:4) * 0.5
-    elseif ( ( AA(2,2) .lt. AA(3,3) ) .and. ( AA(1,1) .lt. -AA(2,2) ) .and. ( AA(1,1) .lt. AA(3,3) ) ) then
-      !q3
-      quat(4) = sqrt( 1.0 - AA(1,1) - AA(2,2) + AA(3,3) )
-      quat(1) = ( AA(1,2) - AA(2,1) ) / quat(4)
-      quat(2) = ( AA(3,1) - AA(1,3) ) / quat(4)
-      quat(3) = ( AA(2,3) - AA(3,2) ) / quat(4)
-      quat(1:4) = quat(1:4) * 0.5
-    else
-      write(*,*) "No quat case, problem encountered?"
-    endif
+!     if ( ( AA(2,2) .gt. -AA(3,3) ) .and. ( AA(1,1) .gt. -AA(2,2) ) .and. ( AA(1,1) .gt. -AA(3,3) ) ) then
+!       !q0
+!       quat(1) = sqrt( 1.0 + AA(1,1) + AA(2,2) + AA(3,3) )
+!       quat(2) = ( AA(2,3) - AA(3,2) ) / quat(1)
+!       quat(3) = ( AA(3,1) - AA(1,3) ) / quat(1)
+!       quat(4) = ( AA(1,2) - AA(2,1) ) / quat(1)
+!       quat(1:4) = quat(1:4) * 0.5
+!     elseif ( ( AA(2,2) .lt. -AA(3,3) ) .and. ( AA(1,1) .gt. AA(2,2) ) .and. ( AA(1,1) .gt. AA(3,3) ) ) then
+!       !q1 
+!       quat(2) = sqrt( 1.0 + AA(1,1) - AA(2,2) - AA(3,3) ) 
+!       quat(1) = ( AA(2,3) - AA(3,2) ) / quat(2)
+!       quat(3) = ( AA(1,2) + AA(2,1) ) / quat(2)
+!       quat(4) = ( AA(3,1) + AA(1,3) ) / quat(2)
+!       quat(1:4) = quat(1:4) * 0.5
+!     elseif ( ( AA(2,2) .gt. AA(3,3) ) .and. ( AA(1,1) .lt. AA(2,2) ) .and. ( AA(1,1) .lt. -AA(3,3) ) ) then
+!       !q2
+!       quat(3) = sqrt( 1.0 - AA(1,1) + AA(2,2) - AA(3,3) )
+!       quat(1) = ( AA(3,1) - AA(1,3) ) / quat(3)
+!       quat(2) = ( AA(1,2) - AA(2,1) ) / quat(3)
+!       quat(4) = ( AA(2,3) - AA(3,2) ) / quat(3)
+!       quat(1:4) = quat(1:4) * 0.5
+!     elseif ( ( AA(2,2) .lt. AA(3,3) ) .and. ( AA(1,1) .lt. -AA(2,2) ) .and. ( AA(1,1) .lt. AA(3,3) ) ) then
+!       !q3
+!       quat(4) = sqrt( 1.0 - AA(1,1) - AA(2,2) + AA(3,3) )
+!       quat(1) = ( AA(1,2) - AA(2,1) ) / quat(4)
+!       quat(2) = ( AA(3,1) - AA(1,3) ) / quat(4)
+!       quat(3) = ( AA(2,3) - AA(3,2) ) / quat(4)
+!       quat(1:4) = quat(1:4) * 0.5
+!     else
+!       write(*,*) "No quat case, problem encountered?"
+!     endif
 
-  ! normalize quaternions
-    quat = quat / norm2 (quat)
+!   ! normalize quaternions
+!     quat = quat / norm2 (quat)
   
-  end subroutine calc_quat_from_rotMatrix
+!   end subroutine calc_quat_from_rotMatrix
 
 
 subroutine calc_rigidBody_params (COM,Vol,I_ij,nv,nf,xyz,vert_of_face,isGhostFace)
@@ -1045,6 +814,31 @@ subroutine calc_rigidBody_params (COM,Vol,I_ij,nv,nf,xyz,vert_of_face,isGhostFac
 
 end subroutine calc_rigidBody_params
 
+
+subroutine invert_3x3_matrix(I_inv)
+  ! Invert a 3x3 matrix with LAPACK's LU factorization
+  ! Helper routine for inertia tensor calculations
+  ! Iterative inertia tensor update (Ardekani et al. 2016)
+  implicit none
+  real, dimension(3,3) :: I_inv
+  ! For LAPACK
+  integer :: LWORK = 3
+  real, dimension(3) :: WORK
+  integer :: IPIV(3), INFO
+
+  call dgetrf(3, 3, I_inv, 3, IPIV, INFO) ! Compute the LU factorization of I_ij
+  if (info /= 0) then
+    print *, "Error in dgetrf for I_inv calculation"
+    stop
+  end if
+  call dgetri(3, I_inv, 3, IPIV, WORK, LWORK, INFO) ! Invert the LU factorization
+
+  if (info /= 0) then
+    print *, "Error in dgetri for I_inv calculation"
+    stop
+  end if
+end subroutine invert_3x3_matrix
+
 subroutine update_xyz
   use param
   use mls_param
@@ -1095,3 +889,37 @@ subroutine update_xyz
  end do
 
 end subroutine update_xyz
+
+
+! Update specifically the velocity of Lagrangian nodes (triangles)
+! Specifically, this is an update for any triangle re-labelling that was done following remeshing
+! U_tri = U_centroid + omega_c \times R
+! Where the moment arm, R changes during triangle relabelling
+subroutine update_tri_velocity
+  use param
+  use mls_param
+  use mpih
+  implicit none
+  real,dimension(3)  :: om_dCM, rad
+  integer :: i,inp
+
+  do inp = 1,Nparticle
+    !-- velocity
+    do i = 1,maxnf
+      if (.not. isGhostFace(i,inp) ) then
+
+        rad = tri_bar(:,i,inp) - pos_CM(:,inp)
+        
+        ! Add Urot = omega x r contribution to local surface velocity
+        call cross(om_dCM(:), omega_c(:,inp), rad  )
+
+        vel_tri(:,i,inp) = vel_CM(:,inp) + om_dCM(:)
+
+      endif
+
+    enddo
+
+ end do
+
+end subroutine update_tri_velocity
+

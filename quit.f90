@@ -28,11 +28,10 @@
       endif
 
       if(normalexit) then
-!       call WriteStats
-       call mpi_write_continua
-       !call WriteRandForcCoef
-       call continua_particle
-       !call continua_collision
+      call mpi_write_continua
+      !call mpi_write_field
+      call WriteRandForcCoef
+      call continua_particle
       if(ismaster) write(6,'(a)') 'Continuation files written'
       else
        call MpiAbort

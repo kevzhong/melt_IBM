@@ -34,7 +34,7 @@
  ! Since the object can shrink, the bounding box size in y-z can be less than numtasks
  ! in this case, we switch back to the original naiive slab method
 
-subroutine tagCells(ind, inp)
+subroutine pencilTag(ind, inp)
     use mls_param
     use mpih
     use mpi_param
@@ -85,7 +85,8 @@ subroutine tagCells(ind, inp)
         BUFF_SIZE = n1m ! Max. no. of triangles in a pencil
 
         ! Global bounding box arrays
-        allocate( pencil_triList(jbegin:jfinish, kbegin:kfinish, 1:BUFF_SIZE) )
+        !allocate( pencil_triList(jbegin:jfinish, kbegin:kfinish, 1:BUFF_SIZE) )
+        allocate( pencil_triList(1:BUFF_SIZE, jbegin:jfinish, kbegin:kfinish ) )
         allocate( pencil_triCount(jbegin:jfinish, kbegin:kfinish ) )
         pencil_triCount = 0
         pencil_triList = 0
@@ -129,7 +130,8 @@ subroutine tagCells(ind, inp)
                                 call MPI_Finalize(ierr)
                             endif
 
-                            pencil_triList(j,k,pencil_triCount(j,k)) = f
+                            !pencil_triList(j,k,pencil_triCount(j,k)) = f
+                            pencil_triList(pencil_triCount(j,k),j,k) = f
                         endif ! end insidePencil
 
                     endif ! end ghostFace
@@ -160,7 +162,7 @@ subroutine tagCells(ind, inp)
   !call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
   !call MPI_Finalize(ierr)
 
-end subroutine tagCells
+end subroutine pencilTag
 
 
 subroutine pencil_workAlloc(myid, numtasks, p_row, p_col, my_p_row, my_p_col,&
@@ -242,7 +244,8 @@ subroutine pencil_tagCells(ind,inp,&
     integer :: kc,km,kp,jm,jc,jp,ic,im,ip
 
     integer :: jbegin, jfinish, kbegin, kfinish, BUFF_SIZE
-    integer ::  pencil_triList(jbegin:jfinish, kbegin:kfinish, 1:BUFF_SIZE) 
+    !integer ::  pencil_triList(jbegin:jfinish, kbegin:kfinish, 1:BUFF_SIZE) 
+    integer ::  pencil_triList(1:BUFF_SIZE, jbegin:jfinish, kbegin:kfinish) 
     integer ::  pencil_triCount(jbegin:jfinish, kbegin:kfinish ) 
 
   
@@ -271,7 +274,8 @@ subroutine pencil_tagCells(ind,inp,&
               x_gc = pos_cm(1:3,inp)
 
               !call rayTagQ(vof,C,Q,inp)
-              call rayTagQ_pencil(i,j,kk,vof,Q,inp,pencil_triList(j,kk,1:pencil_triCount(j,kk)),pencil_triCount(j,kk))
+              !call rayTagQ_pencil(i,j,kk,vof,Q,inp,pencil_triList(j,kk,1:pencil_triCount(j,kk)),pencil_triCount(j,kk))
+              call rayTagQ_pencil(i,j,kk,vof,Q,inp,pencil_triList(1:pencil_triCount(j,kk),j,kk),pencil_triCount(j,kk))
 
               !if ( (kk .eq. 64) .and. (j .eq. 64)  ) then
               !  write(*,*) "VOF: ", vof
@@ -680,36 +684,36 @@ subroutine pencil_tagCells(ind,inp,&
   ! end subroutine rayTagQ_slab
 
 
-  subroutine interp_vof
-    ! Interpolate VOFx, VOFv, VOFw from cell-centered VOFp information
-    use param
-    use mpi_param, only: kstart,kend
-    implicit none
-    integer :: ic,jc,kc
-    integer :: km,kp,jm,jp,im,ip
+  ! subroutine interp_vof
+  !   ! Interpolate VOFx, VOFv, VOFw from cell-centered VOFp information
+  !   use param
+  !   use mpi_param, only: kstart,kend
+  !   implicit none
+  !   integer :: ic,jc,kc
+  !   integer :: km,kp,jm,jp,im,ip
   
-    !call update_both_ghosts(n1,n2,VOFx,kstart,kend)
-    !call update_both_ghosts(n1,n2,VOFy,kstart,kend)
-    !call update_both_ghosts(n1,n2,VOFz,kstart,kend)
-    call update_both_ghosts(n1,n2,VOFp,kstart,kend)
+  !   !call update_both_ghosts(n1,n2,VOFx,kstart,kend)
+  !   !call update_both_ghosts(n1,n2,VOFy,kstart,kend)
+  !   !call update_both_ghosts(n1,n2,VOFz,kstart,kend)
+  !   call update_both_ghosts(n1,n2,VOFp,kstart,kend)
   
-    do kc=kstart,kend
-      km=kc-1
-      kp=kc+1
-        do jc=1,n2m
-          jm=jmv(jc)
-          jp=jpv(jc)
-          do ic=1,n1m
-            ip=ipv(ic)
-            im=imv(ic)
+  !   do kc=kstart,kend
+  !     km=kc-1
+  !     kp=kc+1
+  !       do jc=1,n2m
+  !         jm=jmv(jc)
+  !         jp=jpv(jc)
+  !         do ic=1,n1m
+  !           ip=ipv(ic)
+  !           im=imv(ic)
             
-            VOFx(ic,jc,kc) = 0.5 * (VOFp(im,jc,kc) + VOFp(ic,jc,kc) )
-            VOFy(ic,jc,kc) = 0.5 * (VOFp(ic,jm,kc) + VOFp(ic,jc,kc) )
-            VOFz(ic,jc,kc) = 0.5 * (VOFp(ic,jc,km) + VOFp(ic,jc,kc) )
-          enddo
-        enddo
-    enddo
-  end subroutine interp_vof
+  !           VOFx(ic,jc,kc) = 0.5 * (VOFp(im,jc,kc) + VOFp(ic,jc,kc) )
+  !           VOFy(ic,jc,kc) = 0.5 * (VOFp(ic,jm,kc) + VOFp(ic,jc,kc) )
+  !           VOFz(ic,jc,kc) = 0.5 * (VOFp(ic,jc,km) + VOFp(ic,jc,kc) )
+  !         enddo
+  !       enddo
+  !   enddo
+  ! end subroutine interp_vof
 
 
 !   subroutine trianglePencilIntersect(insidePencil,V0,V1,V2, ymin, ymax, zmin, zmax)
@@ -748,56 +752,56 @@ subroutine pencil_tagCells(ind,inp,&
 
 ! end subroutine trianglePencilIntersect
 
-subroutine get_bbox_inds(bbox_inds,inp)
-    ! Retrieve the xyz indices of the bounding box for a given particle
-    use param
-    use mls_param
-    implicit none
-    integer :: i, nf, tri_ind
-    real, dimension(3,2) :: lim
-    integer, dimension(3,2) :: bbox_inds
-    integer  :: inp, padSize
+! subroutine get_bbox_inds(bbox_inds,inp)
+!     ! Retrieve the xyz indices of the bounding box for a given particle
+!     use param
+!     use mls_param
+!     implicit none
+!     integer :: i, nf, tri_ind
+!     real, dimension(3,2) :: lim
+!     integer, dimension(3,2) :: bbox_inds
+!     integer  :: inp, padSize
   
-    ! Padding size indices for safety
-    padSize = 2
+!     ! Padding size indices for safety
+!     padSize = 2
   
-  ! get bounding box
-    do i = 1,3
-      lim(i,1) = minval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
-      lim(i,2) = maxval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
-    end do
+!   ! get bounding box
+!     do i = 1,3
+!       lim(i,1) = minval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
+!       lim(i,2) = maxval( pack(xyzv(i,:,inp) , .not. isGhostVert(:,inp)  ) )
+!     end do
   
-    bbox_inds = floor(lim*dx1) + 1 ! compute indices cell centered
+!     bbox_inds = floor(lim*dx1) + 1 ! compute indices cell centered
   
-    ! expanding bounding box to be extra safe
-    bbox_inds(:,1) = bbox_inds(:,1) - padSize
-    bbox_inds(:,2) = bbox_inds(:,2) + padSize
+!     ! expanding bounding box to be extra safe
+!     bbox_inds(:,1) = bbox_inds(:,1) - padSize
+!     bbox_inds(:,2) = bbox_inds(:,2) + padSize
   
-    ! Hard code vertical for testing free-fall
-    !bbox_inds(3,1) = 1
-    !bbox_inds(3,2) = n3m
+!     ! Hard code vertical for testing free-fall
+!     !bbox_inds(3,1) = 1
+!     !bbox_inds(3,2) = n3m
   
   
-    !! Hard-code the full domain for testing
-    !bbox_inds(:,1) = [1, 1, 1] 
-    !bbox_inds(:,2) = [n1m, n2m, n3m]
+!     !! Hard-code the full domain for testing
+!     !bbox_inds(:,1) = [1, 1, 1] 
+!     !bbox_inds(:,2) = [n1m, n2m, n3m]
   
-end subroutine get_bbox_inds
+! end subroutine get_bbox_inds
 
-subroutine get_periodic_indices(k,x)
-  use param
-  implicit none
-  integer :: k
-  real    :: x(3)
+! subroutine get_periodic_indices(k,x)
+!   use param
+!   implicit none
+!   integer :: k
+!   real    :: x(3)
 
-  if (k .ge. n3) then
-     k = k - n3m
-    x(3) = x(3) - zlen
-  end if
+!   if (k .ge. n3) then
+!      k = k - n3m
+!     x(3) = x(3) - zlen
+!   end if
 
-  if (k .lt. 1) then
-     k = k + n3m
-     x(3) = x(3) + zlen
-  end if
-end subroutine
+!   if (k .lt. 1) then
+!      k = k + n3m
+!      x(3) = x(3) + zlen
+!   end if
+! end subroutine
 

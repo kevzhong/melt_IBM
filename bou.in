@@ -1,16 +1,16 @@
  N1M          N2M         N3M 
- 128          128          128          
+ 128          128          128         
 XLEN         YLEN          ZLEN
- 1.0          1.0           1.0
+ 1.0         1.0            1.0
  NREAD         PREAD 
   0            0
 NTST   NSST    TFRAME    TPIN      IRESET
- 6000     3      1e-1    5e-3       0
+ 1000     3      1e-2    5e-3       0
 IDTV    DT    DTMAX  WANT_CFL 
   1    1e-2    1e-2    1.0  
  REN     PRANDTL  BETA_GZ     
- 650.0     1.0      0.0    
+100.0     1.0      0.0    
  TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID  TEMP_RESTART
   0.0d0   1.0d0      0.0d0      4.0d0       1.0d0          0
  IHIT
-   1
+   0

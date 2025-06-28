@@ -106,7 +106,7 @@ subroutine restart_temperature
       use mls_param, only: rad_p, pos_CM
       implicit none
       integer :: ic,jc,kc
-      real :: rr
+      real :: rr, rx_periodic,ry_periodic, rz_periodic 
 
       temp= Tsol
             
@@ -115,8 +115,12 @@ subroutine restart_temperature
       do kc = kstart, kend
             do ic = 1, n1m
                   do jc = 1, n2m
-                        !rr = sqrt ( (xm(ic) - 0.5d0*xlen )**2 + (ym(jc) - 0.5d0*ylen )**2 + (zm(kc) - 0.5d0*zlen )**2 )
-                        rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - pos_CM(:,1)  )
+
+                        rx_periodic = mod( xm(ic) - pos_CM(1,1) + 0.5*xlen, xlen ) - 0.5*xlen
+                        ry_periodic = mod( ym(jc) - pos_CM(2,1) + 0.5*ylen, ylen ) - 0.5*ylen
+                        rz_periodic = mod( zm(kc) - pos_CM(3,1) + 0.5*zlen, zlen ) - 0.5*zlen
+
+                        rr = sqrt( rx_periodic**2 + ry_periodic**2 + rz_periodic**2 )
 
                         ! Sigmoid fit
                         ! temp(ic,jc,kc) = Tliq - (Tliq - Tsol) / ( 1 + exp(2.0d0 / dx1 * (rr - rad_p)  )

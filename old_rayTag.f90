@@ -42,11 +42,11 @@
     call convex_hull_q22(ind,inp)
     call convex_hull_q32(ind,inp)
 
-    vol_sphere = sum( 1.0 - VOFp(:,:,kstart:kend) ) * celvol
-    call MPI_ALLREDUCE(MPI_IN_PLACE,vol_sphere,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
-    if (myid .eq. 0) then
-     write(*,*) "Vsphere = ", vol_sphere
-    endif
+    !vol_sphere = sum( 1.0 - VOFp(:,:,kstart:kend) ) * celvol
+    !call MPI_ALLREDUCE(MPI_IN_PLACE,vol_sphere,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)    
+    !if (myid .eq. 0) then
+    ! write(*,*) "Vsphere = ", vol_sphere
+    !endif
 
   end subroutine tagCells
 
@@ -678,3 +678,20 @@ subroutine interp_vof
       enddo
   enddo
 end subroutine interp_vof
+
+subroutine get_periodic_indices(k,x)
+  use param
+  implicit none
+  integer :: k
+  real    :: x(3)
+
+  if (k .ge. n3) then
+     k = k - n3m
+    x(3) = x(3) - zlen
+  end if
+
+  if (k .lt. 1) then
+     k = k + n3m
+     x(3) = x(3) + zlen
+  end if
+end subroutine

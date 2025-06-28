@@ -1,6 +1,7 @@
 subroutine setup_particles
   use param
   use mls_param
+  use mpih
   implicit none
   integer :: i,j,k,inp,count
   integer :: Npx,Npy,Npz
@@ -14,7 +15,7 @@ subroutine setup_particles
 
   ! Assign COMs for each particle and initialise rigid-body parameters (vel_COM, orientation, etc)
 
-  Npx = 1; Npy = 1; Npz = 1
+ ! Npx = 1; Npy = 1; Npz = 1
 
 
   ! Rescale unit sphere to desired radius
@@ -41,14 +42,29 @@ subroutine setup_particles
   call calc_rigidBody_params(pos_CM(:,1),Volume(1),InertTensor(:,:,1),maxnv,maxnf,&
   xyz0(:,:),vert_of_face(:,:,1),isGhostFace(:,1) )
 
-  if (ismaster) then
-    write(*,*) "Volume: ", Volume(1)
-  endif
+  !if (ismaster) then
+  !  write(*,*) "Volume: ", Volume(1)
+  !endif
 
-  ! KZ: note the hard-coded single particle for now
+  ! KZ: hard-coded single or double solid treatment
+  if (Nparticle .eq. 1 ) then
   pos_CM(1,1) = 0.5*xlen
   pos_CM(2,1) = 0.5*ylen
   pos_CM(3,1) = 0.5*zlen
+  elseif (Nparticle .eq. 2) then
+    pos_CM(1,1) = 0.5*xlen
+    pos_CM(2,1) = 0.5*ylen
+    pos_CM(3,1) = 0.5*zlen
+
+    pos_CM(1,2) = 0.55*xlen
+    pos_CM(2,2) = 0.5*ylen
+    pos_CM(3,2) = 0.75*zlen
+
+  else
+    write(*,*) "Only supporting 1 or 2 particles for now!"
+    call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    call MPI_Finalize(ierr)
+  endif
 
   !write(*,*), "Volume is", Volume(1)
   
