@@ -1,5 +1,9 @@
 # melt_IBM
-This is a repository for a DNS code which simulates the Lagrangian melting of a solid object.
+This is a repository for a DNS code which simulates the Lagrangian melting of a solid object. The journal paper detailing this work is found at:
+
+* Zhong, K., Howland, C. J., Lohse, D., and Verzicco, R. (2025). A front-tracking immersed-boundary framework for simulating Lagrangian melting problems. J. Comput. Phys., page 113762.
+
+There is also a WIP documentation for this repository found [here](https://kevzhong.github.io/melt_IBM/).
 
 # Dependencies
 - MPI Fortran compiler
