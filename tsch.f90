@@ -42,7 +42,7 @@
         !    call tagCells(bbox_inds,inp)
         !  enddo
         !endif
-        if( .not. is_stationarySolid ) then
+        if ( .not. is_stationarySolid ) then
           call computeIndicator
         endif
 

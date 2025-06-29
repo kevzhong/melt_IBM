@@ -33,6 +33,8 @@
       VOFp(:,:,:) = 1.
       solid_mask(:,:,:) = .false.
 
+     allocate(sdf(n1,n2,kstart:kend))
+
       ! Auxilary fractional-step pseudo-pressure
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &
           kstart-lvlhalo,kend+lvlhalo)

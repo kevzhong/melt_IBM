@@ -32,7 +32,9 @@ character(70) namfile
 
   ! Initial cell-tagging operation at start of runtime if IBM is active
   ! the most expensive full tagging of ALL cells
+  initial_tag = .true.
   if (imlsfor .eq. 1) call computeIndicator
+  initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
 
   time=0.d0
   vmax=0.0d0
@@ -180,13 +182,13 @@ character(70) namfile
 
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           !call mkmov_hdf_xcut
+           call mkmov_hdf_xcut
            call mkmov_hdf_ycut
-           !call mkmov_hdf_zcut
+           call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel
-           !call mpi_write_field
+           call mpi_write_field
 
            if (specflag) call compute_1d_spectra
          endif

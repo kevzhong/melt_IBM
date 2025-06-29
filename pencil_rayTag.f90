@@ -376,8 +376,6 @@ subroutine pencil_tagCells(ind,inp,&
         end do
       end do
     end do
-
-    call interp_vof
   
   end subroutine pencil_tagCells
 

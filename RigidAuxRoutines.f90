@@ -210,12 +210,12 @@ pre_fac = 1.0 / Volume / dens_ratio
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
 
-!vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
-!                  +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
-!                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
+vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
+                  +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
+                   + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
-vel_CM(1) = 1.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 0.0 ! Fixed translational motion
+!vel_CM(1) = 0.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 1.0 ! Fixed translational motion
 
 
 pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
@@ -246,12 +246,16 @@ I_inv = I_LHS
 call invert_3x3_matrix(I_inv)
 
 
-omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
-                  +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
-                  +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
+ omega_c =  matmul(I_inv, matmul(I_ij,omega_c_m1) &
+                   +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
+                   +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
 
 ! No rotation
 !omega_c = 0.0
+
+! Fixed rotation
+!omega_c(1) = 0.0 ; omega_c(2) = 5.0 ; omega_c(3) = 0.0 ! Fixed translational motion
+
 
 om_buffer = 0.5* (omega_c + omega_c_m1 )
 magOM = norm2(om_buffer)

@@ -33,6 +33,7 @@
         !real, allocatable, dimension(:,:,:) :: usolid_x, usolid_y, usolid_z
         real, allocatable, dimension(:,:,:) :: d_UsolidT_dxj
         logical, allocatable, dimension(:,:,:) :: solid_mask
+        real, allocatable, dimension(:,:,:) :: sdf
 
         logical :: timeflag = .false.
         logical :: specflag = .false.
@@ -165,6 +166,7 @@
       real      :: rad_p
       integer :: tagType
       logical :: is_stationarySolid = .true.
+      logical :: initial_tag = .true.
       !integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
       !=================================================
       !       end of input file

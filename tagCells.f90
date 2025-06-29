@@ -15,8 +15,11 @@ subroutine computeIndicator
            enddo
         elseif (tagType .eq. 1) then
            do inp=1,Nparticle
-             call get_bbox_inds(bbox_inds,inp)
-             call pencilTag(bbox_inds,inp)
+            if (initial_tag) then ! Ray-tagging only needed for initialization
+              call get_bbox_inds(bbox_inds,inp)
+              call pencilTag(bbox_inds,inp)
+            endif
+            call narrowBandTagging(inp)
            enddo
         else
             write(*,*) "Invalid tag type specified?"
