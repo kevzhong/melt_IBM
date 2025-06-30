@@ -432,8 +432,8 @@ end subroutine mpi_globalsum_double_var
       if(allocated(VOFy)) deallocate(VOFy)
       if(allocated(VOFz)) deallocate(VOFz)
       if(allocated(VOFp)) deallocate(VOFp)
-      if(allocated(d_UsolidT_dxj)) deallocate(d_UsolidT_dxj)
-      if(allocated(solid_mask)) deallocate(solid_mask)
+      !if(allocated(d_UsolidT_dxj)) deallocate(d_UsolidT_dxj)
+      !if(allocated(solid_mask)) deallocate(solid_mask)
       if(allocated(sdf)) deallocate(sdf)
 
       ! HIT forcing field

@@ -28,14 +28,8 @@ call update_both_ghosts(n1,n2,for_yc,kstart,kend)
 call update_both_ghosts(n1,n2,for_zc,kstart,kend)
 
  !-------------------- Re-tag cells --------------------------
-!  if (  (imlsfor .eq. 1 ) ) then
-!  do inp=1,Nparticle
-!    call get_bbox_inds(bbox_inds,inp)
-!    call tagCells(bbox_inds, inp)
-!  enddo
-!  endif
 if ( .not. is_stationarySolid ) then
-  call computeIndicator
+  call tagCells
 endif
  !-------------------- End re-tag cells --------------------------
 
@@ -53,7 +47,7 @@ endif
       !  if((VOFx(ic,jc,kc).eq.1).and.(VOFx(ip,jc,kc).eq.1).and. &
       !     (VOFy(ic,jc,kc).eq.1).and.(VOFy(ic,jp,kc).eq.1).and. &
       !     (VOFz(ic,jc,kc).eq.1).and.(VOFz(ic,jc,kp).eq.1))then
-      if (solid_mask(ic,jc,kc) .eqv. .false.) then
+      if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
 
        eps_in = eps_in + ((forcx(ic,jc,kc)*vx(ic,jc,kc)+forcx(ip,jc,kc)*vx(ip,jc,kc))/xlen+ &
       &                    (forcy(ic,jc,kc)*vy(ic,jp,kc)+forcy(ic,jp,kc)*vy(ic,jp,kc))/ylen + &

@@ -74,7 +74,7 @@
       !     (VOFz(ic,jm,kc).eq.1).and.(VOFz(ic,jm,kp).eq.1).and. &
       !     (VOFz(ic,jc,kp).eq.1).and.(VOFz(ic,jc,kc).eq.1))then
 
-      if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
+      if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
 
       nfluid = nfluid + 1
 

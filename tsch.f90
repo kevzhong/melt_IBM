@@ -36,14 +36,8 @@
         
         if (timeflag) call tic(tstart)
 
-        !if(imlsfor.eq.1)then
-        !  do inp=1,Nparticle
-        !    call get_bbox_inds(bbox_inds,inp)
-        !    call tagCells(bbox_inds,inp)
-        !  enddo
-        !endif
         if ( .not. is_stationarySolid ) then
-          call computeIndicator
+          call tagCells
         endif
 
         if (timeflag) call toc(tstart,tend,wtime_vof)

@@ -11,6 +11,6 @@ IDTV    DT    DTMAX  WANT_CFL
  REN     PRANDTL  BETA_GZ     
 100.0     1.0      0.0    
  TMELT    TLIQUID     TSOLID   LATHEAT     CP_LIQUID  TEMP_RESTART
-  0.0d0   1.0d0      0.0d0      4.0d0       1.0d0          0
+  0.0d0   1.0d0      0.0d0      1.0d0       1.0d0          0
  IHIT
    0

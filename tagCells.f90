@@ -1,7 +1,7 @@
-! A wrapper function for computing the indicator functions, VOF, switching based on the tagging type specified in the input
+! A wrapper function for tagging cells (computing the indicator functions), VOF, switching based on the tagging type specified in the input
 ! tagType = 0   sphereTagging, for a rigid sphere
-! tagType = 1   rayTagging, general purpose for arbitrary geometry
-subroutine computeIndicator
+! tagType = 1   rayTagging with signed-distance treatment at interface, general purpose for arbitrary geometry
+subroutine tagCells
     use param
     use mls_param
     implicit none
@@ -24,7 +24,7 @@ subroutine computeIndicator
         else
             write(*,*) "Invalid tag type specified?"
     endif
-end subroutine computeIndicator
+end subroutine tagCells
 
 
 ! SHARED ROUTINES AMONGST ALL TAGGING TYPES

@@ -80,7 +80,7 @@
           ip= ipv(ic)
 
             ! ignoring grid-stagger, should be mostly negligible since no. of interface cells is not too significant
-            if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
+            if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
 
                 counter = counter + 1
 

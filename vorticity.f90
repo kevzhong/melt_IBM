@@ -43,7 +43,7 @@
          ip=ipv(ic)
          im=imv(ic)
 
-         if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
+         if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
 
          counter = counter + 1
 

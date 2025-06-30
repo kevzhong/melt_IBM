@@ -23,15 +23,15 @@
       allocate(VOFy(n1,n2,kstart-1:kend+1))
       allocate(VOFz(n1,n2,kstart-1:kend+1))
       allocate(VOFp(n1,n2,kstart-1:kend+1))
-      call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
-      call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
+      !call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
+      !call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
 
       ! Default values for single-phase
       VOFx(:,:,:) = 1.
       VOFy(:,:,:) = 1.
       VOFz(:,:,:) = 1.
       VOFp(:,:,:) = 1.
-      solid_mask(:,:,:) = .false.
+      !solid_mask(:,:,:) = .false.
 
      allocate(sdf(n1,n2,kstart:kend))
 

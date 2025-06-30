@@ -3,7 +3,7 @@
   ! The signed distance function, phi, is evaluated as the distance from the Eulerian-cell-corner point to the plane of the closest triangle centroid
 
   subroutine sphereTagging(ind,inp)
-    use param, only: VOFx, VOFy, VOFz, VOFp, solid_mask, dx1, dx2,dx3
+    use param, only: VOFx, VOFy, VOFz, VOFp, dx1, dx2,dx3
     use mls_param, only: celvol
     use mpih
     use mpi_param
@@ -17,7 +17,6 @@
     VOFy(:,:,:) = 1.
     VOFz(:,:,:) = 1.
     VOFp(:,:,:) = 1.
-    solid_mask(:,:,:) = .false.
 
     call convex_hull_qc2(ind,inp)
     call convex_hull_q12(ind,inp)
@@ -418,72 +417,72 @@
                 VOFp(ii,jj,k) = 1.0 - alpha
                end if
 
-               ! Solid cell d_Usolid_dxj
-               if (VOFp(ii,jj,k).lt. 1.0e-6) then
+              !  ! Solid cell d_Usolid_dxj
+              !  if (VOFp(ii,jj,k).lt. 1.0e-6) then
 
-                solid_mask(ii,jj,k) = .true.
+              !   solid_mask(ii,jj,k) = .true.
 
-                !                d  u T   |          1   [                              ]
-                !             ----------- |  =     ----- |  uT |      -      uT |       |
-                !                d   x    |i,j,k     dx  [     i+1/2            i-1/2   ]
+              !   !                d  u T   |          1   [                              ]
+              !   !             ----------- |  =     ----- |  uT |      -      uT |       |
+              !   !                d   x    |i,j,k     dx  [     i+1/2            i-1/2   ]
 
-                ! uT |_{i-1/2}
-                x_grid(1) = xc(i)
-                x_grid(2) = ym(j)
-                x_grid(3) = zm(kk)
-                r = x_grid - x_GC ! relative distance 
-                u_imh = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
+              !   ! uT |_{i-1/2}
+              !   x_grid(1) = xc(i)
+              !   x_grid(2) = ym(j)
+              !   x_grid(3) = zm(kk)
+              !   r = x_grid - x_GC ! relative distance 
+              !   u_imh = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
 
-                ! uT |_{i+1/2}
-                x_grid(1) = xc(i+1)
-                r = x_grid - x_GC ! relative distance 
-                u_iph = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
+              !   ! uT |_{i+1/2}
+              !   x_grid(1) = xc(i+1)
+              !   r = x_grid - x_GC ! relative distance 
+              !   u_iph = vel_CM(1,inp) + omega_c(2,inp)*r(3) - omega_c(3,inp)*r(2)
 
-                h31=( u_iph*(temp(ip,jc,kc)+temp(ic,jc,kc)) & 
-                -u_imh*(temp(ic,jc,kc)+temp(im,jc,kc)) )*udx1
+              !   h31=( u_iph*(temp(ip,jc,kc)+temp(ic,jc,kc)) & 
+              !   -u_imh*(temp(ic,jc,kc)+temp(im,jc,kc)) )*udx1
 
-                !                d  v T   |          1   [                              ]
-                !             ----------- |  =     ----- |  vT |      -      vT |       |
-                !                d   y    |i,j,k     dy  [     j+1/2            j-1/2   ] 
+              !   !                d  v T   |          1   [                              ]
+              !   !             ----------- |  =     ----- |  vT |      -      vT |       |
+              !   !                d   y    |i,j,k     dy  [     j+1/2            j-1/2   ] 
 
-                ! vT |_{j-1/2}
-                x_grid(1) = xm(i)
-                x_grid(2) = yc(j)
-                x_grid(3) = zm(kk)
-                r = x_grid - x_GC ! relative distance 
-                v_jmh = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
+              !   ! vT |_{j-1/2}
+              !   x_grid(1) = xm(i)
+              !   x_grid(2) = yc(j)
+              !   x_grid(3) = zm(kk)
+              !   r = x_grid - x_GC ! relative distance 
+              !   v_jmh = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
 
-                ! vT |_{j+1/2}
-                x_grid(2) = yc(j+1)
-                r = x_grid - x_GC ! relative distance 
-                v_jph = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
+              !   ! vT |_{j+1/2}
+              !   x_grid(2) = yc(j+1)
+              !   r = x_grid - x_GC ! relative distance 
+              !   v_jph = vel_CM(2,inp) + omega_c(3,inp)*r(1) - omega_c(1,inp)*r(3)
 
-                h32=( v_jph*(temp(ic,jp,kc)+temp(ic,jc,kc)) &
-                -v_jmh*(temp(ic,jc,kc)+temp(ic,jm,kc)) )*udx2
+              !   h32=( v_jph*(temp(ic,jp,kc)+temp(ic,jc,kc)) &
+              !   -v_jmh*(temp(ic,jc,kc)+temp(ic,jm,kc)) )*udx2
 
 
-                !                d  w T   |          1   [                              ]
-                !             ----------- |  =     ----- |  wT |      -      wT |       |
-                !                d   z    |i,j,k     dz  [     k+1/2            k-1/2   ]
+              !   !                d  w T   |          1   [                              ]
+              !   !             ----------- |  =     ----- |  wT |      -      wT |       |
+              !   !                d   z    |i,j,k     dz  [     k+1/2            k-1/2   ]
 
-                ! wT |_{k-1/2}
-                x_grid(1) = xm(i)
-                x_grid(2) = ym(j)
-                x_grid(3) = zc(kk)
-                r = x_grid - x_GC ! relative distance 
-                w_kmh = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
+              !   ! wT |_{k-1/2}
+              !   x_grid(1) = xm(i)
+              !   x_grid(2) = ym(j)
+              !   x_grid(3) = zc(kk)
+              !   r = x_grid - x_GC ! relative distance 
+              !   w_kmh = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
 
-                ! wT |_{k+1/2}
-                x_grid(3) = zc(kk+1)
-                r = x_grid - x_GC ! relative distance 
-                w_kph = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
+              !   ! wT |_{k+1/2}
+              !   x_grid(3) = zc(kk+1)
+              !   r = x_grid - x_GC ! relative distance 
+              !   w_kph = vel_CM(3,inp) + omega_c(1,inp)*r(2) - omega_c(2,inp)*r(1)
 
-                h33=( w_kph*(temp(ic,jc,kp)+temp(ic,jc,kc)) &
-                -w_kmh*(temp(ic,jc,kc)+temp(ic,jc,km)) )*udx3
+              !   h33=( w_kph*(temp(ic,jc,kp)+temp(ic,jc,kc)) &
+              !   -w_kmh*(temp(ic,jc,kc)+temp(ic,jc,km)) )*udx3
 
-                d_UsolidT_dxj(ii,jj,k) = (h31+h32+h33)
+              !   d_UsolidT_dxj(ii,jj,k) = (h31+h32+h33)
 
-               endif
+              !  endif
 
 
 

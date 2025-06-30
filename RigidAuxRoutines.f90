@@ -209,7 +209,6 @@ pre_fac = 1.0 / Volume / dens_ratio
 !      + e_z / dens_ratio &
 !      + (u_tot - u_tot_m1) / (dens_ratio*dt)
 
-
 vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
                   +  ro * dt * pre_fac * ( -int_prn_dA_m1 + int_tau_dA_m1 ) &
                    + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term

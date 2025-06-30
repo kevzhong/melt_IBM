@@ -33,7 +33,7 @@ character(70) namfile
   ! Initial cell-tagging operation at start of runtime if IBM is active
   ! the most expensive full tagging of ALL cells
   initial_tag = .true.
-  if (imlsfor .eq. 1) call computeIndicator
+  if (imlsfor .eq. 1) call tagCells
   initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
 
   time=0.d0
