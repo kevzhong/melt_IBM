@@ -19,4 +19,4 @@ A to-do list of documentation I intend to add:
 - Explanation of the .gts file convention for triangulated geometries
 - Cell-tagging details: ray-tagging, GenSDF (Patil et al. 2025)
 - Step-by-step examples on the remeshing algorithm at work
-- Details on the rigid body routines: quaternion usage, hydrodynamic load calculations via MLS interpolation
+- Details on the rigid body routines: quaternion usage, hydrodynamic load calculations via MLS interpolation, solid-body conduction treatment
