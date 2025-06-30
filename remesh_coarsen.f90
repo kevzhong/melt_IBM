@@ -5,7 +5,7 @@ subroutine remesh_coarsen (ecol_cnt,Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,E_
 
 use mpih
 use param, only: ismaster
-
+use mls_param, only: vmelt
 implicit none
 integer :: nf,nv,ne
 real :: E_thresh, Surface
@@ -24,6 +24,7 @@ integer :: f, e, v1, v2
 integer :: F1, F2, e1, e2, re1, re2
 integer :: ecol_cnt, EN, flip_cnt, cnt, niter
 character*50 :: dsetname,filename
+integer :: max_whileSweep, while_sweep
 
 !integer :: valence, i
 
@@ -43,7 +44,11 @@ character*50 :: dsetname,filename
 ecol_cnt = 0
 flip_cnt = 0
 
-do while (rm_flag .eqv. .true.) 
+while_sweep = 0
+max_whileSweep = 5 ! Max number of sweeps in the while loop
+
+!do while ( (rm_flag .eqv. .true.)  )
+do while ( (rm_flag .eqv. .true.) .and. (while_sweep .lt. max_whileSweep) )
 do e = 1,ne
 if ( (isGhostEdge(e) .eqv. .false.) .and.  (  eLengths(e) .le. E_thresh)  )  then
 !write(*,*) "Collapsing face", f
@@ -65,6 +70,9 @@ call calc_errorQuadric_of_v(Q2,v2,e,ne,nf,nv,tri_nor,xyz,edge_of_face,face_of_ed
 
 call solve_QEM_system(Q1,Q2, xyz(1:3,v1) ) ! v1 -> vbar
 !write(*,*) "New position from QEM of ecol ", e, "is ", xyz(1:3,v1)
+
+! Interpolate remeshed melt velocity of vertex: average of the collapsed vertices
+vmelt(1:3,v1,1) = 0.5 * (vmelt(1:3,v1,1) + vmelt(1:3,v2,1) )
 
 !-------------- Apply ghost flags --------------------------------
 ! Faces to be removed: the faces of edge e
@@ -154,12 +162,13 @@ ecol_cnt = ecol_cnt + 1
 
 endif
 enddo
+while_sweep = while_sweep + 1
 enddo !while
 
-! if (ismaster) then
-!     write(*,*) ecol_cnt," edge collapses performned "
-!     write(*,*) flip_cnt," edge flips performned "
-! endif
+if (ismaster) then
+   if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
+    !write(*,*) "While sweep count: ", while_sweep
+endif
 
 ! if (ismaster) then
 !     filename = 'continuation/isGhostVert.h5'

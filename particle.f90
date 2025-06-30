@@ -42,9 +42,9 @@ if(imlsfor.eq.1)then
     my_up=myid+1
 
     do mstep=1,1 !Multi-direct forcing iteration. cf. Breugem (2012) eqn. 10
-        call update_both_ghosts(n1,n2,vx,kstart,kend)
-        call update_both_ghosts(n1,n2,vy,kstart,kend)
-        call update_both_ghosts(n1,n2,vz,kstart,kend)
+        !call update_both_ghosts(n1,n2,vx,kstart,kend)
+        !call update_both_ghosts(n1,n2,vy,kstart,kend)
+        !call update_both_ghosts(n1,n2,vz,kstart,kend)
         call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
@@ -60,18 +60,18 @@ if(imlsfor.eq.1)then
             call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
         endif
 
-        if (imlsstr .eq. 1) then
-            call mls_structLoads
-        endif
+        ! if (imlsstr .eq. 1) then
+        !     call mls_structLoads
+        ! endif
 
-        call velforce
+        !call velforce
         call tempforce
     end do
 endif
 
-call update_both_ghosts(n1,n2,vx,kstart,kend)
-call update_both_ghosts(n1,n2,vy,kstart,kend)
-call update_both_ghosts(n1,n2,vz,kstart,kend)
+!call update_both_ghosts(n1,n2,vx,kstart,kend)
+!call update_both_ghosts(n1,n2,vy,kstart,kend)
+!call update_both_ghosts(n1,n2,vz,kstart,kend)
 call update_both_ghosts(n1,n2,temp,kstart,kend)
 
  !------------------------------------ (1) END IBM FORCING ----------------------------------------------
@@ -93,27 +93,27 @@ endif
 !------------------------------------ (2) END MELTING  --------------------------------------------------
 
 
-! !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
-if (imlsstr.eq.1) then
+! ! !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
+! if (imlsstr.eq.1) then
 
-    ! Update: tri-centroid locations, object COM, Volume, Inertia tensor components (rotation matrix)
-    do inp = 1,Nparticle
-        call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
-        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-        call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
-        xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
-    enddo
+!     ! Update: tri-centroid locations, object COM, Volume, Inertia tensor components (rotation matrix)
+!     do inp = 1,Nparticle
+!         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
+!         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+!         call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
+!         xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
+!     enddo
 
-    ! if (ismaster) then
-    !     write(*,*) "Volume fraction is ", Volume(1)*100.0
-    ! !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
-    ! endif    
-    !KZ: check if anything else needs to be updated
+!     ! if (ismaster) then
+!     !     write(*,*) "Volume fraction is ", Volume(1)*100.0
+!     ! !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
+!     ! endif    
+!     !KZ: check if anything else needs to be updated
 
-    ! Move / rotate object by solving Newton--Euler
-    call update_part_pos
-endif
-! !------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
+!     ! Move / rotate object by solving Newton--Euler
+!     call update_part_pos
+! endif
+! ! !------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
 
 !-------------------------------- (4)  BEGIN REMESHING  -------------------------------------------------
 if (iremesh .eq. 1 ) then

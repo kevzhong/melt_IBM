@@ -17,10 +17,10 @@
 
       beta=dt/ren*0.5d0
       ! Accumulate Structural loads across all sub-steps
-      Fp(1:3) = 0.0d0
-      Ftau(1:3) = 0.0d0
-      Torq_p(1:3) = 0.0d0
-      Torq_tau(1:3) = 0.0d0
+      !Fp(1:3) = 0.0d0
+      !Ftau(1:3) = 0.0d0
+      !Torq_p(1:3) = 0.0d0
+      !Torq_tau(1:3) = 0.0d0
 
       ! Code timing
       wtime_vof = 0.
@@ -46,14 +46,14 @@
 
         if (timeflag) call tic(tstart)
 
-        call hdnl1
-        call hdnl2
-        call hdnl3
-        call hdnlte
+        !call hdnl1
+        !call hdnl2
+        !call hdnl3
+        !call hdnlte
 
-        call invtr1 
-        call invtr2      
-        call invtr3
+        !call invtr1 
+        !call invtr2      
+        !call invtr3
         call invtrte
 
         if (timeflag) call toc(tstart,tend,eul_solve_wtime)
@@ -65,22 +65,17 @@
         if (timeflag) call toc(tstart,tend,mls_wtime)
 
 
-        if (timeflag) call tic(tstart)
-
-        call divg
-        call phcalc 
-
-        call update_both_ghosts(n1,n2+1,dph,kstart,kend)
-        
-        call updvp  ! SOLENOIDAL VEL FIELD
-        call prcalc  ! PRESSURE FIELD
-
-        if (timeflag) call toc(tstart,tend,pressure_wtime)
-        
-        call update_both_ghosts(n1,n2,vx,kstart,kend)
-        call update_both_ghosts(n1,n2,vy,kstart,kend)
-        call update_both_ghosts(n1,n2,vz,kstart,kend)
-        call update_both_ghosts(n1,n2,pr,kstart,kend)
+        !if (timeflag) call tic(tstart)
+        !call divg
+        !call phcalc 
+        !call update_both_ghosts(n1,n2+1,dph,kstart,kend)
+        !call updvp  ! SOLENOIDAL VEL FIELD
+        !call prcalc  ! PRESSURE FIELD
+        !if (timeflag) call toc(tstart,tend,pressure_wtime)
+        !call update_both_ghosts(n1,n2,vx,kstart,kend)
+        !call update_both_ghosts(n1,n2,vy,kstart,kend)
+        !call update_both_ghosts(n1,n2,vz,kstart,kend)
+        !call update_both_ghosts(n1,n2,pr,kstart,kend)
         call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 !     ======================================================

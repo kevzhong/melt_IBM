@@ -415,6 +415,34 @@ subroutine writePartVol
   end if
 end subroutine writePartVol
 
+subroutine writeVmelt
+  ! For writing the min/max local melt-rate
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+
+  if (myid.eq.0) then
+
+  namfile='stringdata/part_melt.txt'
+ !KZ: note hard-coded single particle for now
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)')time, maxval( pack(vmelt(1,:,:) , .not. isGhostVert(:,:)  ) ) , &
+                              maxval( pack(vmelt(2,:,:) , .not. isGhostVert(:,:)  ) ) , &
+                              maxval( pack(vmelt(3,:,:) , .not. isGhostVert(:,:)  ) ) 
+  !write(43,'(100E15.7)')time, Volume(1), Surface(1)
+
+  close(43)
+  end if
+end subroutine writeVmelt
+
 subroutine writeTriMeshStats
   use param
   use mls_param
