@@ -88,8 +88,6 @@ logical, dimension(nf) :: isGhostFace
 real, dimension (3,nv) ::xyz
 real, dimension (nf) :: sur
 real :: Surface,d12,d23,d31,sp
-logical :: rm_flag
-real :: A_thresh
 
 Surface=0.0
 do i=1,nf

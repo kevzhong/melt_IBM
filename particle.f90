@@ -67,7 +67,6 @@ if(imlsfor.eq.1)then
         call velforce
         call tempforce
     end do
-endif
 
 call update_both_ghosts(n1,n2,vx,kstart,kend)
 call update_both_ghosts(n1,n2,vy,kstart,kend)
@@ -216,11 +215,14 @@ endif
 if (Volume(1) .lt. V_thresh ) then
     write(*,*) "Geometry V/VE is ", Volume(1)/celvol, "smaller than threshold, exiting now!"
     call write_tecplot_geom
+    call MpiBarrier
     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
     call MPI_Finalize(ierr)
 endif
 !--------------------------------------------------------------------------------------------
 
+call MpiBarrier ! Sync geometry across each rank before proceeding
 
-
+endif
  end
+
