@@ -88,8 +88,6 @@ logical, dimension(nf) :: isGhostFace
 real, dimension (3,nv) ::xyz
 real, dimension (nf) :: sur
 real :: Surface,d12,d23,d31,sp
-logical :: rm_flag
-real :: A_thresh
 
 Surface=0.0
 do i=1,nf
@@ -219,10 +217,10 @@ subroutine update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
                         ! flip if needed
                         sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
 
-                        if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
-                                !write(*,*) "tri_normal ", i, " flipped"
-                                vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
-                        endif
+                        !if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
+                        !        write(*,*) "tri_normal ", i, " flipped"
+                        !        vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
+                        !endif
                         
                         sgn = sign(1.0, sgn)
                         
@@ -287,6 +285,9 @@ real, dimension (3,nv) ::xyz
 real, dimension (ne) :: eLengths
 logical :: rm_flag
 real :: edge_thresh
+
+rm_flag = .false.
+
 do i=1,ne
         if ( isGhostEdge(i) .eqv. .false. ) then
                 v1=vert_of_edge(1,i)

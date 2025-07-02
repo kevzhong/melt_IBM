@@ -34,17 +34,17 @@
         ga=gam(ns)
         ro=rom(ns)
         
-        if (timeflag) call tic(tstart)
+        !if (timeflag) call tic(tstart)
 
-        if ( .not. is_stationarySolid ) then
-          call tagCells
-        endif
+        !if ( .not. is_stationarySolid ) then
+        !  call tagCells
+        !endif
 
-        if (timeflag) call toc(tstart,tend,wtime_vof)
+        !if (timeflag) call toc(tstart,tend,wtime_vof)
  
         
 
-        if (timeflag) call tic(tstart)
+        !if (timeflag) call tic(tstart)
 
         !call hdnl1
         !call hdnl2
@@ -54,15 +54,17 @@
         !call invtr1 
         !call invtr2      
         !call invtr3
-        call invtrte
+        !call invtrte
 
-        if (timeflag) call toc(tstart,tend,eul_solve_wtime)
+        !if (timeflag) call toc(tstart,tend,eul_solve_wtime)
 
-        if (timeflag) call tic(tstart)
+        !if (timeflag) call tic(tstart)
 
         call particle
-
-        if (timeflag) call toc(tstart,tend,mls_wtime)
+        !write(6,'(A,F10.6)') "min elength/E_thresh:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
+        !write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
+        !call MpiBarrier
+        !if (timeflag) call toc(tstart,tend,mls_wtime)
 
 
         !if (timeflag) call tic(tstart)
@@ -76,7 +78,7 @@
         !call update_both_ghosts(n1,n2,vy,kstart,kend)
         !call update_both_ghosts(n1,n2,vz,kstart,kend)
         !call update_both_ghosts(n1,n2,pr,kstart,kend)
-        call update_both_ghosts(n1,n2,temp,kstart,kend)
+        !call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 !     ======================================================
 !     End pressure correction

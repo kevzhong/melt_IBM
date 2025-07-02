@@ -6,23 +6,27 @@ implicit none
 real, dimension(3) :: nhat
 integer :: inp,nv,nf
 integer :: v1, v2, v3
+real :: vmelt_fixed
+real :: rand_noise
 
+
+! Prescribe a fixed local melt-rate for testing (should be negative)
+vmelt_fixed = -7.0
 
 ! RK3 memory swap
 vmelt_m1 = vmelt
 
 do inp=1,Nparticle
     do nv = 1,maxnv
+        call random_number(rand_noise) ! different for each rank, be careful
         if (isGhostVert(nv,inp) .eqv. .false. ) then
             nhat(1:3) = vert_nor(1:3,nv,inp)
-            ! Accumulate outward-normal term, outward = liquid
-            !vmelt(nv,inp) = cpliquid / latHeat * ( (1.0d0/pec)*qw_iVert(nv,inp) -(1.0d0/pec)*qw_oVert(nv,inp) )
-            vmelt(1:3,nv,inp) = cpliquid / latHeat * ( qw_iVert(nv,inp) - qw_oVert(nv,inp) ) * nhat(1:3)
-            !rhs_stefan(1:3) = vmelt(nv,inp)*nhat(1:3)
-            !rhs_stefan(1:3) =  cpliquid / latHeat * &
-            !                    ( (1.0d0/prandtl)*qw_iVert(nv,inp) -(1.0d0/prandtl)*qw_oVert(nv,inp) ) * nhat
-            !vmelt(nv,inp) = dot_product( rhs_stefan, nhat ) ! Store the scalar local melting velocity
-            
+            !vmelt(1:3,nv,inp) = cpliquid / latHeat * ( qw_iVert(nv,inp) - qw_oVert(nv,inp) ) * nhat(1:3)
+
+
+            !vmelt(1:3,nv,inp) = (vmelt_fixed - rand_noise * 0.5) * nhat(1:3)
+            vmelt(1:3,nv,inp) = vmelt_fixed  * nhat(1:3)
+
             ! Update interface location
             !xyzv(1:3,nv,inp) = xyzv(1:3,nv,inp) +  al * dt * vmelt(1:3,nv,inp)
             xyzv(1:3,nv,inp) = xyzv(1:3,nv,inp) + dt * ( ga * vmelt(1:3,nv,inp) + ro * vmelt_m1(1:3,nv,inp) )

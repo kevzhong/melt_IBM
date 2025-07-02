@@ -15,6 +15,10 @@ real :: tstart, tend
 integer :: inp
 real,dimension(3,2)     :: bbox_inds
 character(70) namfile
+integer :: seed_size, i
+integer, allocatable :: seed(:)
+integer :: clock
+
   call mpi_workdistribution
   call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
@@ -28,6 +32,29 @@ character(70) namfile
   call cordin 
   call phini
   call tri_geo
+
+
+  !!!!!!!!!!!!!!!!!! STOCHASTIC NOISE IN MELT-RATE
+    !— find out how many seed integers the compiler wants —
+  call random_seed(size=seed_size)
+  allocate(seed(seed_size))
+
+  !— rank 0 picks a “random” seed from the wall‐clock (or you can
+  ! choose a fixed constant for a perfectly reproducible run) —
+  if (ismaster) then
+    call system_clock(count=clock)
+    do i = 1, seed_size
+      !seed(i) = mod(clock + i*12345, huge(1))
+      seed(i) = 123456 + i ! Fixed seed
+    end do
+  end if
+
+  !— now broadcast that identical seed array to every rank —
+  call MPI_Bcast(seed, seed_size, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+
+  !— set the Fortran RNG to that shared state —
+  call random_seed(put=seed)
+
 
 
   ! Initial cell-tagging operation at start of runtime if IBM is active
@@ -83,7 +110,7 @@ character(70) namfile
        call update_both_ghosts(n1,n2,vz,kstart,kend)
        call update_both_ghosts(n1,n2,temp,kstart,kend)
 
-       call cfl 
+       !call cfl 
 
 !=================================
 ! Check velocity divergence of initial conditions
@@ -122,7 +149,7 @@ character(70) namfile
 
        ti(1) = MPI_WTIME()
 
-       call cfl 
+       !call cfl 
 
        if(idtv.eq.1) then !CFL mode
          if(ntime.ne.1) then
@@ -152,10 +179,12 @@ character(70) namfile
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
           write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
           write(6,*) "V(t)/VE", Volume(1) / celvol
-          write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
+          write(6,*) "A(t)/AE", Surface(1) / celvol**(2.0/3.0)
+          !write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
+          write(6,'(A,F10.6)') "min elength/E_thresh:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
           !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
-          write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
-          write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
+          !write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
+          !write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
           endif
         !endif
 
@@ -185,7 +214,7 @@ character(70) namfile
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            !call mkmov_hdf_xcut
-           call mkmov_hdf_ycut
+           !call mkmov_hdf_ycut
            !call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField

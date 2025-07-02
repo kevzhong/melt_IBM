@@ -35,8 +35,8 @@ vol_smooth = 0.0d0
 !------------------------------------ (1) BEGIN IBM FORCING ----------------------------------------------
 if(imlsfor.eq.1)then
 
-    call findCentroidIndices
-    call mlsWeight
+    !call findCentroidIndices
+    !call mlsWeight
 
     my_down=myid-1
     my_up=myid+1
@@ -45,7 +45,7 @@ if(imlsfor.eq.1)then
         !call update_both_ghosts(n1,n2,vx,kstart,kend)
         !call update_both_ghosts(n1,n2,vy,kstart,kend)
         !call update_both_ghosts(n1,n2,vz,kstart,kend)
-        call update_both_ghosts(n1,n2,temp,kstart,kend)
+        !call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
         for_xc = 0.0d0
@@ -53,26 +53,25 @@ if(imlsfor.eq.1)then
         for_zc = 0.0d0
         for_temp = 0.0d0
 
-        call mlsForce
+        !call mlsForce
 
-        if (imelt .eq. 1) then 
-            call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
-            call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
-        endif
+        !if (imelt .eq. 1) then 
+        !    call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
+        !    call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
+        !endif
 
         ! if (imlsstr .eq. 1) then
         !     call mls_structLoads
         ! endif
 
         !call velforce
-        call tempforce
+        !call tempforce
     end do
-endif
 
 !call update_both_ghosts(n1,n2,vx,kstart,kend)
 !call update_both_ghosts(n1,n2,vy,kstart,kend)
 !call update_both_ghosts(n1,n2,vz,kstart,kend)
-call update_both_ghosts(n1,n2,temp,kstart,kend)
+!call update_both_ghosts(n1,n2,temp,kstart,kend)
 
  !------------------------------------ (1) END IBM FORCING ----------------------------------------------
 
@@ -91,6 +90,7 @@ if (imelt .eq. 1) then
 
 endif
 !------------------------------------ (2) END MELTING  --------------------------------------------------
+!if (ismaster) write(*,*) "V_melt/VE", vol_smooth / celvol
 
 
 ! ! !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
@@ -125,9 +125,10 @@ do inp = 1,Nparticle
             rm_flag(inp),E_thresh)
     call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
 
-
+    !if (ismaster) write(*,*) "rm_flag is: ", rm_flag(inp)
      if ( (rm_flag(inp) .eqv. .true.) ) then
-
+    !write(6,'(A,F10.6)') "min ratio after melt:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
+    !if (ismaster) write(*,*) "Entering re-mesher!"
         did_remesh = .true.
         !----------Mesh coarsening----------
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
@@ -146,7 +147,8 @@ do inp = 1,Nparticle
         ! Update volume after mesh-coarsening to specify target volume change in smoothing
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_coarse = Volume(1)
-    
+        !if (ismaster) write(*,*) "V_coarse/VE", vol_coarse / celvol
+
         !----------Mesh smoothing----------
         call remesh_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
@@ -154,6 +156,8 @@ do inp = 1,Nparticle
         
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_smooth = Volume(1)
+        !if (ismaster) write(*,*) "V_smooth/VE", vol_smooth / celvol
+
     endif
     
 enddo
@@ -179,6 +183,9 @@ do inp = 1,Nparticle
 
     call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
     xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
+
+    !if (ismaster) write(*,*) "V_post/VE", Volume(inp) / celvol
+
 enddo
 
 ! Update triangle velocities if any remeshing relabelling was done
@@ -201,26 +208,33 @@ if (did_remesh .eqv. .true.) then
     !  write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
     !endif
 
-   ! Error catching for remeshing residual
-   if ( abs(vol_melt - vol_smooth)  .gt. 1.e-10   ) then
-    write(*,*) "Non-zero remeshing residual detected. Writing geometry and exiting now!"
-    call write_tecplot_geom
-    call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-    call MPI_Finalize(ierr)
-   endif
+!    ! Error catching for remeshing residual
+!    if ( abs(vol_melt - vol_smooth)  .gt. 1.e-10   ) then
+!     write(*,*) "Non-zero remeshing residual detected. Writing geometry and exiting now!"
+!     call write_tecplot_geom
+!     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+!     call MPI_Finalize(ierr)
+!    endif
    
 endif
+
+write(*,*) "(myid, V/VE) ", myid ,Volume(1)/celvol
 
 
 !---------------- EXIT CONDITION FOR SMALL GEOMETRY ------------------------------------------
 if (Volume(1) .lt. V_thresh ) then
     write(*,*) "Geometry V/VE is ", Volume(1)/celvol, "smaller than threshold, exiting now!"
+    write(*,*) "Geometry A/AE is ", Surface(1)/celvol**(2.0/3.0)
     call write_tecplot_geom
+    call MPI_Barrier
     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
     call MPI_Finalize(ierr)
 endif
 !--------------------------------------------------------------------------------------------
 
+! Sync geometry updates for each rank
+call MPI_Barrier
 
+endif
 
  end
