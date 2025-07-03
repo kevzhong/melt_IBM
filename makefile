@@ -2,7 +2,7 @@
 #FC = h5pfc -r8 -O3 -fpp -C -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
 FC = h5pfc -cpp -O3 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
 
-FC+= -fcheck=all -fbacktrace # DEBUG FLAGS
+#FC+= -fcheck=all -fbacktrace # DEBUG FLAGS
 ################################## UNCONMMENT BELOW FOR DISCOVERER #############################################
 ## GNU
 #LINKS = -lz -lhdf5_fortran -lhdf5

@@ -159,6 +159,7 @@
          write(6,205) dtmax,cfllim
   205 format(/,5x,'Fixed dt= ',e11.4,' and maximum cfl=', &
         e11.4,/ )            
+        write(*,*) "IMLSFOR = ", imlsfor, "IMLSSTR = ", imlsstr, "IMELT = ",imelt
       endif
 !m====================================================    
       endif
