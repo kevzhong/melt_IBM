@@ -78,7 +78,7 @@
       if (imelt.eq.1) then
             if(imlsfor.ne.1) then
             write(*,*) "Rank", myid, "Melting enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
             endif
       endif
 
@@ -86,7 +86,7 @@
       if (imlsstr.eq.1) then
             if(imlsfor.ne.1) then
             write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
             endif
       endif
 

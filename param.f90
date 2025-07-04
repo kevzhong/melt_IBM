@@ -115,8 +115,9 @@
       end module stat_arrays
 !=====================================================       
       module mpih
+        use mpi
         implicit none
-        include 'mpif.h'
+        !include 'mpif.h'
         integer :: myid, numtasks, ierr
         integer :: p_row, p_col, my_p_row, my_p_col
         integer, parameter :: master=0

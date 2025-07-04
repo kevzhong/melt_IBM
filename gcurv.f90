@@ -182,9 +182,9 @@ character(70) namfile
 
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           !call mkmov_hdf_xcut
-           !call mkmov_hdf_ycut
-           !call mkmov_hdf_zcut
+           call mkmov_hdf_xcut
+           call mkmov_hdf_ycut
+           call mkmov_hdf_zcut
            call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel
