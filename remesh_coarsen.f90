@@ -165,10 +165,10 @@ enddo
 while_sweep = while_sweep + 1
 enddo !while
 
-if (ismaster) then
-   if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
-    !write(*,*) "While sweep count: ", while_sweep
-endif
+! if (ismaster) then
+!    if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
+!     !write(*,*) "While sweep count: ", while_sweep
+! endif
 
 ! if (ismaster) then
 !     filename = 'continuation/isGhostVert.h5'

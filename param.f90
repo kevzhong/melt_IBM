@@ -114,21 +114,67 @@
         real :: vxvyvz_rms_vol
       end module stat_arrays
 !=====================================================       
-      module mpih
-        implicit none
-        include 'mpif.h'
-        integer :: myid, numtasks, ierr
-        integer :: p_row, p_col, my_p_row, my_p_col
-        integer, parameter :: master=0
-        integer, parameter :: lvlhalo=1
-        integer :: MDP = MPI_DOUBLE_PRECISION
-        integer :: MCP = MPI_DOUBLE_COMPLEX
-        integer :: STATUS(MPI_STATUS_SIZE,4)
-        integer :: req(1:4)
-        integer(kind=MPI_OFFSET_KIND) :: disp, offset
-      end module mpih
+!       module mpih
+!         implicit none
+!         include 'mpif.h'
+!         integer :: myid, numtasks, ierr
+!         integer :: p_row, p_col, my_p_row, my_p_col
+!         integer, parameter :: master=0
+!         integer, parameter :: lvlhalo=1
+!         integer :: MDP = MPI_DOUBLE_PRECISION
+!         integer :: MCP = MPI_DOUBLE_COMPLEX
+!         integer :: STATUS(MPI_STATUS_SIZE,4)
+!         integer :: req(1:4)
+!         integer(kind=MPI_OFFSET_KIND) :: disp, offset
+!       end module mpih
+module mpih
+  use mpi         ! or mpi_f08 if you have MPI-3+ compiler
+  implicit none
+
+  !— public state & constants —----------------------------------------
+  integer :: comm     = MPI_COMM_WORLD
+  integer :: myid, numtasks
+  integer :: ierr      ! <=== now everyone sees it
+  integer :: p_row, p_col, my_p_row, my_p_col
+  integer, parameter :: master = 0, lvlhalo = 1
+
+  !— MPI datatype aliases —--------------------------------------------
+  integer, parameter :: MDP = MPI_DOUBLE_PRECISION
+  integer, parameter :: MCP = MPI_DOUBLE_COMPLEX
+
+  !— typed requests & statuses —---------------------------------------
+  !type(MPI_Request),  allocatable :: req(:)
+  !type(MPI_Status),   allocatable :: status(:)
+  integer, allocatable :: req(:)        ! <-- plain integer
+  integer, allocatable :: status(:)  ! <-- integer status array
+
+contains
+
+  subroutine init_mpi(grid_comm)
+        use param, only: ismaster
+    integer, intent(in), optional :: grid_comm
+
+    if (present(grid_comm)) comm = grid_comm
+
+    call MPI_Init(ierr)
+    call MPI_Comm_rank(comm, myid, ierr)
+    call MPI_Comm_size(comm, numtasks, ierr)
+
+    if(myid.eq.0) ismaster = .true.
+
+
+    ! allocate just what you need
+    allocate(req(4),    stat=ierr)
+    allocate(status(4), stat=ierr)
+  end subroutine init_mpi
+
+  subroutine finalize_mpi()
+    call MPI_Finalize(ierr)
+  end subroutine finalize_mpi
+
+end module mpih
       
-      module mpi_param
+module mpi_param
         implicit none
         integer :: istart,iend,jstart,jend, kstart,kend
         integer :: jstartp,jendp
@@ -192,6 +238,9 @@
       !real :: PERC_Athresh, A_thresh, skew_thresh, V_ON_VE_PERC, V_thresh
       real :: PERC_Ethresh, E_thresh, V_ON_VE_PERC, V_thresh
       
+        integer :: Nactive_tri
+        real :: minE_on_Ethresh
+
       logical, dimension(:), allocatable :: rm_flag ! Remeshing flag
       logical, dimension(:,:), allocatable :: anchorVert
       logical, dimension(:,:), allocatable :: flagged_edge

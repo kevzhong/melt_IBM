@@ -18,7 +18,7 @@ vmelt_m1 = vmelt
 
 do inp=1,Nparticle
     do nv = 1,maxnv
-        call random_number(rand_noise) ! different for each rank, be careful
+        !call random_number(rand_noise) ! different for each rank, be careful
         if (isGhostVert(nv,inp) .eqv. .false. ) then
             nhat(1:3) = vert_nor(1:3,nv,inp)
             !vmelt(1:3,nv,inp) = cpliquid / latHeat * ( qw_iVert(nv,inp) - qw_oVert(nv,inp) ) * nhat(1:3)

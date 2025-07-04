@@ -116,8 +116,7 @@
       if(myid .eq. numtasks-1) my_up=0
 
       tag=1
-      call MPI_ISEND(q(1,1,ke-lvlhalo+1), mydata, MDP, &
-       my_up,tag,MPI_COMM_WORLD,req(1),ierr)
+      call MPI_ISEND(q(1,1,ke-lvlhalo+1), mydata, MDP, my_up,tag,MPI_COMM_WORLD,req(1),ierr)
       
       call MPI_ISEND(q(1,1,ks), mydata,  MDP, &
        my_down,tag,MPI_COMM_WORLD,req(2), ierr)
@@ -1147,7 +1146,8 @@ subroutine mpi_write_continua
   use hdf5
   implicit none
 
-  integer            :: hdf_error, comm, info, ndims
+  !integer            :: hdf_error, comm, info, ndims
+  integer            :: hdf_error, info, ndims
   integer(HID_T)     :: file_id, filespace, slabspace, memspace
   integer(HID_T)     :: dset_vx, dset_vy, dset_vz, dset_pr, dset_temp
   integer(HID_T)     :: plist_id
@@ -1164,7 +1164,7 @@ subroutine mpi_write_continua
   integer(HID_T) :: dspace_grid
 
   ! MPI‐IO setup
-  comm = MPI_COMM_WORLD
+  !comm = MPI_COMM_WORLD
   info = MPI_INFO_NULL
 
   ! file names
@@ -1466,14 +1466,15 @@ end subroutine mpi_write_continua
       integer(HSIZE_T), dimension(3) :: data_count
       integer(HSSIZE_T), dimension(3) :: data_offset
 
-      integer :: comm, info
+      !integer :: comm, info
+      integer :: info
       integer :: ndims
 
       integer, intent(in) :: intvar
       character*70 :: filnam1
       character*10 :: dsetname
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
 !EP   Select file and dataset based on intvar
@@ -1688,7 +1689,8 @@ end subroutine mpi_write_continua
       integer(HID_T) :: dset_grid
       integer(HID_T) :: dspace_grid
 
-      integer :: comm, info
+      !integer :: comm, info
+      integer :: info
       integer :: ndims
       real tprfi
       integer itime
@@ -1702,7 +1704,7 @@ end subroutine mpi_write_continua
 
 !RO   Sort out MPI definitions
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
 !RO   Form the name of the file
@@ -1980,7 +1982,8 @@ end subroutine mpi_write_continua
             integer(HID_T) :: dset_grid
             integer(HID_T) :: dspace_grid
       
-            integer :: comm, info
+            !integer :: comm, info
+            integer :: info
             integer :: ndims
             real tprfi
             integer itime
@@ -1994,7 +1997,7 @@ end subroutine mpi_write_continua
       
       !RO   Sort out MPI definitions
       
-            comm = MPI_COMM_WORLD
+            !comm = MPI_COMM_WORLD
             info = MPI_INFO_NULL
       
       !RO   Form the name of the file
@@ -2154,7 +2157,9 @@ end subroutine mpi_write_continua
             integer(HID_T) :: dset_grid
             integer(HID_T) :: dspace_grid
       
-            integer :: comm, info
+            !integer :: comm, info
+            integer :: info
+
             integer :: ndims
             real tprfi
             integer itime
@@ -2168,7 +2173,7 @@ end subroutine mpi_write_continua
       
       !RO   Sort out MPI definitions
       
-            comm = MPI_COMM_WORLD
+            !comm = MPI_COMM_WORLD
             info = MPI_INFO_NULL
       
       !RO   Form the name of the file

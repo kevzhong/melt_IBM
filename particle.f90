@@ -138,6 +138,10 @@ do inp = 1,Nparticle
         face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
         anchorVert(:,inp),flagged_edge(:,inp) )
 
+        ! In case winding orientation needs to be fixed after coarsening
+        call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
+
+
         ! call main_remesh (n_ecol,Surface(inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),maxnf,maxne,maxnv,&
         !                  xyzv(:,:,inp),tri_nor(:,:,inp),&
         !                  A_thresh,skew_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
@@ -218,7 +222,7 @@ if (did_remesh .eqv. .true.) then
    
 endif
 
-write(*,*) "(myid, V/VE) ", myid ,Volume(1)/celvol
+!write(*,*) "(myid, V/VE) ", myid ,Volume(1)/celvol
 
 
 !---------------- EXIT CONDITION FOR SMALL GEOMETRY ------------------------------------------
@@ -226,14 +230,15 @@ if (Volume(1) .lt. V_thresh ) then
     write(*,*) "Geometry V/VE is ", Volume(1)/celvol, "smaller than threshold, exiting now!"
     write(*,*) "Geometry A/AE is ", Surface(1)/celvol**(2.0/3.0)
     call write_tecplot_geom
-    call MPI_Barrier
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
     call MPI_Finalize(ierr)
 endif
 !--------------------------------------------------------------------------------------------
 
 ! Sync geometry updates for each rank
-call MPI_Barrier
+call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
 
 endif
 

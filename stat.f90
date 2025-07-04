@@ -182,7 +182,9 @@
       integer(HSIZE_T), dimension(3) :: data_count  
       integer(HSSIZE_T), dimension(3) :: data_offset 
 
-      integer :: comm, info
+      !integer :: comm, info
+      integer ::  info
+
       integer :: ndims
 
       character(40)filnam1
@@ -190,7 +192,7 @@
 
 !RO   Sort out MPI definitions
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
 !RO   Form the name of the file

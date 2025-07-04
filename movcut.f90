@@ -30,7 +30,8 @@
       integer(HSIZE_T), dimension(2) :: data_count  
       integer(HSSIZE_T), dimension(2) :: data_offset 
 
-      integer :: comm, info
+      !integer :: comm, info
+      integer :: info
       integer :: ndims
 
       real tprfi
@@ -74,7 +75,7 @@
 
 !RO   Sort out MPI definitions and open file
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
@@ -277,7 +278,9 @@
       integer(HID_T) :: plist_id
       integer(HSIZE_T), dimension(2) :: data_count  
       integer(HSSIZE_T), dimension(2) :: data_offset 
-      integer :: comm, info
+      !integer :: comm, info
+      integer ::  info
+
       integer :: ndims
       
       real tprfi
@@ -334,7 +337,7 @@
 
 !RO   Sort out MPI definitions and open file
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
       call h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, hdf_error)
@@ -640,7 +643,9 @@
       integer(HSIZE_T), dimension(2) :: data_count  
       integer(HSSIZE_T), dimension(2) :: data_offset 
 
-      integer :: comm, info
+      !integer :: comm, info
+      integer :: info
+
       integer :: ndims
 
       real tprfi
@@ -696,7 +701,7 @@
 
 !RO   Sort out MPI definitions and open file
 
-      comm = MPI_COMM_WORLD
+      !comm = MPI_COMM_WORLD
       info = MPI_INFO_NULL
 
       dims(1)=n1m

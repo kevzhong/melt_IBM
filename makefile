@@ -1,6 +1,7 @@
 
 #FC = h5pfc -r8 -O3 -fpp -C -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
-FC = h5pfc -cpp -O3 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
+#FC = h5pfc -cpp -O3 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
+FC = h5pfc -cpp -O0 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
 
 FC+= -fcheck=all -fbacktrace # DEBUG FLAGS
 ################################## UNCONMMENT BELOW FOR DISCOVERER #############################################
@@ -37,7 +38,7 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           hdnl1.f90 hdnl2.f90 hdnl3.f90 hdnlte.f90 hit.f90 inirea.f90 init.f90 inqpr.f90  \
           interp.f90 invtr1.f90 invtr2.f90 invtr3.f90 invtrte.f90 matrix_transpose.f90     \
           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
-          prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90 stat.f90           \
+          prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90       \
           tridiag_periodic.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
           diss.f90 vorticity.f90 injection.f90  calcSlipVels.f90 spectra.f90           \
 		  tagCells.f90 pencil_rayTag.f90 sphereTagging.f90 genSDF.f90
@@ -46,6 +47,7 @@ FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f9
          	forc1.f90 forc2.f90 forc3.f90 forctemp.f90 mlsForce.f90 mlsWeight.f90 mls_structLoads.f90 mls_heatFlux.f90 stefanCondition.f90 \
 			partaux.f90 initmls.f90 particle.f90 triaux.f90 tri_geo.f90 velforce.f90 tempforce.f90
 #KZ: cutvol.f90 removed for raytagging
+#KZ: stat.f90 removed
 
 MFILES = param.f90 geom.f90 rayAux.f90 coll_sphere.f90 #KZ: no collisions
 OBJDIR = obj

@@ -43,7 +43,7 @@
 
       n3om = n3o - 1
       
-      call MpiBarrier
+      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
       call AllocateInt1DArray(countko,0,numtasks-1)
 
       call block(n3o-1, numtasks, myid, kstarto, kendo, countko) 

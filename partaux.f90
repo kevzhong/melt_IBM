@@ -415,6 +415,49 @@ subroutine writePartVol
   end if
 end subroutine writePartVol
 
+subroutine calcDynamicMeshStats
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+
+Nactive_tri = count(isGhostFace(:,1) .eqv. .false.)
+minE_on_Ethresh = minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh
+
+end subroutine calcDynamicMeshStats
+
+subroutine writeMyRankVol
+  ! KZ: for debugging a race condition: the volume of the object for each rank
+  use param
+  use mls_param
+  use mpih
+
+  IMPLICIT none
+
+  real, dimension(Nparticle*3) :: pos
+  integer                      :: i,idx,inp
+
+  character(70) namfile
+  character(5) ipfi
+
+  write(ipfi,82) myid
+  82 format(i5.5)
+
+  namfile='stringdata/vol_rank_'//ipfi//'.txt'
+ !KZ: note hard-coded single particle for now
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  !write(43,'(100E15.7)')time, Volume(1), Surface(1), maxval( pack(skewness(:,:) , .not. isGhostFace(:,:)  ) ) , vel_CM(3,1) 
+  write(43,'(100E15.7)')time, Volume(1), Surface(1)
+
+  close(43)
+end subroutine writeMyRankVol
+
 subroutine writeVmelt
   ! For writing the min/max local melt-rate
   use param

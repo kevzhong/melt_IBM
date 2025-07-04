@@ -54,14 +54,14 @@
       end subroutine MpiBcastReal2DArray
 !==============================================================================
 
-      subroutine MpiBarrier
-      use mpih
-      implicit none
+      ! subroutine MpiBarrier
+      ! use mpih
+      ! implicit none
       
-      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+      ! call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-      return
-      end subroutine MpiBarrier
+      ! return
+      ! end subroutine MpiBarrier
 
 !==============================================================================
 
@@ -215,26 +215,26 @@
       end subroutine MpiAbort
 !==============================================================================
 
-      subroutine InitializeMPI
-      use mpih
-      use param, only: ismaster
-      implicit none
+!       subroutine InitializeMPI
+!       use mpih
+!       use param, only: ismaster
+!       implicit none
 
-      call MPI_INIT(ierr)
-      call MPI_COMM_RANK(MPI_COMM_WORLD,myid,ierr)
-      call MPI_COMM_SIZE(MPI_COMM_WORLD,numtasks,ierr)
+!       call MPI_INIT(ierr)
+!       call MPI_COMM_RANK(MPI_COMM_WORLD,myid,ierr)
+!       call MPI_COMM_SIZE(MPI_COMM_WORLD,numtasks,ierr)
 
-      if(myid.eq.0) ismaster = .true.
+!       if(myid.eq.0) ismaster = .true.
 
-      return
-      end subroutine InitializeMPI
+!       return
+!       end subroutine InitializeMPI
 
-!==============================================================================
+! !==============================================================================
 
-      subroutine FinalizeMPI
-      use mpih
-      implicit none
-      call MPI_FINALIZE(ierr)
+!       subroutine FinalizeMPI
+!       use mpih
+!       implicit none
+!       call MPI_FINALIZE(ierr)
 
-      return
-      end subroutine FinalizeMPI
+!       return
+!       end subroutine FinalizeMPI

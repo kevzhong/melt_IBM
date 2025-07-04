@@ -53,7 +53,8 @@
 
       if (specflag) call dealloc_spec
       
-      call FinalizeMPI
+      !call FinalizeMPI
+      call finalize_mpi
 
       endif
 

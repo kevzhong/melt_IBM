@@ -12,7 +12,8 @@
       real    :: dmax,minwtdt
       real    :: ti(2), tin(3)
 
-      call InitializeMPI
+      !call InitializeMPI
+      call init_mpi(comm)
 
       tin(1) = mpi_wtime()
       tin(2) = mpi_wtime()
@@ -78,7 +79,7 @@
       if (imelt.eq.1) then
             if(imlsfor.ne.1) then
             write(*,*) "Rank", myid, "Melting enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            call MPI_ABORT(comm,1,ierr)
             endif
       endif
 
@@ -86,7 +87,7 @@
       if (imlsstr.eq.1) then
             if(imlsfor.ne.1) then
             write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,ierr)
+            call MPI_ABORT(comm,1,ierr)
             endif
       endif
 
@@ -136,7 +137,7 @@
         alm(ns)=(gam(ns)+rom(ns))
       end do
 
-  call MpiBarrier
+      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
 
       pi=2.d0*dasin(1.d0)                          

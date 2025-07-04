@@ -28,7 +28,7 @@ integer :: clock
   tin(1) = MPI_WTIME()
 
   call HdfStart
-  call InitStats
+  !call InitStats
   call cordin 
   call phini
   call tri_geo
@@ -172,25 +172,30 @@ integer :: clock
 
        call tschem
 
+       call calcDynamicMeshStats
+
         !if(mod(time,tpin).lt.dt) then !KZ: commented to dump at every timestep
           if(ismaster) then
           write(6,*) "---------------"
           write(6,'(A,I10,A,E10.3)')"nt  ", ntime," time  ",time
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
-          write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
+          write(6,*) "Ntri", Nactive_tri
           write(6,*) "V(t)/VE", Volume(1) / celvol
           write(6,*) "A(t)/AE", Surface(1) / celvol**(2.0/3.0)
-          !write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
-          write(6,'(A,F10.6)') "min elength/E_thresh:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
-          !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
-          !write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
-          !write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
+          !write(6,'(A,F10.6)') "min elength/E_thresh:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
+          write(6,'(A,F10.6)') "min elength/E_thresh:", minE_on_Ethresh
+          write(6,*) "---------------"
           endif
         !endif
 
+          write(*,*) "(myid, time, V/VE) ", myid ,time, Volume(1)/celvol
+
+
+      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
           !------ ASCII write -----------------
           call writePartVol
+          call writeMyRankVol
           call writeInertTens
           call write_partrot
           call write_partpos
@@ -224,6 +229,7 @@ integer :: clock
            if (specflag) call compute_1d_spectra
          endif
          
+      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
 
       time=time+dt
