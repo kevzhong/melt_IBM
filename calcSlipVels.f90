@@ -180,10 +180,11 @@
         return
     end subroutine calcFluidVelAvgs
 
-    subroutine calcRelShellVel
+  subroutine calcLocalShellFlow
         use mpih
         use param
         use local_arrays,only: vx,vy,vz,temp
+        use local_aux,only: vorx, vory, vorz, diss, tke, chi
         use stat_arrays
         use mls_param
         use mpi_param, only: kstart,kend
@@ -191,52 +192,88 @@
         implicit none
         integer :: i,j,k,ii,jj,kk
         integer :: iip, jjp
-        real :: R_shell, R_eqv
-        real :: rr_x, rr_y, rr_z, rr_t, phi
+        real :: R_eqv
+        real :: rr_t
         integer, dimension(3,2) :: bbox_inds
         real, dimension(3,2) :: lim
         real, dimension(3) :: x_GC
         character(70) namfile
+        real :: Rshell_min, Rshell_max
+        real :: u_interp, v_interp, w_interp, urel, vrel, wrel
 
-        integer :: nshell
-        real, dimension(6) :: Rshell_on_Reqv
-        real, dimension(6) :: sumPhix, sumPhiy, sumPhiz, sumPhiT, Ushell, Vshell, Wshell, Tshell
-        real, dimension(6) :: uTshell, vTshell, wTshell
-        real :: u_interp, v_interp, w_interp
+        real :: sumVOFmin, sumVOFmax
+        real :: sumU_min    , sumU_max    
+        real :: sumV_min    , sumV_max    
+        real :: sumW_min    , sumW_max    
+        real :: sumUrel_min , sumUrel_max 
+        real :: sumVrel_min , sumVrel_max 
+        real :: sumWrel_min , sumWrel_max 
+        real :: sumTKE_min  , sumTKE_max  
+        real :: sumDISS_min , sumDISS_max 
+        real :: sumTemp_min , sumTemp_max 
+        real :: sumCHImin   , sumCHImax   
+        real :: sumUTmin    , sumUTmax    
+        real :: sumVTmin    , sumVTmax    
+        real :: sumWTmin    , sumWTmax    
+        real :: sumUTrelmin , sumUTrelmax 
+        real :: sumVTrelmin , sumVTrelmax 
+        real :: sumWTrelmin , sumWTrelmax 
 
-        ! Varying choices of shell radius to test
-        ! Up to 6 equivalent radii (= 3 equivalent diameters, cf. Kidanemariam et al. 2013)
-        Rshell_on_Reqv = [6.0, 5.0, 4.0, 3.0, 2.0, 1.5]
 
-        
+        ! Quantities to sample:
+        ! 1) <u - Uc>
+        ! 2) <v - Vc>
+        ! 3) <w - Wc>
+        ! 4) tke
+        ! 5) dissipation
+        ! 6) Temperature
+        ! 7) chi
+        ! 8) < (u-Uc)T >
+        ! 9) < (v - Vc) > T
+        ! 10) < (w - Wc) > T
+
+        ! Boundary layer sample: <= 1.5 R_eqv
+        ! Local sample: 1.5 to 3R_eqv
 
         ! Running averages of the shell kernel functions
-        sumPhix = 0.0
-        sumPhiy = 0.0
-        sumPhiz = 0.0
-        sumPhiT = 0.0
-
-        ! Shell-averaged velocities
-        Ushell = 0.0
-        Vshell = 0.0
-        Wshell = 0.0
-        Tshell = 0.0
+        sumVOFmin = 0.0
+        sumVOFmax = 0.0
+ 
+        ! Shell-averaged quantities
+        sumU_min    = 0.0   ; sumU_max    = 0.0
+        sumV_min    = 0.0   ; sumV_max    = 0.0
+        sumW_min    = 0.0   ; sumW_max    = 0.0
+        sumUrel_min = 0.0   ; sumUrel_max = 0.0
+        sumVrel_min = 0.0   ; sumVrel_max = 0.0
+        sumWrel_min = 0.0   ; sumWrel_max = 0.0
+        sumTKE_min  = 0.0   ; sumTKE_max  = 0.0
+        sumDISS_min = 0.0   ; sumDISS_max = 0.0
+        sumTemp_min = 0.0   ; sumTemp_max = 0.0
+        sumCHImin   = 0.0   ; sumCHImax   = 0.0
+        sumUTmin    = 0.0   ; sumUTmax    = 0.0
+        sumVTmin    = 0.0   ; sumVTmax    = 0.0
+        sumWTmin    = 0.0   ; sumWTmax    = 0.0
+        sumUTrelmin = 0.0   ; sumUTrelmax = 0.0
+        sumVTrelmin = 0.0   ; sumVTrelmax = 0.0
+        sumWTrelmin = 0.0   ; sumWTrelmax = 0.0
 
         ! First calculate equivalent radius based on current object volume
         R_eqv =  (3.0 * Volume(1) / (4.0 * pi))**(1.0/3.0)
 
-        !----------------- Shell radius  ---------------------------------------
-        ! Compute the largest shell radius: use to construct the bounding box to loop over
-        R_shell = Rshell_on_Reqv(1) * R_eqv
+        !----------------- Shell radii  ---------------------------------------
+        ! 
+        Rshell_min = 1.5 * R_eqv
+        Rshell_max = 3.0 * R_eqv
 
         !-----------------------------------------------------------------------
 
-          ! get bounding box
+        ! ----------- GET BOUNDING BOX AND ITS INDICES ------------------------
         do i = 1,3
-            lim(i,1) =  pos_CM(i,1) - R_shell ! min
-            lim(i,2) =  pos_CM(i,1) + R_shell ! max
+            lim(i,1) =  pos_CM(i,1) - Rshell_max ! min
+            lim(i,2) =  pos_CM(i,1) + Rshell_max ! max
         end do
         bbox_inds = floor(lim*dx1) + 1 ! compute indices cell centered
+        ! ----------------------------------------------------------------------
 
         do i = bbox_inds(1,1),bbox_inds(1,2)
             do j = bbox_inds(2,1),bbox_inds(2,2)
@@ -254,128 +291,403 @@
                     jjp = modulo(j,n2m) + 1
 
                     ! Abs distances to centroid from the (i,j,k) cell
-                    rr_x =  norm2 (  [ xc(i), ym(j), zm(kk) ]  - pos_CM(:,1)  ) 
-                    rr_y =  norm2 (  [ xm(i), yc(j), zm(kk) ]  - pos_CM(:,1)  ) 
-                    rr_z =  norm2 (  [ xm(i), ym(j), zc(kk) ]  - pos_CM(:,1)  )
                     rr_t =  norm2 (  [ xm(i), ym(j), zm(kk) ]  - pos_CM(:,1)  )
 
-                    do nshell = 1,6 ! loop over each shell
+                    if (VOFp(ii,jj,k) .eq. 1.0 ) then ! Only accumulate avg. in fluid domain
 
-                      R_shell = Rshell_on_Reqv(nshell) * R_eqv
-
-                      ! x component
-                      phi = 1.0 / ( cosh( 0.5*(rr_x - R_shell) * dx1 ) )**2
-                      sumPhix(nshell) = sumPhix(nshell) + phi
-                      Ushell(nshell) = Ushell(nshell) + phi * vx(ii,jj,k)
-
-                      ! y component
-                      phi = 1.0 / ( cosh( 0.5*(rr_y - R_shell) * dx1 ) )**2
-                      sumPhiy(nshell) = sumPhiy(nshell) + phi
-                      Vshell(nshell) = Vshell(nshell) + phi * vy(ii,jj,k)
-
-                      ! z component
-                      phi = 1.0 / ( cosh( 0.5*(rr_z - R_shell) * dx1 ) )**2
-                      sumPhiz(nshell) = sumPhiz(nshell) + phi
-                      Wshell(nshell) = Wshell(nshell) + phi * vz(ii,jj,k)
-
-
-                      ! temperature component
-                      phi = 1.0 / ( cosh( 0.5*(rr_t - R_shell) * dx1 ) )**2
-                      sumPhiT(nshell) = sumPhiT(nshell) + phi
-                      Tshell(nshell) = Tshell(nshell) + phi * temp(ii,jj,k)
-
-
-                      ! Temperature transport fluxes
-                      ! phi from cell-centered temperature is re-used
-                      ! temperature relative to Tamb
                       u_interp = 0.5 * ( vx(ii,jj,k) + vx(iip,jj ,k) )
                       v_interp = 0.5 * ( vy(ii,jj,k) + vx(ii ,jjp,k) )
                       w_interp = 0.5 * ( vz(ii,jj,k) + vz(ii ,jj ,k+1) )
+                      urel = u_interp - vel_CM(1,1)
+                      vrel = v_interp - vel_CM(2,1)
+                      wrel = w_interp - vel_CM(3,1)
 
-                      uTshell(nshell) = uTshell(nshell) + phi * u_interp * (temp(ii,jj,k) - Tliq)
-                      vTshell(nshell) = vTshell(nshell) + phi * v_interp * (temp(ii,jj,k) - Tliq)
-                      wTshell(nshell) = wTshell(nshell) + phi * w_interp * (temp(ii,jj,k) - Tliq)
-                    enddo
+                      ! SMALL SHELL: <= 1.5R_EQV
+                      if (rr_t .le. Rshell_min) then ! r_ijk < 1.5 R_Eqv
+                        sumVOFmin = sumVOFmin + VOFp(ii,jj,k)
+
+                        ! Velocities
+                        sumU_min = sumU_min + u_interp
+                        sumV_min = sumV_min + v_interp
+                        sumW_min = sumW_min + w_interp
+                        ! Relative
+                        sumUrel_min = sumUrel_min + urel
+                        sumVrel_min = sumVrel_min + vrel
+                        sumWrel_min = sumWrel_min + wrel
+                        ! Turbulence quantities
+                        sumTKE_min = sumTKE_min + tke(ii,jj,k)
+                        sumDISS_min = sumDISS_min + diss(ii,jj,k)
+                        ! Temperature
+                        sumTemp_min = sumTemp_min + temp(ii,jj,k)
+                        sumCHImin = sumCHImin + chi(ii,jj,k)
+                        ! Temperature transport fluxes
+                        sumUTmin = sumUTmin + u_interp * (temp(ii,jj,k) - Tliq)
+                        sumVTmin = sumVTmin + v_interp * (temp(ii,jj,k) - Tliq)
+                        sumWTmin = sumWTmin + w_interp * (temp(ii,jj,k) - Tliq)
+
+                        ! Relative
+                        sumUTrelmin = sumUTrelmin + urel * (temp(ii,jj,k) - Tliq)
+                        sumVTrelmin = sumVTrelmin + vrel * (temp(ii,jj,k) - Tliq)
+                        sumWTrelmin = sumWTrelmin + wrel * (temp(ii,jj,k) - Tliq)
+                      endif
+
+                      if ( (rr_t .gt. Rshell_min) .and. (rr_t .le. Rshell_max) ) then
+                        sumVOFmax = sumVOFmax + VOFp(ii,jj,k)
+
+                        ! Velocities
+                        sumU_max = sumU_max + u_interp
+                        sumV_max = sumV_max + v_interp
+                        sumW_max = sumW_max + w_interp
+                        ! Relative
+                        sumUrel_max = sumUrel_max + urel
+                        sumVrel_max = sumVrel_max + vrel
+                        sumWrel_max = sumWrel_max + wrel
+                        ! Turbulence quantities
+                        sumTKE_max = sumTKE_max + tke(ii,jj,k)
+                        sumDISS_max = sumDISS_max + diss(ii,jj,k)
+                        ! Temperature
+                        sumTemp_max = sumTemp_max + temp(ii,jj,k)
+                        sumCHImax = sumCHImax + chi(ii,jj,k)
+                        ! Temperature transport fluxes
+                        sumUTmax = sumUTmax + u_interp * (temp(ii,jj,k) - Tliq)
+                        sumVTmax = sumVTmax + v_interp * (temp(ii,jj,k) - Tliq)
+                        sumWTmax = sumWTmax + w_interp * (temp(ii,jj,k) - Tliq)
+
+                        ! Relative
+                        sumUTrelmax = sumUTrelmax + urel * (temp(ii,jj,k) - Tliq)
+                        sumVTrelmax = sumVTrelmax + vrel * (temp(ii,jj,k) - Tliq)
+                        sumWTrelmax = sumWTrelmax + wrel * (temp(ii,jj,k) - Tliq)
+
+                      endif
+
+                    endif
 
                 endif
               enddo
             enddo
         enddo
-             
-        !call MpiAllSumRealScalar(Ushell)
-        !call MpiAllSumRealScalar(Vshell)
-        !call MpiAllSumRealScalar(Wshell)
-        !call MpiAllSumRealScalar(sumPhix)
-        !call MpiAllSumRealScalar(sumPhiy)
-        !call MpiAllSumRealScalar(sumPhiz)
 
-        call MpiSumReal1D(Ushell, 6)
-        call MpiSumReal1D(Vshell, 6)
-        call MpiSumReal1D(Wshell, 6)
-        call MpiSumReal1D(Tshell, 6)
-        call MpiSumReal1D(uTshell, 6)
-        call MpiSumReal1D(vTshell, 6)
-        call MpiSumReal1D(wTshell, 6)
+        call MpiAllSumRealScalar(sumVOFmin)
+        call MpiAllSumRealScalar(sumU_min)
+        call MpiAllSumRealScalar(sumV_min)
+        call MpiAllSumRealScalar(sumW_min)
+        call MpiAllSumRealScalar(sumUrel_min)
+        call MpiAllSumRealScalar(sumVrel_min)
+        call MpiAllSumRealScalar(sumWrel_min)
+        call MpiAllSumRealScalar(sumTKE_min)
+        call MpiAllSumRealScalar(sumDISS_min)
+        call MpiAllSumRealScalar(sumTemp_min)
+        call MpiAllSumRealScalar(sumCHImin)
+        call MpiAllSumRealScalar(sumUTmin)
+        call MpiAllSumRealScalar(sumVTmin)
+        call MpiAllSumRealScalar(sumWTmin)
+        call MpiAllSumRealScalar(sumUTrelmin)
+        call MpiAllSumRealScalar(sumVTrelmin)
+        call MpiAllSumRealScalar(sumWTrelmin)
+        sumU_min  =   sumU_min    / sumVOFmin
+        sumV_min  =   sumV_min    / sumVOFmin
+        sumW_min  =   sumW_min    / sumVOFmin
+        sumUrel_min = sumUrel_min / sumVOFmin
+        sumVrel_min = sumVrel_min / sumVOFmin
+        sumWrel_min = sumWrel_min / sumVOFmin
+        sumTKE_min  = sumTKE_min  / sumVOFmin
+        sumDISS_min = sumDISS_min / sumVOFmin
+        sumTemp_min = sumTemp_min / sumVOFmin
+        sumCHImin   = sumCHImin   / sumVOFmin
+        sumUTmin    = sumUTmin    / sumVOFmin
+        sumVTmin    = sumVTmin    / sumVOFmin
+        sumWTmin    = sumWTmin    / sumVOFmin
+        sumUTrelmin = sumUTrelmin / sumVOFmin
+        sumVTrelmin = sumVTrelmin / sumVOFmin
+        sumWTrelmin = sumWTrelmin / sumVOFmin
 
-        call MpiSumReal1D(sumPhix, 6)
-        call MpiSumReal1D(sumPhiy, 6)
-        call MpiSumReal1D(sumPhiz, 6)
-        call MpiSumReal1D(sumPhiT, 6)
-
-        do i = 1,6
-          Ushell(i) = Ushell(i) / sumPhix(i)
-          Vshell(i) = Vshell(i) / sumPhiy(i)
-          Wshell(i) = Wshell(i) / sumPhiz(i)
-          Tshell(i) = Tshell(i) / sumPhiT(i)
-          uTshell(i) = uTshell(i) / sumPhiT(i)
-          vTshell(i) = vTshell(i) / sumPhiT(i)
-          wTshell(i) = wTshell(i) / sumPhiT(i)
-        enddo
+        
+        call MpiAllSumRealScalar(sumVOFmax)
+        call MpiAllSumRealScalar(sumU_max)
+        call MpiAllSumRealScalar(sumV_max)
+        call MpiAllSumRealScalar(sumW_max)
+        call MpiAllSumRealScalar(sumUrel_max)
+        call MpiAllSumRealScalar(sumVrel_max)
+        call MpiAllSumRealScalar(sumWrel_max)
+        call MpiAllSumRealScalar(sumTKE_max)
+        call MpiAllSumRealScalar(sumDISS_max)
+        call MpiAllSumRealScalar(sumTemp_max)
+        call MpiAllSumRealScalar(sumCHImax)
+        call MpiAllSumRealScalar(sumUTmax)
+        call MpiAllSumRealScalar(sumVTmax)
+        call MpiAllSumRealScalar(sumWTmax)
+        call MpiAllSumRealScalar(sumUTrelmax)
+        call MpiAllSumRealScalar(sumVTrelmax)
+        call MpiAllSumRealScalar(sumWTrelmax)
+        sumU_max  =   sumU_max    / sumVOFmax
+        sumV_max  =   sumV_max    / sumVOFmax
+        sumW_max  =   sumW_max    / sumVOFmax
+        sumUrel_max = sumUrel_max / sumVOFmax
+        sumVrel_max = sumVrel_max / sumVOFmax
+        sumWrel_max = sumWrel_max / sumVOFmax
+        sumTKE_max  = sumTKE_max  / sumVOFmax
+        sumDISS_max = sumDISS_max / sumVOFmax
+        sumTemp_max = sumTemp_max / sumVOFmax
+        sumCHImax   = sumCHImax   / sumVOFmax
+        sumUTmax    = sumUTmax    / sumVOFmax
+        sumVTmax    = sumVTmax    / sumVOFmax
+        sumWTmax    = sumWTmax    / sumVOFmax
+        sumUTrelmax = sumUTrelmax / sumVOFmax
+        sumVTrelmax = sumVTrelmax / sumVOFmax
+        sumWTrelmax = sumWTrelmax / sumVOFmax
 
         if(ismaster) then
-
-        ! x-component
-          namfile='stringdata/rel_UShell.txt'
+          !------------------- MINIMUM SHELL -----------------------------------------------
+          ! Momentum field
+          namfile='stringdata/minShell_mmtm.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, Ushell
+          write(92,'(100E15.7)') time, sumU_min, sumV_min, sumW_min, sumTKE_min, sumDISS_min
           close(92)
 
-          ! y-component
-          namfile='stringdata/rel_VShell.txt'
+          ! Momentum field with relative motion
+          namfile='stringdata/minShell_Relmmtm.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, Vshell
+          write(92,'(100E15.7)') time, sumUrel_min, sumVrel_min, sumWrel_min
           close(92)
 
-          ! z-component
-          namfile='stringdata/rel_WShell.txt'
+          ! Temperature field
+          namfile='stringdata/minShell_temp.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, Wshell
+          write(92,'(100E15.7)') time, sumTemp_min, sumCHImin, sumUTmin, sumVTmin, sumWTmin
           close(92)
 
-          ! temperature-component
-          namfile='stringdata/rel_TShell.txt'
+          ! Relative temperature field
+          namfile='stringdata/minShell_Reltemp.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, Tshell
+          write(92,'(100E15.7)') time, sumUTrelmin, sumVTrelmin, sumWTrelmin
           close(92)
 
-          ! temperature fluxes
-          namfile='stringdata/rel_uTShell.txt'
+          !------------------- MAXIMUM SHELL -----------------------------------------------
+          ! Momentum field
+          namfile='stringdata/maxShell_mmtm.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, uTshell
+          write(92,'(100E15.7)') time, sumU_max, sumV_max, sumW_max, sumTKE_max, sumDISS_max
           close(92)
 
-          namfile='stringdata/rel_vTShell.txt'
+          ! Momentum field with relative motion
+          namfile='stringdata/maxShell_Relmmtm.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, vTshell
+          write(92,'(100E15.7)') time, sumUrel_max, sumVrel_max, sumWrel_max
           close(92)
 
-          namfile='stringdata/rel_wTShell.txt'
+          ! Temperature field
+          namfile='stringdata/maxShell_temp.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(100E15.7)') time, wTshell
+          write(92,'(100E15.7)') time, sumTemp_max, sumCHImax, sumUTmax, sumVTmax, sumWTmax
           close(92)
+
+          ! Relative temperature field
+          namfile='stringdata/maxShell_Reltemp.txt'
+          open(unit=92,file=namfile, Access='append', Status='unknown')
+          write(92,'(100E15.7)') time, sumUTrelmax, sumVTrelmax, sumWTrelmax
+          close(92)
+
         end if
      
         return
-    end subroutine calcRelShellVel
+    end subroutine calcLocalShellFlow
+
+    ! subroutine calcRelShellVel
+    !     use mpih
+    !     use param
+    !     use local_arrays,only: vx,vy,vz,temp
+    !     use stat_arrays
+    !     use mls_param
+    !     use mpi_param, only: kstart,kend
+  
+    !     implicit none
+    !     integer :: i,j,k,ii,jj,kk
+    !     integer :: iip, jjp
+    !     real :: R_shell, R_eqv
+    !     real :: rr_x, rr_y, rr_z, rr_t, phi
+    !     integer, dimension(3,2) :: bbox_inds
+    !     real, dimension(3,2) :: lim
+    !     real, dimension(3) :: x_GC
+    !     character(70) namfile
+
+    !     integer :: nshell
+    !     real, dimension(6) :: Rshell_on_Reqv
+    !     real, dimension(6) :: sumPhix, sumPhiy, sumPhiz, sumPhiT, Ushell, Vshell, Wshell, Tshell
+    !     real, dimension(6) :: uTshell, vTshell, wTshell
+    !     real :: u_interp, v_interp, w_interp
+
+    !     ! Varying choices of shell radius to test
+    !     ! Up to 6 equivalent radii (= 3 equivalent diameters, cf. Kidanemariam et al. 2013)
+    !     Rshell_on_Reqv = [6.0, 5.0, 4.0, 3.0, 2.0, 1.5]
+
+        
+
+    !     ! Running averages of the shell kernel functions
+    !     sumPhix = 0.0
+    !     sumPhiy = 0.0
+    !     sumPhiz = 0.0
+    !     sumPhiT = 0.0
+
+    !     ! Shell-averaged velocities
+    !     Ushell = 0.0
+    !     Vshell = 0.0
+    !     Wshell = 0.0
+    !     Tshell = 0.0
+
+    !     ! First calculate equivalent radius based on current object volume
+    !     R_eqv =  (3.0 * Volume(1) / (4.0 * pi))**(1.0/3.0)
+
+    !     !----------------- Shell radius  ---------------------------------------
+    !     ! Compute the largest shell radius: use to construct the bounding box to loop over
+    !     R_shell = Rshell_on_Reqv(1) * R_eqv
+
+    !     !-----------------------------------------------------------------------
+
+    !       ! get bounding box
+    !     do i = 1,3
+    !         lim(i,1) =  pos_CM(i,1) - R_shell ! min
+    !         lim(i,2) =  pos_CM(i,1) + R_shell ! max
+    !     end do
+    !     bbox_inds = floor(lim*dx1) + 1 ! compute indices cell centered
+
+    !     do i = bbox_inds(1,1),bbox_inds(1,2)
+    !         do j = bbox_inds(2,1),bbox_inds(2,2)
+    !           do kk = bbox_inds(3,1),bbox_inds(3,2)
+
+    !             k = kk
+    !             call get_periodic_indices(k,x_GC)
+
+    !             if (k.ge.kstart.and.k.le.kend) then
+
+    !                 ii = modulo(i-1,n1m) + 1
+    !                 jj = modulo(j-1,n2m) + 1
+
+    !                 iip = modulo(i,n1m) + 1
+    !                 jjp = modulo(j,n2m) + 1
+
+    !                 ! Abs distances to centroid from the (i,j,k) cell
+    !                 rr_x =  norm2 (  [ xc(i), ym(j), zm(kk) ]  - pos_CM(:,1)  ) 
+    !                 rr_y =  norm2 (  [ xm(i), yc(j), zm(kk) ]  - pos_CM(:,1)  ) 
+    !                 rr_z =  norm2 (  [ xm(i), ym(j), zc(kk) ]  - pos_CM(:,1)  )
+    !                 rr_t =  norm2 (  [ xm(i), ym(j), zm(kk) ]  - pos_CM(:,1)  )
+
+    !                 do nshell = 1,6 ! loop over each shell
+
+    !                   R_shell = Rshell_on_Reqv(nshell) * R_eqv
+
+    !                   ! x component
+    !                   phi = 1.0 / ( cosh( 0.5*(rr_x - R_shell) * dx1 ) )**2
+    !                   sumPhix(nshell) = sumPhix(nshell) + phi
+    !                   Ushell(nshell) = Ushell(nshell) + phi * vx(ii,jj,k)
+
+    !                   ! y component
+    !                   phi = 1.0 / ( cosh( 0.5*(rr_y - R_shell) * dx1 ) )**2
+    !                   sumPhiy(nshell) = sumPhiy(nshell) + phi
+    !                   Vshell(nshell) = Vshell(nshell) + phi * vy(ii,jj,k)
+
+    !                   ! z component
+    !                   phi = 1.0 / ( cosh( 0.5*(rr_z - R_shell) * dx1 ) )**2
+    !                   sumPhiz(nshell) = sumPhiz(nshell) + phi
+    !                   Wshell(nshell) = Wshell(nshell) + phi * vz(ii,jj,k)
+
+
+    !                   ! temperature component
+    !                   phi = 1.0 / ( cosh( 0.5*(rr_t - R_shell) * dx1 ) )**2
+    !                   sumPhiT(nshell) = sumPhiT(nshell) + phi
+    !                   Tshell(nshell) = Tshell(nshell) + phi * temp(ii,jj,k)
+
+
+    !                   ! Temperature transport fluxes
+    !                   ! phi from cell-centered temperature is re-used
+    !                   ! temperature relative to Tamb
+    !                   u_interp = 0.5 * ( vx(ii,jj,k) + vx(iip,jj ,k) )
+    !                   v_interp = 0.5 * ( vy(ii,jj,k) + vx(ii ,jjp,k) )
+    !                   w_interp = 0.5 * ( vz(ii,jj,k) + vz(ii ,jj ,k+1) )
+
+    !                   uTshell(nshell) = uTshell(nshell) + phi * u_interp * (temp(ii,jj,k) - Tliq)
+    !                   vTshell(nshell) = vTshell(nshell) + phi * v_interp * (temp(ii,jj,k) - Tliq)
+    !                   wTshell(nshell) = wTshell(nshell) + phi * w_interp * (temp(ii,jj,k) - Tliq)
+    !                 enddo
+
+    !             endif
+    !           enddo
+    !         enddo
+    !     enddo
+             
+    !     !call MpiAllSumRealScalar(Ushell)
+    !     !call MpiAllSumRealScalar(Vshell)
+    !     !call MpiAllSumRealScalar(Wshell)
+    !     !call MpiAllSumRealScalar(sumPhix)
+    !     !call MpiAllSumRealScalar(sumPhiy)
+    !     !call MpiAllSumRealScalar(sumPhiz)
+
+    !     call MpiSumReal1D(Ushell, 6)
+    !     call MpiSumReal1D(Vshell, 6)
+    !     call MpiSumReal1D(Wshell, 6)
+    !     call MpiSumReal1D(Tshell, 6)
+    !     call MpiSumReal1D(uTshell, 6)
+    !     call MpiSumReal1D(vTshell, 6)
+    !     call MpiSumReal1D(wTshell, 6)
+
+    !     call MpiSumReal1D(sumPhix, 6)
+    !     call MpiSumReal1D(sumPhiy, 6)
+    !     call MpiSumReal1D(sumPhiz, 6)
+    !     call MpiSumReal1D(sumPhiT, 6)
+
+    !     do i = 1,6
+    !       Ushell(i) = Ushell(i) / sumPhix(i)
+    !       Vshell(i) = Vshell(i) / sumPhiy(i)
+    !       Wshell(i) = Wshell(i) / sumPhiz(i)
+    !       Tshell(i) = Tshell(i) / sumPhiT(i)
+    !       uTshell(i) = uTshell(i) / sumPhiT(i)
+    !       vTshell(i) = vTshell(i) / sumPhiT(i)
+    !       wTshell(i) = wTshell(i) / sumPhiT(i)
+    !     enddo
+
+    !     if(ismaster) then
+
+    !     ! x-component
+    !       namfile='stringdata/rel_UShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, Ushell
+    !       close(92)
+
+    !       ! y-component
+    !       namfile='stringdata/rel_VShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, Vshell
+    !       close(92)
+
+    !       ! z-component
+    !       namfile='stringdata/rel_WShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, Wshell
+    !       close(92)
+
+    !       ! temperature-component
+    !       namfile='stringdata/rel_TShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, Tshell
+    !       close(92)
+
+    !       ! temperature fluxes
+    !       namfile='stringdata/rel_uTShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, uTshell
+    !       close(92)
+
+    !       namfile='stringdata/rel_vTShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, vTshell
+    !       close(92)
+
+    !       namfile='stringdata/rel_wTShell.txt'
+    !       open(unit=92,file=namfile, Access='append', Status='unknown')
+    !       write(92,'(100E15.7)') time, wTshell
+    !       close(92)
+    !     end if
+     
+    !     return
+    ! end subroutine calcRelShellVel
 
   

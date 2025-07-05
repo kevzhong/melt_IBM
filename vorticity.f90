@@ -11,7 +11,7 @@
       real :: dvyx1,dvyx2,dvyx3
       real :: dvzx1,dvzx2,dvzx3
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
-      real :: enstrophy
+      real :: enstrophy_volAvg
       real :: sumVOF
       character(70) namfile
 
@@ -78,7 +78,7 @@
 
         if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
           ! Fluid-domain averaged
-          enstrophy = enstrophy + (vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2 )
+          enstrophy_volAvg = enstrophy_volAvg + (vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2 )
           sumVOF = sumVOF + VOFp(ic,jc,kc)
         endif
 
@@ -94,14 +94,14 @@
 
       ! Number of fluid cells
       call MPI_ALLREDUCE(MPI_IN_PLACE,sumVOF,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD,ierr)
-      call MpiAllSumRealScalar(enstrophy)
-      enstrophy = enstrophy / sumVOF
+      call MpiAllSumRealScalar(enstrophy_volAvg)
+      enstrophy_volAvg = enstrophy_volAvg / sumVOF
 
 
       if(ismaster) then
           namfile='stringdata/enstrophy.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(2E15.7)') time, enstrophy
+          write(92,'(2E15.7)') time, enstrophy_volAvg
           close(92)
       end if
 

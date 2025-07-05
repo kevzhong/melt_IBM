@@ -177,7 +177,8 @@ character(70) namfile
 
           ! KZ: relative Lagrangian motion tracking
           call calcFluidVelAvgs
-          call calcRelShellVel
+          !call calcRelShellVel
+          call calcLocalShellFlow
           call vorticity
           !------ END ASCII -----------------
 
