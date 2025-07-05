@@ -397,6 +397,10 @@ end subroutine mpi_globalsum_double_var
       if(allocated(vory)) deallocate(vory)
       if(allocated(vorz)) deallocate(vorz)
       
+      if(allocated(diss)) deallocate(diss)
+      if(allocated(tke)) deallocate(tke)
+      if(allocated(chi)) deallocate(chi)
+
       !---------------------------------------
       if(allocated(countj)) deallocate(countj)
       if(allocated(countk)) deallocate(countk)

@@ -149,6 +149,8 @@
        use param
        implicit none
        real,allocatable,dimension(:,:,:) :: vorx, vory, vorz
+       real,allocatable,dimension(:,:,:) :: diss, tke, chi
+
       end module local_aux
 
       module mls_param

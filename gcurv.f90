@@ -13,6 +13,7 @@ real    :: ti(2), tin(3)
 real    :: dmax,tpc
 real :: tstart, tend
 integer :: inp
+integer :: icut,jcut,kcut
 real,dimension(3,2)     :: bbox_inds
 character(70) namfile
   call mpi_workdistribution
@@ -171,7 +172,7 @@ character(70) namfile
           call writeTriMeshStats
           call writeClock
 
-          call CalcInjection
+          !call CalcInjection
           call CalcDissipation
 
           ! KZ: relative Lagrangian motion tracking
@@ -182,9 +183,25 @@ character(70) namfile
 
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           call mkmov_hdf_xcut
-           call mkmov_hdf_ycut
-           call mkmov_hdf_zcut
+           
+            if (imlsstr .eq. 1) then
+              ! For Lagrangian: cuts follow centroid of object
+              icut = floor( pos_CM(1,1) * dx1 ) + 1
+              jcut = floor( pos_CM(2,1) * dx2 ) + 1
+              kcut = floor( pos_CM(3,1) * dx3 ) + 1
+
+              icut = modulo(icut-1,n1m)  + 1
+              jcut = modulo(jcut-1,n2m)  + 1
+              kcut = modulo(kcut-1,n3m)  + 1
+            else
+              icut = n1m / 2
+              jcut = n2m / 2
+              kcut = n3m / 2
+            endif
+
+           call mkmov_hdf_xcut(icut)
+           call mkmov_hdf_ycut(jcut)
+           call mkmov_hdf_zcut(kcut)
            call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel

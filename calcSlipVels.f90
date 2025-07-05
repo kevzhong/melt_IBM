@@ -32,7 +32,6 @@
         real :: ufluid_var, vfluid_var, wfluid_var
         real :: Urel_box, Vrel_box, Wrel_box
         real :: uu_rel, vv_rel, ww_rel
-        real :: chi
         integer :: ip, im, jp, jm, kp, km
 
         character(70) namfile
@@ -48,7 +47,6 @@
         DT_fluid = 0.0
         DT2_fluid = 0.0
 
-        chi = 0.0
 
         ufluid_var = 0.0
         vfluid_var = 0.0
@@ -112,10 +110,6 @@
                 DT_fluid = DT_fluid + ( temp(ic,jc,kc) - Tliq )
                 DT2_fluid = DT2_fluid + ( temp(ic,jc,kc) - Tliq )**2
 
-                ! Scalar dissipation rate
-                chi = chi + (0.5 * dx1 * ( temp(ip,jc,kc) - temp(im,jc,kc) ) )**2 + & ! (dT / dx)^2
-                            (0.5 * dx2 * ( temp(ic,jp,kc) - temp(ic,jm,kc) ) )**2 + & ! (dT / dy)^2
-                            (0.5 * dx3 * ( temp(ic,jc,kp) - temp(ic,jc,km) ) )**2     ! (dT / dz)^2
             endif
 
          end do
@@ -157,12 +151,9 @@
         call MpiAllSumRealScalar(Tfluid)
         call MpiAllSumRealScalar(DT_fluid)
         call MpiAllSumRealScalar(DT2_fluid)
-        call MpiAllSumRealScalar(chi)
         Tfluid = Tfluid / dble(counter)
         DT_fluid = DT_fluid / dble(counter)
         DT2_fluid = DT2_fluid / dble(counter)
-
-        chi = chi / dble(counter) / pec
 
 
         if(ismaster) then
@@ -182,81 +173,12 @@
         if(ismaster) then
           namfile='stringdata/fluidAvgTemps.txt'
           open(unit=92,file=namfile, Access='append', Status='unknown')
-          write(92,'(E15.7, I12, 6E15.7)') time, counter, Tfluid, DT_fluid, DT2_fluid, chi
+          write(92,'(E15.7, I12, 5E15.7)') time, counter, Tfluid, DT_fluid, DT2_fluid
           close(92)
         end if
 
         return
     end subroutine calcFluidVelAvgs
-
-
-    !   subroutine calcRelBoxVel
-    !     use mpih
-    !     use param
-    !     use local_arrays,only: vx,vy,vz
-    !     use stat_arrays
-    !     use mls_param
-    !     use mpi_param, only: kstart,kend
-  
-    !     implicit none
-    !     integer :: ic,jc,kc
-    !     integer :: counter
-    !     real :: Urel_box, Vrel_box, Wrel_box
-    !     character(70) namfile
-        
-
-    !     counter = 0
-    !     Urel_box = 0.0
-    !     Vrel_box = 0.0
-    !     Wrel_box = 0.0
-
-  
-    !      do kc=kstart,kend
-    !      do jc=1,n2m
-    !      do ic=1,n1m  
-
-    !         if ( solid_mask(ic,jc,kc) .eqv. .false. ) then
-    !         ! Box-averaged relative velocity
-    !             counter = counter + 1
-
-    !             Urel_box = Urel_box + ( vx(ic,jc,kc) - vel_CM(1,1) )
-    !             Vrel_box = Vrel_box + ( vy(ic,jc,kc) - vel_CM(2,1) )
-    !             Wrel_box = Wrel_box + ( vz(ic,jc,kc) - vel_CM(3,1) )
-    !         endif
-
-    !      end do
-    !      end do
-    !      end do
-             
-    !     call MpiAllSumRealScalar(Urel_box)
-    !     call MpiAllSumRealScalar(Vrel_box)
-    !     call MpiAllSumRealScalar(Wrel_box)
-    !     call MPI_ALLREDUCE(MPI_IN_PLACE,counter,1,MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,ierr)
-    !     Urel_box = Urel_box / dble(counter)
-    !     Vrel_box = Vrel_box / dble(counter)
-    !     Wrel_box = Wrel_box / dble(counter)
-
-    !     ! kenerg =0.5d0* kenerg / (dble(n1m*n2m*n3m))
-    !     ! nu=1.0d0/ren
-    !     ! diss_volAvg = 2.0d0 * nu*diss_volAvg / (dble(n1m*n2m*n3m))  
-    !     ! urms = sqrt( 2.0 / 3.0 * kenerg )
-    !     ! eta = (nu**3/diss_volAvg)**(0.25)
-    !     ! kmax_eta = pi * dx1 * eta ! kmax_eta where kmax = pi /  dx is the Nyquist limit
-    !     ! Re_L = kenerg**2 / (nu * diss_volAvg)
-    !     ! lambda_t = sqrt( 15.0 * nu * urms**2 / diss_volAvg )
-    !     ! re_lam = urms * lambda_t / nu
-    !     ! L_int = sqrt(kenerg**3) / diss_volAvg ! Large-eddy length scale
-
-    !     if(ismaster) then
-    !     namfile='stringdata/rel_velBox.txt'
-    !     open(unit=92,file=namfile, Access='append', Status='unknown')
-    !     write(92,'(100E15.7)') time, Urel_box, Vrel_box, Wrel_box
-    !     close(92)
-    !     end if
-     
-    !     return
-    ! end subroutine calcRelBoxVel
-
 
     subroutine calcRelShellVel
         use mpih

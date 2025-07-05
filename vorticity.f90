@@ -12,7 +12,7 @@
       real :: dvzx1,dvzx2,dvzx3
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
       real :: enstrophy
-      integer :: counter
+      real :: sumVOF
       character(70) namfile
 
 
@@ -20,17 +20,17 @@
       call update_both_ghosts(n1,n2,vy,kstart,kend)
       call update_both_ghosts(n1,n2,vz,kstart,kend)
 
-      call update_add_upper_ghost(vorx)
-      call update_add_upper_ghost(vory)
-      call update_add_upper_ghost(vorz)
-
-      call update_add_lower_ghost(vorx)
-      call update_add_lower_ghost(vory)
-      call update_add_lower_ghost(vorz)
+      !call update_add_upper_ghost(vorx)
+      !call update_add_upper_ghost(vory)
+      !call update_add_upper_ghost(vorz)
+!
+      !call update_add_lower_ghost(vorx)
+      !call update_add_lower_ghost(vory)
+      !call update_add_lower_ghost(vorz)
 
       ! Fluid-domain averaged enstrophy
 
-      counter = 0
+      sumVOF = 0.0
       enstrophy = 0.0
 
       do kc=kstart,kend
@@ -42,10 +42,6 @@
         do ic=1,n1m
          ip=ipv(ic)
          im=imv(ic)
-
-         if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
-
-         counter = counter + 1
 
           dvxx1=vx(ip,jc,kc)-vx(ic,jc,kc)
 
@@ -78,9 +74,15 @@
           vory(ic,jc,kc) = dvxx3*dx3 - dvzx1*dx1
           vorz(ic,jc,kc) = dvyx1*dx1 - dvxx2*dx2
 
-          enstrophy = enstrophy + vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2
+          !enstrophy = enstrophy + vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2
 
-         endif
+        if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
+          ! Fluid-domain averaged
+          enstrophy = enstrophy + (vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2 )
+          sumVOF = sumVOF + VOFp(ic,jc,kc)
+        endif
+
+         !endif
 
           end do
         end do     
@@ -91,9 +93,9 @@
 
 
       ! Number of fluid cells
-      call MPI_ALLREDUCE(MPI_IN_PLACE,counter,1,MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,ierr)
+      call MPI_ALLREDUCE(MPI_IN_PLACE,sumVOF,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD,ierr)
       call MpiAllSumRealScalar(enstrophy)
-      enstrophy = enstrophy / dble(counter)
+      enstrophy = enstrophy / sumVOF
 
 
       if(ismaster) then

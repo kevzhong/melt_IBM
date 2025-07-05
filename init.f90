@@ -2,7 +2,7 @@
       subroutine InitArrays
       use param
       use local_arrays
-      use local_aux, only: vorx, vory, vorz
+      use local_aux, only: vorx, vory, vorz, diss, tke,chi
       use mpi_param, only: kstart,kend, buf_n1n2
       use mpih, only: lvlhalo
       use stat_arrays
@@ -46,6 +46,11 @@
            kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(vorz,1,n1,1,n2,  &
            kstart-lvlhalo,kend+lvlhalo)
+
+     ! dissipation, tke
+     call AllocateReal3DArray(diss,1,n1,1,n2,kstart,kend)
+     call AllocateReal3DArray(tke,1,n1,1,n2,kstart,kend)
+     call AllocateReal3DArray(chi,1,n1,1,n2,kstart,kend)
 
      !HIT forcing
       call AllocateReal3DArray(forcx,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)

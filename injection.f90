@@ -27,11 +27,11 @@ call update_both_ghosts(n1,n2,for_xc,kstart,kend)
 call update_both_ghosts(n1,n2,for_yc,kstart,kend)
 call update_both_ghosts(n1,n2,for_zc,kstart,kend)
 
- !-------------------- Re-tag cells --------------------------
-if ( .not. is_stationarySolid ) then
-  call tagCells
-endif
- !-------------------- End re-tag cells --------------------------
+!  !-------------------- Re-tag cells --------------------------
+! if ( .not. is_stationarySolid ) then
+!   call tagCells
+! endif
+!  !-------------------- End re-tag cells --------------------------
 
       eps_in=0.0d0
       kenerg=0.0d0
