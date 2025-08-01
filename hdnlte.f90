@@ -1,4 +1,4 @@
-subroutine hdnlte
+    subroutine hdnlte
     use param
     use local_arrays, only: vy,vz,htemp,vx,temp
     use mpi_param, only: kstart,kend
@@ -86,7 +86,7 @@ subroutine hdnlte
 
     htemp(ic,jc,kc)=-(h31+h32+h33)*VOFp(ic,jc,kc)
 
-    !----------------------- SOLID VELOCITY TERMS
+    !----------------------- SOLID VELOCITY TERMS --------------------------------------
 
     ! U_i+1/2 = U_i-1/2 since moment arm does not depend on x location
 

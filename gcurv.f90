@@ -25,7 +25,7 @@ character(70) namfile
   tin(1) = MPI_WTIME()
 
   call HdfStart
-  call InitStats
+  !call InitStats
   call cordin 
   call phini
   call tri_geo
@@ -65,8 +65,8 @@ character(70) namfile
        cflm=0.d0
          
        !call inqpr_rotated
-       !call inqpr
-       call inqpr_taylorGreen
+       call inqpr
+       !call inqpr_taylorGreen
 
       else
 
@@ -204,7 +204,7 @@ character(70) namfile
            call mkmov_hdf_ycut(jcut)
            call mkmov_hdf_zcut(kcut)
            call write_tecplot_geom
-           !call mpi_write_tempField
+           call mpi_write_tempField
            !call mpi_write_vel
            !call mpi_write_field
 

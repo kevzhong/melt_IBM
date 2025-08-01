@@ -346,24 +346,24 @@ use mpih
   real,intent(inout) :: var
   real :: var2
 
-  call MPI_ALLREDUCE([var],[var2],1,MPI_DOUBLE_PRECISION, MPI_SUM,MPI_COMM_WORLD,ierr)
+  call MPI_ALLREDUCE(var,var2,1,MPI_DOUBLE_PRECISION, MPI_SUM,MPI_COMM_WORLD,ierr)
   var = var2
 
 end subroutine mpi_globalsum_double_var
 !==============================================
-        subroutine mpi_globalsum_double_forc(var)
-        use mpih
-          implicit none
-          real,intent(inout),dimension(6,7,7,7) :: var
-          real,dimension(6,7,7,7) :: var2
-!          integer :: nvar=1715
-          integer :: nvar=2058!6*7*7*7
+!         subroutine mpi_globalsum_double_forc(var)
+!         use mpih
+!           implicit none
+!           real,intent(inout),dimension(6,7,7,7) :: var
+!           real,dimension(6,7,7,7) :: var2
+! !          integer :: nvar=1715
+!           integer :: nvar=2058!6*7*7*7
 
-          call MPI_ALLREDUCE(var,var2,nvar,MPI_DOUBLE_PRECISION, &
-              MPI_SUM,MPI_COMM_WORLD,ierr)          
-          var = var2
+!           call MPI_ALLREDUCE(var,var2,nvar,MPI_DOUBLE_PRECISION, &
+!               MPI_SUM,MPI_COMM_WORLD,ierr)          
+!           var = var2
 
-        end subroutine mpi_globalsum_double_forc
+!         end subroutine mpi_globalsum_double_forc
 
 !==================================================      
       

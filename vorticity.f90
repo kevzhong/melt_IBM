@@ -31,7 +31,7 @@
       ! Fluid-domain averaged enstrophy
 
       sumVOF = 0.0
-      enstrophy = 0.0
+      enstrophy_volAvg = 0.0
 
       do kc=kstart,kend
       kp=kc+1
