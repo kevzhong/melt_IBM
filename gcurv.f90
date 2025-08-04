@@ -33,35 +33,34 @@ integer :: clock
   call phini
   call tri_geo
 
+  ! !!!!!!!!!!!!!!!!!! STOCHASTIC NOISE IN MELT-RATE
+  !   !— find out how many seed integers the compiler wants —
+  ! call random_seed(size=seed_size)
+  ! allocate(seed(seed_size))
 
-  !!!!!!!!!!!!!!!!!! STOCHASTIC NOISE IN MELT-RATE
-    !— find out how many seed integers the compiler wants —
-  call random_seed(size=seed_size)
-  allocate(seed(seed_size))
+  ! !— rank 0 picks a “random” seed from the wall‐clock (or you can
+  ! ! choose a fixed constant for a perfectly reproducible run) —
+  ! if (ismaster) then
+  !   call system_clock(count=clock)
+  !   do i = 1, seed_size
+  !     !seed(i) = mod(clock + i*12345, huge(1))
+  !     seed(i) = 123456 + i ! Fixed seed
+  !   end do
+  ! end if
 
-  !— rank 0 picks a “random” seed from the wall‐clock (or you can
-  ! choose a fixed constant for a perfectly reproducible run) —
-  if (ismaster) then
-    call system_clock(count=clock)
-    do i = 1, seed_size
-      !seed(i) = mod(clock + i*12345, huge(1))
-      seed(i) = 123456 + i ! Fixed seed
-    end do
-  end if
+  ! !— now broadcast that identical seed array to every rank —
+  ! call MPI_Bcast(seed, seed_size, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
 
-  !— now broadcast that identical seed array to every rank —
-  call MPI_Bcast(seed, seed_size, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-
-  !— set the Fortran RNG to that shared state —
-  call random_seed(put=seed)
+  ! !— set the Fortran RNG to that shared state —
+  ! call random_seed(put=seed)
 
 
 
   ! Initial cell-tagging operation at start of runtime if IBM is active
   ! the most expensive full tagging of ALL cells
-  initial_tag = .true.
-  if (imlsfor .eq. 1) call tagCells
-  initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
+  !initial_tag = .true.
+  !if (imlsfor .eq. 1) call tagCells
+  !initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
 
   time=0.d0
   vmax=0.0d0
@@ -170,9 +169,11 @@ integer :: clock
         endif
        endif
 
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
        call tschem
 
-       call calcDynamicMeshStats
+       !call calcDynamicMeshStats
 
         !if(mod(time,tpin).lt.dt) then !KZ: commented to dump at every timestep
           if(ismaster) then
@@ -194,26 +195,18 @@ integer :: clock
       call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
           !------ ASCII write -----------------
-          call writePartVol
-          call writeMyRankVol
-          call writeInertTens
-          call write_partrot
-          call write_partpos
-          call write_partvel
-          !call writeStructLoads
+          !call writePartVol
+          !call writeMyRankVol
+          !call writeInertTens
+          !call write_partrot
+          !call write_partpos
+          !call write_partvel
 
-          call writeVmelt
+          !call writeVmelt
 
-          call writeTriMeshStats
-          !call writeClock
+          !call writeTriMeshStats
 
-          !call CalcInjection
-          !call CalcDissipation
 
-          ! KZ: relative Lagrangian motion tracking
-          !call calcFluidVelAvgs
-          !call calcRelShellVel
-          !call vorticity
           !------ END ASCII -----------------
 
 

@@ -646,14 +646,14 @@ subroutine write_tecplot_geom
       return
       end subroutine write_VertGeom
 
-subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift)
+subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift,min_normA)
   use param
   use mls_param
   use mpih
 
   IMPLICIT none
 
-  real :: DV_residual, maxdrift
+  real :: DV_residual, maxdrift,min_normA
   integer :: n_ecol, n_erel
   character(70) namfile
 
@@ -664,7 +664,7 @@ subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift)
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  write(43,'(2I6, 2E15.7)')n_ecol, n_erel ,DV_residual, maxdrift*dx1
+  write(43,'(2I6, 3E15.7)')n_ecol, n_erel ,DV_residual, maxdrift*dx1,min_normA
   close(43)
   end if
 end subroutine writeRemeshStats

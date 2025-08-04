@@ -1,6 +1,6 @@
 !------------------------------------------------------
 !!!!!!!!!!! Volume-preserving smoothing !!!!!!!!!!!!!!!!!!!!!
-subroutine remesh_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
+subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
                        vert_of_edge,vert_of_face,face_of_edge,edge_of_face)
 
     use mpih
@@ -19,8 +19,9 @@ subroutine remesh_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhost
     integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
     real, dimension(3) :: A1, A2, A, vec, ej, ejp1, buffer1, x1s, x2s, dx1s, dx2s,nhat
     real, dimension(3,nv) :: xyz
-    real :: omega, h, target_DV, dv_inc, drift
+    real :: omega, h, target_DV, dv_inc, drift, min_normA
     integer :: INFO
+    real :: smallNumber = 1.e-15
     !real, allocatable, dimension(:) :: bx ! rhs vector
     !real, allocatable, dimension(:) :: by ! rhs vector
     !real, allocatable, dimension(:) :: bz ! rhs vector
@@ -60,6 +61,8 @@ subroutine remesh_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhost
 
     ! Track maximum vertex drift
     drift = 1.0d-18
+
+    min_normA = 999999.0
 
 
     ! Number of iterations to pass through for all edge relaxations
@@ -142,7 +145,9 @@ subroutine remesh_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhost
 
                 call cross(buffer1,vec,dx1s - dx2s)
                 A(1:3) = A1(1:3) + A2(1:3) + buffer1(1:3)
-                nhat(1:3) = A(1:3) / norm2(A)
+                nhat(1:3) = A(1:3) / norm2(A + smallNumber)
+
+                min_normA = min(min_normA, norm2(A) )
 
                 call cross(buffer1,vec,dx1s)
                 h = - (dot_product(dx1s, A1) + dot_product(dx2s,A2) + dot_product(dx2s, buffer1 ) ) !+ dv_inc*6.0d0
@@ -154,7 +159,7 @@ subroutine remesh_smooth(target_DV,n_erel,drift,nv,ne,nf,xyz,isGhostVert,isGhost
                     vol_corrected = .true.
                 endif
 
-                h = h / norm2(A)
+                h = h / norm2(A + smallNumber)
 
                 ! Track maximum drift
                 drift = max(drift, norm2(dx1s + h * nhat(1:3)), norm2(dx2s + h * nhat(1:3)) )
@@ -177,6 +182,7 @@ end subroutine remesh_smooth
 subroutine get_vertNeighbours(numNeighbours,v_neighbours,buffersize,v,e,nv,ne,nf,&
                               face_of_edge,vert_of_edge,edge_of_face,reverseOrder)
     use param, only: ismaster
+    use mpih
     ! Flag the neighbours (verts + edges) in the 1-ring neighbourhood
     ! of vertex v to be un-anchored for later smoothing
     implicit none
@@ -243,6 +249,12 @@ subroutine get_vertNeighbours(numNeighbours,v_neighbours,buffersize,v,e,nv,ne,nf
         prevEdge = currentEdge
 
     enddo
+
+    if (numNeighbours .lt. 3 ) then
+        write(*,*) "Vertex", v, " has less than 3 neighbours, exiting!"
+        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+        call MPI_Finalize(ierr)
+    endif
 
     if (reverseOrder .eqv. .true.) then! Flip order if specified
         ! do e = 1, numNeighbours/2

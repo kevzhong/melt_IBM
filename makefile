@@ -1,7 +1,7 @@
 
 #FC = h5pfc -r8 -O3 -fpp -C -xHost -funroll-loops -module $(OBJDIR) # FOR INTEL
 #FC = h5pfc -cpp -O3 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
-FC = h5pfc -cpp -O0 -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
+FC = h5pfc -cpp -C -g -fdefault-real-8 -fdefault-double-8 -funroll-loops -Wno-line-truncation -fallow-argument-mismatch -J $(OBJDIR) # GNU
 
 FC+= -fcheck=all -fbacktrace # DEBUG FLAGS
 ################################## UNCONMMENT BELOW FOR DISCOVERER #############################################
@@ -41,7 +41,7 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90       \
           tridiag_periodic.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
           diss.f90 vorticity.f90 injection.f90  calcSlipVels.f90 spectra.f90           \
-		  tagCells.f90 pencil_rayTag.f90 sphereTagging.f90 genSDF.f90
+		  tagCells.f90 pencil_rayTag.f90 sphereTagging.f90 genSDF.f90 validateMesh.f90
 
 FFILES += allotri.f90 RigidAuxRoutines.f90 create_geo.f90 findCentroidIndices.f90 remesh_coarsen.f90 remesh_smooth.f90 findProbeIndices.f90 \
          	forc1.f90 forc2.f90 forc3.f90 forctemp.f90 mlsForce.f90 mlsWeight.f90 mls_structLoads.f90 mls_heatFlux.f90 stefanCondition.f90 \

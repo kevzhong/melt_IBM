@@ -22,7 +22,7 @@ implicit none
 integer :: mstep, inp, i,ntr
 integer :: my_up,my_down
 logical :: did_remesh
-real :: vol_pre, vol_melt, vol_coarse, vol_smooth , drift ! Store some volumes to track drift in volume
+real :: vol_pre, vol_melt, vol_coarse, vol_smooth , drift, min_normA ! Store some volumes to track drift in volume
 integer :: n_ecol,  n_erel
 
 did_remesh = .false.
@@ -34,45 +34,6 @@ vol_smooth = 0.0d0
 
 !------------------------------------ (1) BEGIN IBM FORCING ----------------------------------------------
 if(imlsfor.eq.1)then
-
-    !call findCentroidIndices
-    !call mlsWeight
-
-    my_down=myid-1
-    my_up=myid+1
-
-    do mstep=1,1 !Multi-direct forcing iteration. cf. Breugem (2012) eqn. 10
-        !call update_both_ghosts(n1,n2,vx,kstart,kend)
-        !call update_both_ghosts(n1,n2,vy,kstart,kend)
-        !call update_both_ghosts(n1,n2,vz,kstart,kend)
-        !call update_both_ghosts(n1,n2,temp,kstart,kend)
-
-
-        for_xc = 0.0d0
-        for_yc = 0.0d0
-        for_zc = 0.0d0
-        for_temp = 0.0d0
-
-        !call mlsForce
-
-        !if (imelt .eq. 1) then 
-        !    call findProbeIndices ! Indices of inward/outward probes extrapolated from triangle faces
-        !    call mls_heatFlux ! Calculate heat flux at +/- faces, then interpolate to vertices
-        !endif
-
-        ! if (imlsstr .eq. 1) then
-        !     call mls_structLoads
-        ! endif
-
-        !call velforce
-        !call tempforce
-    end do
-
-!call update_both_ghosts(n1,n2,vx,kstart,kend)
-!call update_both_ghosts(n1,n2,vy,kstart,kend)
-!call update_both_ghosts(n1,n2,vz,kstart,kend)
-!call update_both_ghosts(n1,n2,temp,kstart,kend)
-
  !------------------------------------ (1) END IBM FORCING ----------------------------------------------
 
 
@@ -90,29 +51,9 @@ if (imelt .eq. 1) then
 
 endif
 !------------------------------------ (2) END MELTING  --------------------------------------------------
-!if (ismaster) write(*,*) "V_melt/VE", vol_smooth / celvol
 
 
 ! ! !------------------------- (3) BEGIN NEWTON--EULER OBJECT MOTION  ---------------------------------------
-! if (imlsstr.eq.1) then
-
-!     ! Update: tri-centroid locations, object COM, Volume, Inertia tensor components (rotation matrix)
-!     do inp = 1,Nparticle
-!         call calc_centroids_from_vert(tri_bar(1:3,:,inp),xyzv(1:3,:,inp),vert_of_face(:,:,inp),maxnf,maxnv,isGhostFace(:,inp)) 
-!         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-!         call calc_rigidBody_params(pos_CM(:,inp),Volume(inp),InertTensor(:,:,inp),maxnv,maxnf,&
-!         xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp) )
-!     enddo
-
-!     ! if (ismaster) then
-!     !     write(*,*) "Volume fraction is ", Volume(1)*100.0
-!     ! !    write(*,*) "trace(I) is ", InertTensor(1,1,1) + InertTensor(2,2,1) + InertTensor(3,3,1)
-!     ! endif    
-!     !KZ: check if anything else needs to be updated
-
-!     ! Move / rotate object by solving Newton--Euler
-!     call update_part_pos
-! endif
 ! ! !------------------------- (3) END NEWTON--EULER OBJECT MOTION  -----------------------------------------
 
 !-------------------------------- (4)  BEGIN REMESHING  -------------------------------------------------
@@ -154,13 +95,16 @@ do inp = 1,Nparticle
         !if (ismaster) write(*,*) "V_coarse/VE", vol_coarse / celvol
 
         !----------Mesh smoothing----------
-        call remesh_smooth( -(vol_coarse - vol_melt),n_erel,drift,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
+        call remesh_smooth( -(vol_coarse - vol_melt),n_erel,drift,min_normA,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
         face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
         
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_smooth = Volume(1)
         !if (ismaster) write(*,*) "V_smooth/VE", vol_smooth / celvol
+
+        call repair_face_orientations(vert_of_edge(:,:,inp), face_of_edge(:,:,inp), vert_of_face(:,:,inp), edge_of_face(:,:,inp),&
+                             isGhostEdge(:,inp),isGhostFace(:,inp),isGhostVert(:,inp),maxnv,maxne, maxnf)
 
     endif
     
@@ -207,7 +151,7 @@ endif
 
 
 if (did_remesh .eqv. .true.) then
-   call writeRemeshStats(n_ecol, n_erel, vol_melt - vol_smooth, drift)
+   call writeRemeshStats(n_ecol, n_erel, vol_melt - vol_smooth, drift,min_normA)
     !if (ismaster) then
     !  write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
     !endif

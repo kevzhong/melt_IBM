@@ -29,6 +29,7 @@
       pressure_wtime = 0.
 
 
+      !write(*,*) "Entered tsch"
       do ns=1,nsst                                                 
         al=alm(ns)
         ga=gam(ns)
@@ -59,8 +60,9 @@
         !if (timeflag) call toc(tstart,tend,eul_solve_wtime)
 
         !if (timeflag) call tic(tstart)
-
+         call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         call particle
+        !write(*,*) "Finished particle"
         !write(6,'(A,F10.6)') "min elength/E_thresh:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) ) / E_thresh 
         !write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
         !call MpiBarrier
