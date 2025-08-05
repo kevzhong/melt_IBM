@@ -22,8 +22,10 @@ implicit none
 integer :: mstep, inp, i,ntr
 integer :: my_up,my_down
 logical :: did_remesh
-real :: vol_pre, vol_melt, vol_coarse, vol_smooth , drift, minA ! Store some volumes to track drift in volume
-integer :: n_ecol,  n_erel
+real :: vol_pre, vol_melt, vol_coarse, vol_smooth , drift, minA,sgnH ! Store some volumes to track drift in volume
+real :: target_dv
+
+integer :: n_ecol,  n_erel,nrefresh
 
 did_remesh = .false.
 vol_pre = 0.0d0
@@ -79,6 +81,7 @@ call update_both_ghosts(n1,n2,temp,kstart,kend)
 !------------------------------------ (2) BEGIN MELTING  ------------------------------------------------
 
 if (imelt .eq. 1) then
+    vol_pre = Volume(1)
     call apply_StefanCondition ! Update vertex locations xyzv
 
     do inp = 1,Nparticle
@@ -145,9 +148,16 @@ do inp = 1,Nparticle
         ! Update volume after mesh-coarsening to specify target volume change in smoothing
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_coarse = Volume(1)
+
+
+        !if (vol_coarse .le. vol_melt) then
+            target_dv = -(vol_coarse - vol_melt)
+        !else
+        !    target_dv = vol_coarse - vol_melt
+        !endif
     
         !----------Mesh smoothing----------
-        call remesh_smooth( -(vol_coarse - vol_melt),n_erel,drift,minA,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
+        call remesh_smooth(vol_melt, target_dv,n_erel,drift,nrefresh,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
         face_of_edge(:,:,inp), edge_of_face(:,:,inp) ) 
         
@@ -195,13 +205,14 @@ endif
 
 
 if (did_remesh .eqv. .true.) then
-   call writeRemeshStats(n_ecol, n_erel, vol_melt - vol_smooth, drift, minA)
+   call writeRemeshStats(n_ecol, n_erel, vol_melt - vol_smooth, drift,nrefresh)
+   call writeRemeshVolumes(vol_pre,vol_melt,vol_coarse,vol_smooth)
     !if (ismaster) then
     !  write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
     !endif
 
    ! Error catching for remeshing residual
-   if ( abs(vol_melt - vol_smooth)  .gt. 1.e-10   ) then
+   if ( abs(vol_melt - vol_smooth)  .gt. 1.e-14   ) then
     write(*,*) "Non-zero remeshing residual detected. Writing geometry and exiting now!"
     call write_tecplot_geom
     call MpiBarrier

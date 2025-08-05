@@ -164,11 +164,14 @@ subroutine inqpr_taylorGreen
 
                         ! Taylor-green vortices IC
 
+                        if (rr .gt. rad_p) then
+
                         vx(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * ym(jc) / ylen ) &
                                      * cos(2.0 * pi * zm(kc) / zlen )
                         vy(ic,jc,kc) = -cos(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * yc(jc) / ylen ) &
                                      * cos(2.0 * pi * zm(kc) / zlen )
                         vz(ic,jc,kc) = 0.0
+                        endif
 
                   enddo !end j
             enddo !end i

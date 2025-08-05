@@ -185,7 +185,7 @@ subroutine update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
         ! Take sign of dot product with newly-computed normal vector and previous normal vector
         ! Choose the one that is best-aligned with prev iteration 
         ! i.e. choose nhat_new such that sign( dot(nhat_old, nhat_new) ) = 1
-
+        use param, only: ismaster
         implicit none
         integer :: nv,nf,v1,v2,v3,i
         integer, dimension (3,nf) :: vert_of_face

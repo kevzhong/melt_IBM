@@ -1,6 +1,6 @@
 !------------------------------------------------------
 !!!!!!!!!!! Volume-preserving smoothing !!!!!!!!!!!!!!!!!!!!!
-subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
+subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz,isGhostVert,isGhostEdge,isGhostFace,flagged_edge,&
                        vert_of_edge,vert_of_face,face_of_edge,edge_of_face)
 
     use mpih
@@ -19,8 +19,8 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
     integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
     real, dimension(3) :: A1, A2, A, vec, ej, ejp1, buffer1, x1s, x2s, dx1s, dx2s,nhat
     real, dimension(3,nv) :: xyz
-    real :: omega, h, target_DV, dv_inc, drift, min_normA
-    integer :: INFO
+    real :: omega, h, target_DV, dv_inc, drift, min_normA, sgnH, vol_check, vol_old
+    integer :: cnt_refresh
     real :: smallNumber = 1.e-15
     !real, allocatable, dimension(:) :: bx ! rhs vector
     !real, allocatable, dimension(:) :: by ! rhs vector
@@ -29,6 +29,9 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
     !integer, allocatable, dimension(:) :: vert_mask
     character*50 :: dsetname,filename
 
+    if (ismaster) then
+        write(*,*) "Target vol change is: ", target_DV
+    endif
     ! This employs the volume-preserving mesh smoothing scheme of
     !       Kuprat et al. (2001), J. Comput. Phys.
     !
@@ -71,6 +74,7 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
 
     ! Keep track of no. of edge-relaxations performed
     n_erel = 0
+    cnt_refresh = 0
 
     do cnt = 1,num_iter 
         do i = 1,ne
@@ -146,8 +150,8 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
                 A(1:3) = A1(1:3) + A2(1:3) + buffer1(1:3)
                 nhat(1:3) = A(1:3) / (norm2(A) + smallNumber)
 
-                ! For diagnostic
-                min_normA = min(min_normA, norm2(A))
+                !! For diagnostic
+                !min_normA = min(min_normA, norm2(A))
 
                 call cross(buffer1,vec,dx1s)
                 h = - (dot_product(dx1s, A1) + dot_product(dx2s,A2) + dot_product(dx2s, buffer1 ) ) !+ dv_inc*6.0d0
@@ -156,7 +160,13 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
                 if (vol_corrected .eqv. .false.) then
                     ! It seems the sign(h) correction is necessary
                     h = h + sign(1.0, h) * target_DV*6.0d0
-                    vol_corrected = .true.
+                    !vol_corrected = .true.
+
+                    !if (ismaster) then
+                    !    write(*,*) "sign(1.0,h) is: ", sign(1.0,h)
+                    !endif
+
+                    !sgnH = sign(1.0, h)
                 endif
 
                 h = h / (norm2(A) + smallNumber)
@@ -169,9 +179,30 @@ subroutine remesh_smooth(target_DV,n_erel,drift,min_normA,nv,ne,nf,xyz,isGhostVe
                 xyz(1:3,v1) = xyz(1:3,v1) + dx1s + h * nhat(1:3)
                 xyz(1:3,v2) = xyz(1:3,v2) + dx2s + h * nhat(1:3)
 
+                if (vol_corrected .eqv. .false.) then
+                    ! Provisional check of new volume
+                    call calculate_volume (vol_check,nv,nf,xyz,vert_of_face,isGhostFace)
+                        if (abs(vol_check - vol_old) .lt. 1.e-14 ) then
+                            vol_corrected = .true.
+                        else
+                            if (ismaster) then
+                            write(*,*) "Erel residual", vol_check - vol_old
+                            endif
+                            cnt_refresh = cnt_refresh + 1
+                        endif
+                endif
+
+
+
             endif !end flagged edge
         enddo
     enddo
+
+    if (ismaster) then
+        if (cnt_refresh .gt. 0 ) then
+        write(*,*) "Refreshed erel count ", cnt_refresh
+        endif
+    endif
 
     ! Reset flag: re-anchor the vertices
     ! Uncomment below if you would like to continue smoothing the already-remeshed vertices for future timesteps

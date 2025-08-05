@@ -16,6 +16,9 @@ integer :: inp
 integer :: icut,jcut,kcut
 real,dimension(3,2)     :: bbox_inds
 character(70) namfile
+integer :: seed_size, i
+integer, allocatable :: seed(:)
+integer :: clock
   call mpi_workdistribution
   call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
@@ -29,6 +32,28 @@ character(70) namfile
   call cordin 
   call phini
   call tri_geo
+
+    !!!!!!!!!!!!!!!!!! Fix random seed for HIT force
+    !— find out how many seed integers the compiler wants —
+  call random_seed(size=seed_size)
+  allocate(seed(seed_size))
+
+  !— rank 0 picks a “random” seed from the wall‐clock (or you can
+  ! choose a fixed constant for a perfectly reproducible run) —
+  if (ismaster) then
+    call system_clock(count=clock)
+    do i = 1, seed_size
+      !seed(i) = mod(clock + i*12345, huge(1))
+      seed(i) = 123456 + i ! Fixed seed
+    end do
+  end if
+
+  !— now broadcast that identical seed array to every rank —
+  call MPI_Bcast(seed, seed_size, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+
+  !— set the Fortran RNG to that shared state —
+  call random_seed(put=seed)
+
 
 
   ! Initial cell-tagging operation at start of runtime if IBM is active
@@ -65,8 +90,8 @@ character(70) namfile
        cflm=0.d0
          
        !call inqpr_rotated
-       call inqpr
-       !call inqpr_taylorGreen
+       !call inqpr
+       call inqpr_taylorGreen
 
       else
 
@@ -204,7 +229,7 @@ character(70) namfile
            call mkmov_hdf_ycut(jcut)
            call mkmov_hdf_zcut(kcut)
            call write_tecplot_geom
-           call mpi_write_tempField
+           !call mpi_write_tempField
            !call mpi_write_vel
            !call mpi_write_field
 

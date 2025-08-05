@@ -575,15 +575,15 @@ subroutine write_tecplot_geom
       return
       end subroutine write_VertGeom
 
-subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift,minA)
+subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift,nrefresh)
   use param
   use mls_param
   use mpih
 
   IMPLICIT none
 
-  real :: DV_residual, maxdrift,minA
-  integer :: n_ecol, n_erel
+  real :: DV_residual, maxdrift,minA,sgnH,target_dv
+  integer :: n_ecol, n_erel,nrefresh
   character(70) namfile
 
 
@@ -593,76 +593,28 @@ subroutine writeRemeshStats(n_ecol, n_erel, DV_residual, maxdrift,minA)
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  write(43,'(2I6, 3E15.7)')n_ecol, n_erel ,DV_residual, maxdrift*dx1,minA
+  write(43,'(2I6, 2E15.7, 1I6)')n_ecol, n_erel ,DV_residual, maxdrift*dx1,nrefresh
   close(43)
   end if
 end subroutine writeRemeshStats
 
-subroutine write_triDebug
-  use param
+subroutine writeRemeshVolumes(vol_pre,vol_melt,vol_coarse,vol_smooth)
   use mls_param
   use mpih
 
   IMPLICIT none
 
-  real :: DV_residual, maxdrift
-  integer :: n_ecol, n_erel,i
+  real :: vol_pre, vol_melt,vol_coarse,vol_smooth
   character(70) namfile
 
 
   if (myid.eq.0) then
 
-  namfile='flowmov/tribar_debug.txt'
+  namfile='stringdata/volRemesh.txt'
  !KZ: note hard-coded single particle for now
   open(unit=43,file=namfile,Access = 'append', Status='unknown')
   !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  do i = 1,maxnf
-    write(43,'(3E15.7)') tri_bar(1,i,1), tri_bar(2,i,1), tri_bar(3,i,1)
-  enddo
+  write(43,'(4E22.14)') vol_pre, vol_melt,vol_coarse,vol_smooth
   close(43)
   end if
-end subroutine write_triDebug
-
-
-subroutine writePrincAxes(xCOM,Ib_ij)
-  use param
-  use mls_param
-  use mpih
-
-  IMPLICIT none
-
-  real, dimension(3) :: xCOM
-  real, dimension(3,3) :: Ib_ij
-  character(70) namfile,namfi2
-  character(7) ipfi
-  character*2 ibod
-  real tprfi
-  integer itime, inp
-
-
-  if(ismaster)then
-
-  inp = 1
-
-  tprfi = 1/tframe
-  itime=nint(time*tprfi)
-  write(ipfi,82)itime
-  82 format(i7.7)
-  98 format(i2.2)
-
-  write(ibod,98) inp
-  write(ipfi,82) itime
-  
-  namfi2='flowmov/partAxes_'//ibod//'_'//ipfi
-  namfi2=trim(namfi2)//'.txt'
-
- !KZ: note hard-coded single particle for now
-  open(unit=43,file=namfi2,Access = 'append', Status='unknown')
-  !write(43,'(100E15.7)')vol_pre, vol_melt, vol_coarse, vol_smooth 
-  write(43,*)'X  Y  Z  e11  e21  e31  e12  e22  e32  e13  e23  e33'
-  write(43,'(12E15.7)')xCOM(1), xCOM(2), xCOM(3), Ib_ij(1,1) , Ib_ij(2,1), Ib_ij(3,1) , &
-                                                 Ib_ij(1,2) , Ib_ij(2,2), Ib_ij(3,2) , &
-                                                 Ib_ij(1,3) , Ib_ij(2,3), Ib_ij(3,3) 
-  close(43)
-  end if
-end subroutine writePrincAxes
+end subroutine writeRemeshVolumes
