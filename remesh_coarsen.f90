@@ -14,6 +14,7 @@ integer, dimension(2,ne) :: vert_of_edge, face_of_edge
 logical, dimension(nf) :: isGhostFace
 logical, dimension(ne) :: isGhostEdge, flagged_edge
 logical, dimension(nv) :: isGhostVert, anchorVert
+integer, dimension(30) :: flagged_faces
 logical :: rm_flag
 real, dimension(3,nv) :: xyz
 real, dimension(3,nf) :: tri_nor
@@ -124,7 +125,7 @@ call update_edge_connectivity(v1,v2,e1,e2,re1,re2,F1,F2,ne,vert_of_edge,face_of_
 !endif
 
 ! Flag un-anchored vertices, for coupling to smoothing
-call flag_neighbours_1ring(anchorVert,flagged_edge,v1,re1,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+call flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v1,re1,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
 
 
 !-------------- Update relevant geometric information --------------
@@ -133,8 +134,9 @@ call flag_neighbours_1ring(anchorVert,flagged_edge,v1,re1,nv,ne,nf,face_of_edge,
 rm_flag = .false.
 
 call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge,rm_flag,E_thresh)
+call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
 !call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace) ! Update sur
-call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
+!call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
 !call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
 
 !!---------------------- Equalize valences in 1-ring of v1 with edge-flips-----------------
@@ -412,28 +414,35 @@ subroutine get_next_edge_of_v(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prev
 
 
 
-subroutine flag_neighbours_1ring(anchorVert,flagged_edge,v,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+subroutine flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
         use param, only: ismaster
         ! Flag the neighbours (verts + edges) in the 1-ring neighbourhood
         ! of vertex v to be un-anchored for later smoothing
+        ! Also accumulate the indices of faces in the 1-ring, to flag for updating properties
         implicit none
         integer :: v, e, nv,ne, nf
         integer ::  cnt
         logical, dimension(nv) :: anchorVert
         logical, dimension(ne) :: flagged_edge
+        integer, dimension(30) :: flagged_faces
         integer, dimension(3,nf) :: edge_of_face
         integer, dimension(2,ne) :: face_of_edge, vert_of_edge
         integer :: prevFace, currentFace, currentEdge, prevEdge, F1
-    
+        integer :: cnt_f
+
         ! 1-ring center
         anchorVert(v) = .false.
         flagged_edge(e) = .true.
+        flagged_faces = 0
 
         ! Accmulate the face adjacency
         ! Arbitrary starting face
         F1 = face_of_edge(1,e)
         prevFace = F1 
         currentFace = 0
+
+        cnt_f = 1
+        flagged_faces(cnt_f) = F1
     
         currentEdge = 0
         prevEdge = e
@@ -449,7 +458,11 @@ subroutine flag_neighbours_1ring(anchorVert,flagged_edge,v,e,nv,ne,nf,face_of_ed
             endif
     
             if (currentFace .eq. F1) exit
-    
+
+
+            cnt_f = cnt_f + 1
+            flagged_faces(cnt_f) = currentFace
+
             cnt = cnt + 1
     
             ! Find next edge, store as currentEdge
@@ -459,7 +472,60 @@ subroutine flag_neighbours_1ring(anchorVert,flagged_edge,v,e,nv,ne,nf,face_of_ed
             prevFace = currentFace
             prevEdge = currentEdge
         enddo 
+
 end subroutine flag_neighbours_1ring
+
+subroutine update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
+    ! Update face normals in the local 1-ring neighbourhood
+    use param, only: ismaster
+    implicit none
+    integer :: nv,nf,v1,v2,v3,i
+    integer, dimension (3,nf) :: vert_of_face
+    logical, dimension(nf) :: isGhostFace
+    real,dimension (3,nf) :: tri_nor
+    real, dimension (3,nv) ::xyz
+    real, dimension(3) :: ve1,ve2
+    real, dimension(3) :: nhat_old
+    integer, dimension(30) :: flagged_faces
+    real :: sgn
+    integer :: cnt = 1
+
+        do while (flagged_faces(cnt) .ne. 0)
+            i = flagged_faces(cnt)
+                if ( isGhostFace(i) .eqv. .false. ) then
+                        nhat_old(1:3) = tri_nor(1:3,i)
+                        
+                        v1=vert_of_face(1,i)
+                        v2=vert_of_face(2,i)
+                        v3=vert_of_face(3,i)
+                        
+                        ! Vectors ve1 = P2 - P1   ve2 = P3 - P1
+                        ve1(1:3) = xyz(1:3,v2) - xyz(1:3,v1)
+                        ve2(1:3) = xyz(1:3,v3) - xyz(1:3,v1)
+                        
+                        ! Compute cross-product cross(ve1, ve2)
+                        tri_nor(1,i) = ve1(2)*ve2(3) - ve1(3)*ve2(2)
+                        tri_nor(2,i) = ve1(3)*ve2(1) - ve1(1)*ve2(3)
+                        tri_nor(3,i) = ve1(1)*ve2(2) - ve1(2)*ve2(1)
+                        tri_nor(1:3,i) = tri_nor(1:3,i) / sqrt ( sum ( tri_nor(1:3,i)**2  )  )
+                        
+                        ! flip if needed
+                        sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
+
+                        if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
+                                if (ismaster) then
+                                write(*,*) "tri_normal ", i, " flipped"
+                                endif
+                                vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
+                        endif
+                        
+                        sgn = sign(1.0, sgn)
+                        
+                        tri_nor(1:3,i) = tri_nor(1:3,i)*sgn
+                endif
+            cnt = cnt + 1
+        enddo
+end subroutine update_1ring_normals
 
 
 ! subroutine optimiseSkewness_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)

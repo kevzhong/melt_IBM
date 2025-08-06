@@ -187,6 +187,7 @@ subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz
                         else
                             if (ismaster) then
                             write(*,*) "Erel residual", vol_check - vol_old
+                            ! KZ: check h when erel residual is triggered
                             endif
                             cnt_refresh = cnt_refresh + 1
                         endif

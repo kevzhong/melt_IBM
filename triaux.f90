@@ -214,17 +214,16 @@ subroutine update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
                         tri_nor(3,i) = ve1(1)*ve2(2) - ve1(2)*ve2(1)
                         tri_nor(1:3,i) = tri_nor(1:3,i) / sqrt ( sum ( tri_nor(1:3,i)**2  )  )
                         
-                        ! flip if needed
-                        sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
+                        ! ! flip if needed
+                        ! sgn = dot_product( tri_nor(1:3,i) , nhat_old(1:3) ) 
+                        ! if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
+                        !         !write(*,*) "tri_normal ", i, " flipped"
+                        !         vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
+                        ! endif
+                        ! sgn = sign(1.0, sgn)
+                        ! tri_nor(1:3,i) = tri_nor(1:3,i)*sgn
 
-                        if ( sgn .lt. 0.0d0 ) then ! Repair winding orientation
-                                !write(*,*) "tri_normal ", i, " flipped"
-                                vert_of_face(1:3,i) = vert_of_face( 3:1:-1, i )
-                        endif
-                        
-                        sgn = sign(1.0, sgn)
-                        
-                        tri_nor(1:3,i) = tri_nor(1:3,i)*sgn
+
                 endif
         enddo
         
