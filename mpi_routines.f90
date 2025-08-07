@@ -96,6 +96,45 @@
       !------------------------------------------------
       
       end subroutine mpi_workdistribution 
+
+      ! !===============================================
+      ! subroutine update_both_ghosts(n1,n2,q,ks,ke)
+      ! use mpih
+      ! implicit none
+      ! integer, intent(in) :: ks,ke
+      ! real,intent(inout) :: q(n1,n2,ks-lvlhalo:ke+lvlhalo)
+      ! integer,intent(in) :: n1,n2
+      ! integer :: mydata
+      ! integer :: my_down, my_up,tag, i, j,nc
+
+      ! mydata= n1*n2*lvlhalo
+
+
+      ! my_down=myid-1
+      
+      ! my_up=myid+1
+
+      ! if(myid .eq. 0) my_down=numtasks-1
+      ! if(myid .eq. numtasks-1) my_up=0
+
+      ! tag=1
+      ! call MPI_ISEND(q(1,1,ke-lvlhalo+1), mydata, MDP, &
+      !  my_up,tag,MPI_COMM_WORLD,req(1),ierr)
+      
+      ! call MPI_ISEND(q(1,1,ks), mydata,  MDP, &
+      !  my_down,tag,MPI_COMM_WORLD,req(2), ierr)
+     
+      ! call MPI_IRECV(q(1,1,ks-lvlhalo), mydata,  MDP,  &
+      !  my_down,tag,MPI_COMM_WORLD,req(3),ierr)
+     
+      ! call MPI_IRECV(q(1,1,ke+1), mydata,  MDP, &
+      !  my_up, tag,MPI_COMM_WORLD,req(4),ierr)
+     
+      ! call MPI_Waitall(4,req,status,ierr)
+
+      ! end subroutine update_both_ghosts
+
+
 !===============================================
       subroutine update_both_ghosts(n1,n2,q,ks,ke)
       use mpih
@@ -104,10 +143,26 @@
       real,intent(inout) :: q(n1,n2,ks-lvlhalo:ke+lvlhalo)
       integer,intent(in) :: n1,n2
       integer :: mydata
-      integer :: my_down, my_up,tag
-      
+      integer :: my_down, my_up,tag, i, j,nc
+      real, allocatable :: sendbuf_up(:), sendbuf_down(:)
+      real, allocatable :: recvbuf_up(:), recvbuf_down(:)
+
       mydata= n1*n2*lvlhalo
-      
+
+      allocate(sendbuf_up(mydata), sendbuf_down(mydata))
+      allocate(recvbuf_up(mydata), recvbuf_down(mydata))      
+
+
+      ! Pack send buffers from q
+      nc = 1
+      do j = 1, n2
+        do i = 1, n1
+            sendbuf_up(nc) = q(i, j, ke - lvlhalo + 1)
+            sendbuf_down(nc) = q(i, j, ks)
+          nc = nc + 1
+        end do
+      end do
+
       my_down=myid-1
       
       my_up=myid+1
@@ -116,84 +171,106 @@
       if(myid .eq. numtasks-1) my_up=0
 
       tag=1
-      call MPI_ISEND(q(1,1,ke-lvlhalo+1), mydata, MDP, &
-       my_up,tag,MPI_COMM_WORLD,req(1),ierr)
-      
-      call MPI_ISEND(q(1,1,ks), mydata,  MDP, &
-       my_down,tag,MPI_COMM_WORLD,req(2), ierr)
-     
-      call MPI_IRECV(q(1,1,ks-lvlhalo), mydata,  MDP,  &
-       my_down,tag,MPI_COMM_WORLD,req(3),ierr)
-     
-      call MPI_IRECV(q(1,1,ke+1), mydata,  MDP, &
-       my_up, tag,MPI_COMM_WORLD,req(4),ierr)
-     
+
+      call MPI_ISEND(sendbuf_up, mydata, MDP, my_up, tag, MPI_COMM_WORLD, req(1), ierr)
+      call MPI_ISEND(sendbuf_down, mydata, MDP, my_down, tag, MPI_COMM_WORLD, req(2), ierr)
+      call MPI_IRECV(recvbuf_down, mydata, MDP, my_down, tag, MPI_COMM_WORLD, req(3), ierr)
+      call MPI_IRECV(recvbuf_up, mydata, MDP, my_up, tag, MPI_COMM_WORLD, req(4), ierr)
       call MPI_Waitall(4,req,status,ierr)
 
+      ! Unpack into q
+      nc = 1
+      do j = 1, n2
+        do i = 1, n1
+          q(i, j, ks - lvlhalo) = recvbuf_down(nc)
+          q(i, j, ke + 1)        = recvbuf_up(nc)
+          nc = nc + 1
+        end do
+      end do
+
+      !write(*,*) "Finished update both ghosts!"
+
+      ! Cleanup
+      deallocate(sendbuf_up, sendbuf_down, recvbuf_up, recvbuf_down)
+
+      ! call MPI_ISEND(q(1,1,ke-lvlhalo+1), mydata, MDP, &
+      !  my_up,tag,MPI_COMM_WORLD,req(1),ierr)
+      
+      ! call MPI_ISEND(q(1,1,ks), mydata,  MDP, &
+      !  my_down,tag,MPI_COMM_WORLD,req(2), ierr)
+     
+      ! call MPI_IRECV(q(1,1,ks-lvlhalo), mydata,  MDP,  &
+      !  my_down,tag,MPI_COMM_WORLD,req(3),ierr)
+     
+      ! call MPI_IRECV(q(1,1,ke+1), mydata,  MDP, &
+      !  my_up, tag,MPI_COMM_WORLD,req(4),ierr)
+     
+      ! call MPI_Waitall(4,req,status,ierr)
+
       end subroutine update_both_ghosts
-!=========================================
-      subroutine update_upper_ghost(n1,n2,q)
-      use mpih
-      use mpi_param, only: kstart,kend
-      implicit none
-      real,intent(inout) :: q(n1,n2,kstart-lvlhalo:kend+lvlhalo)
-      integer,intent(in) :: n1,n2
-      integer :: mydata
-      integer :: my_down, my_up,tag
+! !=========================================
+!       subroutine update_upper_ghost(n1,n2,q)
+!       use mpih
+!       use mpi_param, only: kstart,kend
+!       implicit none
+!       real,intent(inout) :: q(n1,n2,kstart-lvlhalo:kend+lvlhalo)
+!       integer,intent(in) :: n1,n2
+!       integer :: mydata
+!       integer :: my_down, my_up,tag
        
-      mydata= n1*n2*lvlhalo
+!       mydata= n1*n2*lvlhalo
       
-      my_down= myid-1
+!       my_down= myid-1
       
-      my_up= myid+1
+!       my_up= myid+1
 
-      if(myid .eq. 0) my_down=numtasks-1
-      if(myid .eq. numtasks-1) my_up= 0
+!       if(myid .eq. 0) my_down=numtasks-1
+!       if(myid .eq. numtasks-1) my_up= 0
      
-      tag=1
+!       tag=1
       
-      call MPI_ISEND(q(1,1,kstart), mydata, MDP, &
-       my_down, tag, MPI_COMM_WORLD, req(1), ierr)
+!       call MPI_ISEND(q(1,1,kstart), mydata, MDP, &
+!        my_down, tag, MPI_COMM_WORLD, req(1), ierr)
       
-      call MPI_IRECV(q(1,1,kend+1), mydata, MDP, &
-       my_up,tag, MPI_COMM_WORLD, req(2), ierr)
+!       call MPI_IRECV(q(1,1,kend+1), mydata, MDP, &
+!        my_up,tag, MPI_COMM_WORLD, req(2), ierr)
        
-      call MPI_Waitall(2,req,status,ierr)
+!       call MPI_Waitall(2,req,status,ierr)
 
      
-      end subroutine update_upper_ghost
-!=========================================
-      subroutine update_lower_ghost(n1,n2,q)
-      use mpih
-      use mpi_param, only: kstart,kend
-      implicit none
-      real,intent(inout) :: q(n1,n2,kstart-lvlhalo:kend+lvlhalo)
-      integer,intent(in) :: n1,n2
-      integer :: mydata
-      integer :: my_down, my_up,tag
+!       end subroutine update_upper_ghost
+! !=========================================
+!       subroutine update_lower_ghost(n1,n2,q)
+!       use mpih
+!       use mpi_param, only: kstart,kend
+!       implicit none
+!       real,intent(inout) :: q(n1,n2,kstart-lvlhalo:kend+lvlhalo)
+!       integer,intent(in) :: n1,n2
+!       integer :: mydata
+!       integer :: my_down, my_up,tag
        
-      mydata= n1*n2*lvlhalo
+!       mydata= n1*n2*lvlhalo
       
-      my_down= myid-1
+!       my_down= myid-1
       
-      my_up= myid+1
+!       my_up= myid+1
 
-      if(myid .eq. 0) my_down= numtasks-1
-      if(myid .eq. numtasks-1) my_up= 0
+!       if(myid .eq. 0) my_down= numtasks-1
+!       if(myid .eq. numtasks-1) my_up= 0
       
-      tag=1
+!       tag=1
       
-      call MPI_ISEND(q(1,1,kend-lvlhalo+1), mydata,  MDP, &
-       my_up, tag, MPI_COMM_WORLD, req(1), ierr)
+!       call MPI_ISEND(q(1,1,kend-lvlhalo+1), mydata,  MDP, &
+!        my_up, tag, MPI_COMM_WORLD, req(1), ierr)
       
-      call MPI_IRECV(q(1,1,kstart-lvlhalo), mydata,  MDP, &
-       my_down,tag, MPI_COMM_WORLD, req(2), ierr)
+!       call MPI_IRECV(q(1,1,kstart-lvlhalo), mydata,  MDP, &
+!        my_down,tag, MPI_COMM_WORLD, req(2), ierr)
        
-      call MPI_Waitall(2,req,status,ierr)
+!       call MPI_Waitall(2,req,status,ierr)
 
-      end subroutine update_lower_ghost
+!       end subroutine update_lower_ghost
 
-!=========================================
+! !=========================================
 subroutine update_add_lower_ghost(q1)
   use param, only: n1, n2
   use mpi_param, only: kstart,kend, buf_n1n2

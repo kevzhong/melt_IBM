@@ -29,9 +29,9 @@ subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz
     !integer, allocatable, dimension(:) :: vert_mask
     character*50 :: dsetname,filename
 
-    if (ismaster) then
-        write(*,*) "Target vol change is: ", target_DV
-    endif
+    !if (ismaster) then
+    !    write(*,*) "Target vol change is: ", target_DV
+    !endif
     ! This employs the volume-preserving mesh smoothing scheme of
     !       Kuprat et al. (2001), J. Comput. Phys.
     !
@@ -187,7 +187,6 @@ subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz
                         else
                             if (ismaster) then
                             write(*,*) "Erel residual", vol_check - vol_old
-                            ! KZ: check h when erel residual is triggered
                             endif
                             cnt_refresh = cnt_refresh + 1
                         endif

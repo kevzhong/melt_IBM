@@ -37,6 +37,7 @@ vol_smooth = 0.0d0
 !------------------------------------ (1) BEGIN IBM FORCING ----------------------------------------------
 if(imlsfor.eq.1)then
 
+    ! Only dependent on spatial coordinates
     call findCentroidIndices
     call mlsWeight
 
@@ -44,10 +45,11 @@ if(imlsfor.eq.1)then
     my_up=myid+1
 
     do mstep=1,1 !Multi-direct forcing iteration. cf. Breugem (2012) eqn. 10
-        call update_both_ghosts(n1,n2,vx,kstart,kend)
-        call update_both_ghosts(n1,n2,vy,kstart,kend)
-        call update_both_ghosts(n1,n2,vz,kstart,kend)
-        call update_both_ghosts(n1,n2,temp,kstart,kend)
+        ! Moved outside particle routine, not needed for mstep = 1
+        !call update_both_ghosts(n1,n2,vx,kstart,kend)
+        !call update_both_ghosts(n1,n2,vy,kstart,kend)
+        !call update_both_ghosts(n1,n2,vz,kstart,kend)
+        !call update_both_ghosts(n1,n2,temp,kstart,kend)
 
 
         for_xc = 0.0d0
@@ -121,11 +123,11 @@ endif
 if (iremesh .eq. 1 ) then
 do inp = 1,Nparticle
     ! First, evaluate triangle areas and skewnesses -> scan for whether remeshing is needed
-    call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
-                        isGhostFace(:,inp)) 
+    !call calculate_area(Surface(inp),maxnv,maxnf,xyzv(1:3,:,inp),vert_of_face(:,:,inp),sur(:,inp),&
+    !                    isGhostFace(:,inp)) 
     call calculate_eLengths(eLengths(:,inp),maxnv,maxne,xyzv(1:3,:,inp), vert_of_edge(:,:,inp),isGhostEdge(:,inp),&
             rm_flag(inp),E_thresh)
-    call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
+    !call calculate_skewness (maxne,maxnf,edge_of_face(:,:,inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),isGhostFace(:,inp))
 
 
      if ( (rm_flag(inp) .eqv. .true.) ) then
@@ -133,29 +135,18 @@ do inp = 1,Nparticle
         did_remesh = .true.
         !----------Mesh coarsening----------
         call update_tri_normal (tri_nor(:,:,inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
-        call remesh_coarsen (n_ecol,Surface(inp),sur(:,inp),eLengths(:,inp),maxnf,maxne,maxnv,&
+        call remesh_coarsen (n_ecol,eLengths(:,inp),maxnf,maxne,maxnv,&
         xyzv(:,:,inp),tri_nor(:,:,inp),&
         E_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
         face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
         anchorVert(:,inp),flagged_edge(:,inp) )
-
-        ! call main_remesh (n_ecol,Surface(inp),sur(:,inp),eLengths(:,inp),skewness(:,inp),maxnf,maxne,maxnv,&
-        !                  xyzv(:,:,inp),tri_nor(:,:,inp),&
-        !                  A_thresh,skew_thresh,vert_of_face(:,:,inp),edge_of_face(:,:,inp),vert_of_edge(:,:,inp),&
-        !                  face_of_edge(:,:,inp),isGhostFace(:,inp),isGhostEdge(:,inp),isGhostVert(:,inp),rm_flag(inp),&
-        !                  anchorVert(:,inp),flagged_edge(:,inp) )
         
         ! Update volume after mesh-coarsening to specify target volume change in smoothing
         call calculate_volume (Volume(inp),maxnv,maxnf,xyzv(:,:,inp),vert_of_face(:,:,inp),isGhostFace(:,inp))
         vol_coarse = Volume(1)
 
+        target_dv = -(vol_coarse - vol_melt) ! Target volume change for volume-conserving smoothing
 
-        !if (vol_coarse .le. vol_melt) then
-            target_dv = -(vol_coarse - vol_melt)
-        !else
-        !    target_dv = vol_coarse - vol_melt
-        !endif
-    
         !----------Mesh smoothing----------
         call remesh_smooth(vol_melt, target_dv,n_erel,drift,nrefresh,maxnv,maxne,maxnf,xyzv(:,:,inp),isGhostVert(:,inp),&
         isGhostEdge(:,inp),isGhostFace(:,inp),flagged_edge(:,inp),vert_of_edge(:,:,inp), vert_of_face(:,:,inp),&
@@ -206,7 +197,7 @@ endif
 
 if (did_remesh .eqv. .true.) then
    call writeRemeshStats(n_ecol, n_erel, vol_melt - vol_smooth, drift,nrefresh)
-   call writeRemeshVolumes(vol_pre,vol_melt,vol_coarse,vol_smooth)
+   !call writeRemeshVolumes(vol_pre,vol_melt,vol_coarse,vol_smooth)
     !if (ismaster) then
     !  write(*,*) "Re-meshing residual (Vmelt - Vsmooth)", vol_melt - vol_smooth , "Max vert_drift / dx = ", drift * dx1
     !endif

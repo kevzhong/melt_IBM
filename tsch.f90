@@ -60,6 +60,12 @@
 
         if (timeflag) call tic(tstart)
 
+        ! For single-phase
+        call update_both_ghosts(n1,n2,vx,kstart,kend)
+        call update_both_ghosts(n1,n2,vy,kstart,kend)
+        call update_both_ghosts(n1,n2,vz,kstart,kend)
+        call update_both_ghosts(n1,n2,temp,kstart,kend)
+
         call particle
 
         if (timeflag) call toc(tstart,tend,mls_wtime)

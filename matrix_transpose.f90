@@ -9,6 +9,7 @@
       complex, allocatable :: sbuf(:),rbuf(:)
       integer, allocatable :: aaj(:), aak(:)
       integer, allocatable :: dispj(:), dispk(:)
+      !integer(kind=MPI_ADDRESS_KIND), allocatable :: dispj(:), dispk(:)
       integer :: dr,dz,offsetr,offsetz
       integer :: i,j,k,kk,nc
       integer :: merr
@@ -58,16 +59,28 @@
         enddo
       enddo
 
-            ! DEBUG
-      if (sum(aaj) /= size(sbuf)) then
-      print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
-      call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
+!             ! DEBUG
+!       if (sum(aaj) /= size(sbuf)) then
+!       print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
+!       call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+!       endif
 
-      if (sum(aak) /= size(rbuf)) then
-        print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
-        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
+!       if (sum(aak) /= size(rbuf)) then
+!         print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
+!         call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+!       endif
+
+!       do i = 0, numtasks-1
+!   if (dispj(i) + aaj(i) > size(sbuf)) then
+!     print *, "Rank", myid, ": sbuf overflow for task", i
+!     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+!   endif
+!   if (dispk(i) + aak(i) > size(rbuf)) then
+!     print *, "Rank", myid, ": rbuf overflow for task", i
+!     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+!   endif
+! end do
+
       ! END DEBUG
 
 
@@ -162,17 +175,17 @@
         enddo
       enddo
       
-            ! DEBUG
-      if (sum(aaj) /= size(sbuf)) then
-      print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
-      call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
+      !       ! DEBUG
+      ! if (sum(aaj) /= size(sbuf)) then
+      ! print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
+      ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+      ! endif
 
-      if (sum(aak) /= size(rbuf)) then
-        print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
-        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
-      ! END DEBUG
+      ! if (sum(aak) /= size(rbuf)) then
+      !   print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
+      !   call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+      ! endif
+      ! ! END DEBUG
 
       call MPI_ALLTOALLV(sbuf, aak,dispk, MCP, &
                         rbuf, aaj,dispj, MCP, &
@@ -262,17 +275,32 @@
         enddo
       enddo
 
-      ! DEBUG
-      if (sum(aaj) /= size(sbuf)) then
-      print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
-      call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
+    !   ! DEBUG
+    !   if (sum(aaj) /= size(sbuf)) then
+    !   print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
+    !   call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !   endif
 
-      if (sum(aak) /= size(rbuf)) then
-        print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
-        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
-      ! END DEBUG
+    !   if (sum(aak) /= size(rbuf)) then
+    !     print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
+    !     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !   endif
+
+    !   if (any(aaj < 0) .or. any(aak < 0)) then
+    ! print *, "Rank", myid, ": Negative counts found in aaj or aak"
+    ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    ! endif
+
+    !     if (maxval(dispj + aaj) > size(sbuf)) then
+    !   print *, "Rank", myid, ": dispj + aaj exceeds sbuf"
+    !   call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !   endif
+
+    !   if (maxval(dispk + aak) > size(rbuf)) then
+    !     print *, "Rank", myid, ": dispk + aak exceeds rbuf"
+    !     call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+    !   endif
+    !   ! END DEBUG
 
       call MPI_ALLTOALLV(sbuf, aaj,dispj, MDP, &
                         rbuf, aak,dispk, MDP, &
@@ -365,21 +393,26 @@
         enddo
       enddo
 
-            ! DEBUG
-      if (sum(aaj) /= size(sbuf)) then
-      print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
-      call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
+      !       ! DEBUG
+      ! if (sum(aaj) /= size(sbuf)) then
+      ! print *, "Rank", myid, ": sum(aaj) /= size(sbuf)", sum(aaj), size(sbuf)
+      ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+      ! endif
 
-      if (sum(aak) /= size(rbuf)) then
-        print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
-        call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-      endif
-      ! END DEBUG
+      ! if (sum(aak) /= size(rbuf)) then
+      !   print *, "Rank", myid, ": sum(aak) /= size(rbuf)", sum(aak), size(rbuf)
+      !   call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+      ! endif
+      ! ! END DEBUG
       
       call MPI_ALLTOALLV(sbuf, aak,dispk, MDP, &
                         rbuf, aaj,dispj, MDP, &
                         MPI_COMM_WORLD, ierr)
+
+      ! KZ: test fix
+      !call MPI_ALLTOALLV(sbuf, aaj, dispj, MDP, &
+      !             rbuf, aak, dispk, MDP, &
+      !             MPI_COMM_WORLD, ierr)
      
       nc=0
       do kk = 0, numtasks-1

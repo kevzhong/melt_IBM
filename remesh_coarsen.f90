@@ -1,5 +1,5 @@
 !------------------------------------------------------
-subroutine remesh_coarsen (ecol_cnt,Surface,sur,eLengths,nf,ne,nv,xyz,tri_nor,E_thresh,&
+subroutine remesh_coarsen (ecol_cnt,eLengths,nf,ne,nv,xyz,tri_nor,E_thresh,&
     vert_of_face,edge_of_face,vert_of_edge,face_of_edge,&
     isGhostFace,isGhostEdge,isGhostVert,rm_flag,anchorVert,flagged_edge)
 
@@ -8,7 +8,7 @@ use param, only: ismaster
 use mls_param, only: vmelt
 implicit none
 integer :: nf,nv,ne
-real :: E_thresh, Surface
+real :: E_thresh
 integer, dimension (3,nf) :: vert_of_face, edge_of_face
 integer, dimension(2,ne) :: vert_of_edge, face_of_edge
 logical, dimension(nf) :: isGhostFace
@@ -18,7 +18,7 @@ integer, dimension(30) :: flagged_faces
 logical :: rm_flag
 real, dimension(3,nv) :: xyz
 real, dimension(3,nf) :: tri_nor
-real, dimension(nf) :: sur, skewness
+!real, dimension(nf) :: sur, skewness
 real, dimension(ne) :: eLengths
 real, dimension(4,4) :: Q1, Q2 ! Error quadrics of vertices v1, v2
 integer :: f, e, v1, v2
@@ -129,18 +129,11 @@ call flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v1,re1,nv,ne,nf
 
 
 !-------------- Update relevant geometric information --------------
-
-!Reset flag after remesh,  will be modified to .true. again if small triangle area detected
-rm_flag = .false.
-
 call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge,rm_flag,E_thresh)
 call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
 !call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace) ! Update sur
 !call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
 !call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
-
-!!---------------------- Equalize valences in 1-ring of v1 with edge-flips-----------------
-
 
 ! Euler's polyhedral number should be two for closed manifold
 EN = count(isGhostVert .eqv. .false.) -  count(isGhostEdge .eqv. .false.) +  count(isGhostFace .eqv. .false.)

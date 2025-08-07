@@ -284,6 +284,9 @@ real, dimension (3,nv) ::xyz
 real, dimension (ne) :: eLengths
 logical :: rm_flag
 real :: edge_thresh
+
+rm_flag = .false.
+
 do i=1,ne
         if ( isGhostEdge(i) .eqv. .false. ) then
                 v1=vert_of_edge(1,i)

@@ -40,6 +40,7 @@
       call update_both_ghosts(n1,n2,vx,kstart,kend)
       call update_both_ghosts(n1,n2,vy,kstart,kend)
       call update_both_ghosts(n1,n2,vz,kstart,kend)
+      call update_both_ghosts(n1,n2,temp,kstart,kend)
 
       !-------------------- Re-tag cells --------------------------
       if ( .not. is_stationarySolid ) then
