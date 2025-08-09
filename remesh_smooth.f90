@@ -204,6 +204,135 @@ subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz
         endif
     endif
 
+    ! If target residual still has not been achieved after the loop, we resort to looping over all edges
+    if (vol_corrected .eqv. .false.) then
+        do i = 1,ne
+            if ( (.not. isGhostEdge(i) ) ) then
+            n_erel = n_erel + 1
+
+                !write(*,*) "Relaxing edge", i
+
+                v1 = vert_of_edge(1,i)
+                v2 = vert_of_edge(2,i)
+
+                if ( isGhostVert(v1) ) then
+                    write(*,*) "Error, v1 is a ghost vertex"
+                endif
+
+                if ( isGhostVert(v2) ) then
+                    write(*,*) "Error, v2 is a ghost vertex"
+                endif
+                
+                ! Reset
+                A1(1:3)  = 0.0d0
+                A2(1:3)  = 0.0d0
+                vec(1:3) = 0.0d0
+
+                !write(*,*) "size(v1_n) i s" , size(v1_n)
+                call get_vertNeighbours(v1val,v1_n,size(v1_n),v1,i,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .true.)
+                call get_vertNeighbours(v2val,v2_n,size(v2_n),v2,i,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .false.)
+
+                ! Accmulate A1
+                do j=1,v1val
+                    jp1 = ( 1 + mod(j+1-1, v1val) )
+
+                    ej(1:3)  = xyz(1:3, v1_n(j)  ) - xyz(1:3, v1) 
+                    ejp1(1:3) = xyz(1:3, v1_n(jp1)  ) - xyz(1:3, v1)
+
+                    call cross(buffer1,ej,ejp1)
+                    A1(1:3) = A1(1:3) + buffer1
+                enddo
+
+                ! Accmulate A2
+                do j=1,v2val
+                    jp1 = ( 1 + mod(j+1-1, v2val) )
+
+                    ej(1:3)  = xyz(1:3, v2_n(j)  ) - xyz(1:3, v2) 
+                    ejp1(1:3) = xyz(1:3, v2_n(jp1)  ) - xyz(1:3, v2)
+
+                    call cross(buffer1,ej,ejp1)
+                    A2(1:3) = A2(1:3) + buffer1
+
+                    ! store vec = e2^{N2} - e2^{2} while accumulating
+                    if (j .eq. v2val) then
+                        vec(1:3) = vec(1:3) + ej
+                    elseif (j .eq. 2) then
+                        vec(1:3) = vec(1:3) - ej
+                    endif
+                enddo
+
+                ! Calculate smoothed position (x1s, x2s) explicitly
+                x1s(1) = ( sum( xyz(1,v2_n(2:v2val) ) ) + v2val * sum( xyz(1,v1_n(2:v1val) ) ) )  / (v1val*v2val - 1.0) 
+                x1s(2) = ( sum( xyz(2,v2_n(2:v2val) ) ) + v2val * sum( xyz(2,v1_n(2:v1val) ) ) )  / (v1val*v2val - 1.0) 
+                x1s(3) = ( sum( xyz(3,v2_n(2:v2val) ) ) + v2val * sum( xyz(3,v1_n(2:v1val) ) ) )  / (v1val*v2val - 1.0) 
+
+                x2s(1) =  ( x1s(1) + sum( xyz(1,v2_n(2:v2val) ) ) ) / v2val
+                x2s(2) =  ( x1s(2) + sum( xyz(2,v2_n(2:v2val) ) ) ) / v2val
+                x2s(3) =  ( x1s(3) + sum( xyz(3,v2_n(2:v2val) ) ) ) / v2val
+
+                ! Smoothing increments
+                dx1s(1:3) = omega * ( x1s(1:3) - xyz(1:3,v1)  )
+                dx2s(1:3) = omega * ( x2s(1:3) - xyz(1:3,v2)  )
+
+                call cross(buffer1,vec,dx1s - dx2s)
+                A(1:3) = A1(1:3) + A2(1:3) + buffer1(1:3)
+                nhat(1:3) = A(1:3) / (norm2(A) + smallNumber)
+
+                !! For diagnostic
+                !min_normA = min(min_normA, norm2(A))
+
+                call cross(buffer1,vec,dx1s)
+                h = - (dot_product(dx1s, A1) + dot_product(dx2s,A2) + dot_product(dx2s, buffer1 ) ) !+ dv_inc*6.0d0
+
+                ! Restoring volume from coarsening: do this with the first e-relaxation
+                if (vol_corrected .eqv. .false.) then
+                    ! It seems the sign(h) correction is necessary
+                    h = h + sign(1.0, h) * target_DV*6.0d0
+                    !vol_corrected = .true.
+
+                    !if (ismaster) then
+                    !    write(*,*) "sign(1.0,h) is: ", sign(1.0,h)
+                    !endif
+
+                    !sgnH = sign(1.0, h)
+                endif
+
+                h = h / (norm2(A) + smallNumber)
+
+                ! Track maximum drift
+                drift = max(drift, norm2(dx1s + h * nhat(1:3)), norm2(dx2s + h * nhat(1:3)) )
+
+
+                ! Final smoothed position update
+                xyz(1:3,v1) = xyz(1:3,v1) + dx1s + h * nhat(1:3)
+                xyz(1:3,v2) = xyz(1:3,v2) + dx2s + h * nhat(1:3)
+
+                if (vol_corrected .eqv. .false.) then
+                    ! Provisional check of new volume
+                    call calculate_volume (vol_check,nv,nf,xyz,vert_of_face,isGhostFace)
+                        if (abs(vol_check - vol_old) .lt. 1.e-14 ) then
+                            vol_corrected = .true.
+                        else
+                            if (ismaster) then
+                            write(*,*) "Erel residual", vol_check - vol_old
+                            endif
+                            cnt_refresh = cnt_refresh + 1
+                        endif
+                endif
+
+                ! Exit as soon as residual is achieved
+                if (vol_corrected .eqv. .true.) exit
+
+            endif !end flagged edge
+        enddo
+
+        if (ismaster) then
+        if (cnt_refresh .gt. 0 ) then
+            write(*,*) "Total refreshed erel count including unflagged", cnt_refresh
+        endif
+    endif
+    endif
+
     ! Reset flag: re-anchor the vertices
     ! Uncomment below if you would like to continue smoothing the already-remeshed vertices for future timesteps
     flagged_edge(:) = .false.
