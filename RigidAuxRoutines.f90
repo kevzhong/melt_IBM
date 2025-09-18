@@ -214,6 +214,7 @@ vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
                    + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
+!vel_CM(1) = 0.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 0.0 ! Fixed translational motion
 !vel_CM(1) = 0.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 1.0 ! Fixed translational motion
 
 

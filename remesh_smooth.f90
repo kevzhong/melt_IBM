@@ -204,6 +204,13 @@ subroutine remesh_smooth(vol_old,target_DV,n_erel,drift,cnt_refresh,nv,ne,nf,xyz
         endif
     endif
 
+    ! Do a final volume check for additional robustness...
+    call calculate_volume (vol_check,nv,nf,xyz,vert_of_face,isGhostFace)
+    if (abs(vol_check - vol_old) .gt. 1.e-14 ) then
+        vol_corrected = .false.
+    endif
+
+
     ! If target residual still has not been achieved after the loop, we resort to looping over all edges
     if (vol_corrected .eqv. .false.) then
         do i = 1,ne

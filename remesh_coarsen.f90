@@ -27,6 +27,10 @@ integer :: ecol_cnt, EN, flip_cnt, cnt, niter
 character*50 :: dsetname,filename
 integer :: max_whileSweep, while_sweep
 
+! Additional for neighbour-checking
+integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
+integer :: v1val, v2val, cnt2
+
 !integer :: valence, i
 
 ! Iteratively remesh a triangulated geometry using quadric-error-metrics-guided edge collapses
@@ -61,6 +65,16 @@ if ( (isGhostEdge(e) .eqv. .false.) .and.  (  eLengths(e) .le. E_thresh)  )  the
 
 v1 = vert_of_edge(1,e)
 v2 = vert_of_edge(2,e)
+
+! Get the number of vertex neighbours for v1 and v2
+call get_vertNeighbours(v1val,v1_n,size(v1_n),v1,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .true.)
+call get_vertNeighbours(v2val,v2_n,size(v2_n),v2,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .false.)
+
+! Don't perform the edge collapse if vertex valence <= 3, as this would violate topology preservation
+if ( (v1val .le. 3) .or. (v2val .le. 3) ) then
+    if (ismaster) write(*,*) "Skipping collapse of edge", e, "valences: ", v1val, v2val
+    cycle
+endif
 
 ! Compute new optimal position of (v1,v2) collapse, vbar, using QEM
 ! Reset quadrics

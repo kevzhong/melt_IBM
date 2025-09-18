@@ -90,8 +90,8 @@ integer :: clock
        cflm=0.d0
          
        !call inqpr_rotated
-       !call inqpr
-       call inqpr_taylorGreen
+       call inqpr
+       !call inqpr_taylorGreen
 
       else
 
