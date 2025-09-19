@@ -15,6 +15,7 @@ logical, dimension(nf) :: isGhostFace
 logical, dimension(ne) :: isGhostEdge, flagged_edge
 logical, dimension(nv) :: isGhostVert, anchorVert
 integer, dimension(30) :: flagged_faces
+integer, dimension(30) :: e_neighbours, f_neighbours ! for vertex deletion
 logical :: rm_flag
 real, dimension(3,nv) :: xyz
 real, dimension(3,nf) :: tri_nor
@@ -29,8 +30,10 @@ integer :: max_whileSweep, while_sweep
 
 ! Additional for neighbour-checking
 integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
-integer :: v1val, v2val, cnt2
+integer :: v1val, v2val, cnt_en, cnt_f, vdel_cnt
 
+! For debugging help
+vdel_cnt = 0
 !integer :: valence, i
 
 ! Iteratively remesh a triangulated geometry using quadric-error-metrics-guided edge collapses
@@ -54,131 +57,154 @@ max_whileSweep = 5 ! Max number of sweeps in the while loop
 
 !do while ( (rm_flag .eqv. .true.)  )
 do while ( (rm_flag .eqv. .true.) .and. (while_sweep .lt. max_whileSweep) )
-do e = 1,ne
-if ( (isGhostEdge(e) .eqv. .false.) .and.  (  eLengths(e) .le. E_thresh)  )  then
-!write(*,*) "Collapsing face", f
-! Select the smallest edge of the triangle to remove
-!e = minloc(  eLengths( edge_of_face(1:3,f) ) , 1  )
-!e = edge_of_face(e,f)
+    do e = 1,ne
+        if ( (isGhostEdge(e) .eqv. .false.) .and.  (  eLengths(e) .le. E_thresh)  )  then
 
-!write(*,*) "Collapsing edge", e
+        v1 = vert_of_edge(1,e)
+        v2 = vert_of_edge(2,e)
 
-v1 = vert_of_edge(1,e)
-v2 = vert_of_edge(2,e)
+        ! Get the number of vertex neighbours for v1 and v2
+        call get_vertNeighbours(v1val,v1_n,size(v1_n),v1,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .true.)
+        call get_vertNeighbours(v2val,v2_n,size(v2_n),v2,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .false.)
 
-! Get the number of vertex neighbours for v1 and v2
-call get_vertNeighbours(v1val,v1_n,size(v1_n),v1,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .true.)
-call get_vertNeighbours(v2val,v2_n,size(v2_n),v2,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face, .false.)
+        if (v1val .eq. 3) then ! do vertex deletion of v1
+            ! Get v1 e_neighbours, f_neighbours, vertex neighbours
+            vdel_cnt = vdel_cnt + 1
+            call get_edge_face_1ring(e_neighbours,f_neighbours,cnt_en,cnt_f,v1,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
 
-! Don't perform the edge collapse if vertex valence <= 3, as this would violate topology preservation
-if ( (v1val .le. 3) .or. (v2val .le. 3) ) then
-    if (ismaster) write(*,*) "Skipping collapse of edge", e, "valences: ", v1val, v2val
-    cycle
-endif
+            if ( (cnt_en .ne. 3) .or. (cnt_f .ne. 3) )then
+                if (ismaster) write(*,*) "Not 3 edge or face neighbours, something is wrong?"
+            endif
 
-! Compute new optimal position of (v1,v2) collapse, vbar, using QEM
-! Reset quadrics
-Q1(1:4,1:4) = 0.0d0
-Q2(1:4,1:4) = 0.0d0
-call calc_errorQuadric_of_v(Q1,v1,e,ne,nf,nv,tri_nor,xyz,edge_of_face,face_of_edge,vert_of_edge)
-call calc_errorQuadric_of_v(Q2,v2,e,ne,nf,nv,tri_nor,xyz,edge_of_face,face_of_edge,vert_of_edge)
+            ! Delete:
+            !   - vertex v1
+            !   - edges e, e1, e2 (neighbours of v1)
+            !   - faces fL, fR (faces of edge e), f3 (last neighbour of v1)
+            ! Retain: face fL, store in F1
+            call update_connectivity_vert_deletion(v1,v2,F1,e,e_neighbours, f_neighbours, v1_n, cnt_en, cnt_f, v1val, &
+                vert_of_face,edge_of_face, vert_of_edge,face_of_edge,isGhostVert, isGhostEdge, isGhostFace, ne,nv,nf)
 
-call solve_QEM_system(Q1,Q2, xyz(1:3,v1) ) ! v1 -> vbar
-!write(*,*) "New position from QEM of ecol ", e, "is ", xyz(1:3,v1)
+            flagged_faces(1) = F1
+            call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
 
-! Interpolate remeshed melt velocity of vertex: average of the collapsed vertices
-vmelt(1:3,v1,1) = 0.5 * (vmelt(1:3,v1,1) + vmelt(1:3,v2,1) )
+            ! Euler's polyhedral number should be two for closed manifold
+            EN = count(isGhostVert .eqv. .false.) -  count(isGhostEdge .eqv. .false.) +  count(isGhostFace .eqv. .false.)
+            if (EN .ne. 2) then
+                write(*,*) "Topology not preserved, error in remeshing, writing geom and exiting program now!"
+                call write_tecplot_geom
+                !stop
+                call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+                call MPI_Finalize(ierr)
+            endif
 
-!-------------- Apply ghost flags --------------------------------
-! Faces to be removed: the faces of edge e
-F1 = face_of_edge(1,e)
-F2 = face_of_edge(2,e)
-!write(*,*) "Faces to ghost of ecol ", e, "is ", F1, F2
+        elseif (v2val .eq. 3) then ! do vertex deletion of v2
+            vdel_cnt = vdel_cnt + 1
+            call get_edge_face_1ring(e_neighbours,f_neighbours,cnt_en,cnt_f,v2,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
 
-! Remove 1 edge from each of face F1 and F2, not counting the edge e, call this e1, e2
-! Also retain 1 edge (not counting e) from each of F1, F2, call this re1, re2
-call get_ghost_and_retained_edges(F1,e,nf,edge_of_face,e1,re1)
-call get_ghost_and_retained_edges(F2,e,nf,edge_of_face,e2,re2)
+            if ( (cnt_en .ne. 3) .or. (cnt_f .ne. 3) )then
+                if (ismaster) write(*,*) "Not 3 edge or face neighbours, something is wrong?"
+            endif
+        
+            call update_connectivity_vert_deletion(v2,v1,F1,e,e_neighbours, f_neighbours, v2_n, cnt_en, cnt_f, v2val, &
+                vert_of_face,edge_of_face, vert_of_edge,face_of_edge,isGhostVert, isGhostEdge, isGhostFace, ne,nv,nf)
+        
+            flagged_faces(1) = F1
+            call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
+        
+            ! Euler's polyhedral number should be two for closed manifold
+            EN = count(isGhostVert .eqv. .false.) -  count(isGhostEdge .eqv. .false.) +  count(isGhostFace .eqv. .false.)
+            if (EN .ne. 2) then
+                write(*,*) "Topology not preserved, error in remeshing, writing geom and exiting program now!"
+                call write_tecplot_geom
+                !stop
+                call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+                call MPI_Finalize(ierr)
+            endif
 
-!write(*,*) "ecol ", e, "e2 is ", e2, "re2 is ", re2
+        else ! Usual edge collapse
+    
+            ! Compute new optimal position of (v1,v2) collapse, vbar, using QEM
+            ! Reset quadrics
+            Q1(1:4,1:4) = 0.0d0
+            Q2(1:4,1:4) = 0.0d0
+            call calc_errorQuadric_of_v(Q1,v1,e,ne,nf,nv,tri_nor,xyz,edge_of_face,face_of_edge,vert_of_edge)
+            call calc_errorQuadric_of_v(Q2,v2,e,ne,nf,nv,tri_nor,xyz,edge_of_face,face_of_edge,vert_of_edge)
 
-isGhostFace(F1) = .true.
-isGhostFace(F2) = .true.
+            call solve_QEM_system(Q1,Q2, xyz(1:3,v1) ) ! v1 -> vbar
+            !write(*,*) "New position from QEM of ecol ", e, "is ", xyz(1:3,v1)
 
-isGhostVert(v2) = .true.
+            ! Interpolate remeshed melt velocity of vertex: average of the collapsed vertices
+            vmelt(1:3,v1,1) = 0.5 * (vmelt(1:3,v1,1) + vmelt(1:3,v2,1) )
 
-isGhostEdge(e) = .true.
-isGhostEdge(e1) = .true.
-isGhostEdge(e2) = .true.
+            !-------------- Apply ghost flags --------------------------------
+            ! Faces to be removed: the faces of edge e
+            F1 = face_of_edge(1,e)
+            F2 = face_of_edge(2,e)
+            !write(*,*) "Faces to ghost of ecol ", e, "is ", F1, F2
 
-!-------------- Update connectivity --------------------------------
-call update_face_connectivity(v1,v2,e1,e2,re1,re2,nf,vert_of_face,edge_of_face)
-call update_edge_connectivity(v1,v2,e1,e2,re1,re2,F1,F2,ne,vert_of_edge,face_of_edge)
+            ! Remove 1 edge from each of face F1 and F2, not counting the edge e, call this e1, e2
+            ! Also retain 1 edge (not counting e) from each of F1, F2, call this re1, re2
+            call get_ghost_and_retained_edges(F1,e,nf,edge_of_face,e1,re1)
+            call get_ghost_and_retained_edges(F2,e,nf,edge_of_face,e2,re2)
 
-! Optimisation steps: tangential relaxation
-!call write_tecplot_geom ! for debugging
-!call debug_write(flip_cnt) ! for debugging
+            !write(*,*) "ecol ", e, "e2 is ", e2, "re2 is ", re2
 
-!if ( (ismaster) .and. (cnt .ne. 0) ) then
-!    write(*,*) "Entering 1-ring edge-flip for vertex", v1
-!    call debug_write(flip_cnt) ! for debugging
-!endif
+            isGhostFace(F1) = .true.
+            isGhostFace(F2) = .true.
 
-!do niter = 1,4
-!    call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge)
-!    call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace,rm_flag,A_thresh) ! Update sur
-!    call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
-!    call optimiseSkewness_1ring(cnt,v1,re1,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
-!    flip_cnt = flip_cnt + cnt
-!enddo
+            isGhostVert(v2) = .true.
 
-!flip_cnt = flip_cnt + cnt
-!if ( (ismaster) .and. (cnt .ne. 0) ) then
-!    write(*,*) "Exited 1-ring edge-flip with", cnt, "flips!"
-!    call debug_write(flip_cnt) ! for debugging
-!endif
+            isGhostEdge(e) = .true.
+            isGhostEdge(e1) = .true.
+            isGhostEdge(e2) = .true.
 
-! Flag un-anchored vertices, for coupling to smoothing
-call flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v1,re1,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+            !-------------- Update connectivity --------------------------------
+            call update_face_connectivity(v1,v2,e1,e2,re1,re2,nf,vert_of_face,edge_of_face)
+            call update_edge_connectivity(v1,v2,e1,e2,re1,re2,F1,F2,ne,vert_of_edge,face_of_edge)
+
+            ! Flag un-anchored vertices, for coupling to smoothing
+            call flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v1,re1,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
 
 
-!-------------- Update relevant geometric information --------------
-call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge,rm_flag,E_thresh)
-call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
-!call calculate_area(Surface,nv,nf,xyz,vert_of_face,sur,isGhostFace) ! Update sur
-!call update_tri_normal (tri_nor,nv,nf,xyz,vert_of_face,isGhostFace)
-!call calculate_skewness (ne,nf,edge_of_face,sur,eLengths,skewness,isGhostFace)
+            !-------------- Update relevant geometric information --------------
+            call calculate_eLengths(eLengths,nv,ne,xyz,vert_of_edge,isGhostEdge,rm_flag,E_thresh)
+            call update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
 
-! Euler's polyhedral number should be two for closed manifold
-EN = count(isGhostVert .eqv. .false.) -  count(isGhostEdge .eqv. .false.) +  count(isGhostFace .eqv. .false.)
-if (EN .ne. 2) then
-write(*,*) "Topology not preserved, error in remeshing, writing geom and exiting program now!"
-call write_tecplot_geom
-!stop
-call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-call MPI_Finalize(ierr)
-endif
+            ! Euler's polyhedral number should be two for closed manifold
+            EN = count(isGhostVert .eqv. .false.) -  count(isGhostEdge .eqv. .false.) +  count(isGhostFace .eqv. .false.)
+            if (EN .ne. 2) then
+            write(*,*) "Topology not preserved, error in remeshing, writing geom and exiting program now!"
+            call write_tecplot_geom
+            !stop
+            call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+            call MPI_Finalize(ierr)
+            endif
 
-if (count(isGhostFace .eqv. .false.) .le. 4 ) then
-write(*,*) "Geometry reduced to tetrahedron, writing geom and exiting program now!"
-call write_tecplot_geom
-!stop
-call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-call MPI_Finalize(ierr)
-endif
+            if (count(isGhostFace .eqv. .false.) .le. 4 ) then
+            write(*,*) "Geometry reduced to tetrahedron, writing geom and exiting program now!"
+            call write_tecplot_geom
+            !stop
+            call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+            call MPI_Finalize(ierr)
+            endif
 
-ecol_cnt = ecol_cnt + 1
-
-endif
+            ecol_cnt = ecol_cnt + 1
+        endif ! end v1=3, v2=3, else collapse
+    endif ! end ghost
 enddo
-while_sweep = while_sweep + 1
+    while_sweep = while_sweep + 1
 enddo !while
 
-if (ismaster) then
-   if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
-    !write(*,*) "While sweep count: ", while_sweep
-endif
 
+!---------------------------------------------------------------------------------------------
+! if (ismaster) then
+!    if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
+!     write(*,*) "ecol cnt, vdel_cnt:", ecol_cnt, vdel_cnt
+! endif
+
+
+! !------------- FOR DEBUGGING ------------------------
+! if (skipped_ecol) then 
 ! if (ismaster) then
 !     filename = 'continuation/isGhostVert.h5'
 !     dsetname = trim('isGhostVert')
@@ -221,9 +247,13 @@ endif
 !     call HdfWriteSerialReal2D(filename,dsetname,3,nv,xyz)
 ! endif
 
+! call write_tecplot_geom
+
 ! call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
 ! call MPI_Finalize(ierr)
+
+! endif !------ END DEBUGGING
 
 end subroutine remesh_coarsen
 !------------------------------------------------------
@@ -482,6 +512,72 @@ subroutine flag_neighbours_1ring(anchorVert,flagged_edge,flagged_faces,v,e,nv,ne
 
 end subroutine flag_neighbours_1ring
 
+subroutine get_edge_face_1ring(e_neighbours,f_neighbours,cnt_en,cnt_f,v,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+    ! Accmulate the edge and face neighbours of vertex v (the 1-ring)
+        use param, only: ismaster
+        ! Flag the neighbours (verts + edges) in the 1-ring neighbourhood
+        ! of vertex v to be un-anchored for later smoothing
+        ! Also accumulate the indices of faces in the 1-ring, to flag for updating properties
+        implicit none
+        integer :: v, e, nv,ne, nf, cnt_en
+        integer ::  cnt
+        integer, dimension(30) :: e_neighbours,f_neighbours
+        integer, dimension(3,nf) :: edge_of_face
+        integer, dimension(2,ne) :: face_of_edge, vert_of_edge
+        integer :: prevFace, currentFace, currentEdge, prevEdge, F1
+        integer :: cnt_f
+
+        ! Reset
+        e_neighbours = 0
+        f_neighbours = 0
+        cnt_en = 1
+
+        ! 1-ring center
+        e_neighbours(cnt_en) = e
+        ! Accmulate the face adjacency
+        ! Arbitrary starting face
+        F1 = face_of_edge(1,e)
+        prevFace = F1 
+        currentFace = 0
+
+        cnt_f = 1
+        f_neighbours(cnt_f) = F1
+    
+        currentEdge = 0
+        prevEdge = e
+    
+        cnt = 1
+    
+        do while (currentEdge .ne. e )
+    
+            if (face_of_edge(1,prevEdge) .ne. prevFace) then
+                currentFace = face_of_edge(1,prevEdge)
+            else
+                currentFace = face_of_edge(2,prevEdge)
+            endif
+    
+            if (currentFace .eq. F1) exit
+
+
+            cnt_f = cnt_f + 1
+            f_neighbours(cnt_f) = currentFace
+
+            cnt = cnt + 1
+    
+            ! Find next edge, store as currentEdge
+            call get_next_edge_of_v(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prevEdge,currentEdge)
+            !flagged_edge(currentEdge) = .true.
+            cnt_en = cnt_en + 1
+            e_neighbours(cnt_en) = currentEdge
+            
+            prevFace = currentFace
+            prevEdge = currentEdge
+        enddo 
+
+        !write(*,*) "Finished 1-ring ef successfully"
+
+end subroutine get_edge_face_1ring
+
 subroutine update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,nf,nv,xyz)
     ! Update face normals in the local 1-ring neighbourhood
     use param, only: ismaster
@@ -495,7 +591,9 @@ subroutine update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,n
     real, dimension(3) :: nhat_old
     integer, dimension(30) :: flagged_faces
     real :: sgn
-    integer :: cnt = 1
+    integer :: cnt
+
+    cnt = 1
 
         do while (flagged_faces(cnt) .ne. 0)
             i = flagged_faces(cnt)
@@ -535,6 +633,131 @@ subroutine update_1ring_normals(flagged_faces,isGhostFace,tri_nor,vert_of_face,n
 end subroutine update_1ring_normals
 
 
+!get_edge_face_1ring(e_neighbours,f_neighbours,cnt_en,cnt_f,v1,e,nv,ne,nf,face_of_edge,vert_of_edge,edge_of_face)
+subroutine update_connectivity_vert_deletion(v1,v2,re_face,e,e_neighbours, f_neighbours, v_neighbours, cnt_en, cnt_fn, cnt_vn, &
+    vert_of_face,edge_of_face, vert_of_edge,face_of_edge,isGhostVert, isGhostEdge, isGhostFace, ne,nv,nf)
+    ! Update face normals in the local 1-ring neighbourhood
+    use param, only: ismaster
+    implicit none
+    integer :: v1, v2,e
+    integer :: fL, fR, f3, e1, e2, e3, e4, e5, v3, v4, re_face
+    integer :: i, incr
+    integer :: cnt_fn, cnt_en, cnt_vn
+    integer :: ne, nf, nv
+    logical, dimension(nf) :: isGhostFace
+    logical, dimension(ne) :: isGhostEdge 
+    logical, dimension(nv) :: isGhostVert
+    integer, dimension (3,nf) :: vert_of_face, edge_of_face
+    integer, dimension(2,ne) :: vert_of_edge, face_of_edge
+    integer, dimension(30) :: e_neighbours, f_neighbours, v_neighbours ! for vertex deletion
+    integer, dimension(2) :: local_e, local_v
+
+    ! Notation:
+    ! Let vertex v1 be the vertex flagged for deletion
+    ! This routine will only be called when v1 has 3 edge or face neighbours
+    ! v2 is the vertex neighbour of v1 that shares the edge e with v1 (where e was originally flagged for collapse)
+    ! the other vertices are v3, v4
+    ! Besides e, the other edge neighbours to v1 are e2, e3
+    ! The face neighbours are of v1 are fL, fR (faces of edge e) and f3
+    !
+    ! the remaining important entities are: {e3,e4,e5}: the remaining edges of fL, fR, f3 
+
+    ! We delete {v1}, {e,e1,e2}, {fR, f3} and fL becomes the new retained face
+
+    !------------ BEGIN CONNECTIVITY UPDATE ------------------------------------------------
+
+    local_e = 0
+    incr = 1
+    ! Specify some indices
+    ! Retrieve e1, e2 as local_e(1), local_e(2)
+    do i = 1,cnt_en
+        if (e_neighbours(i) .eq. e ) cycle
+
+            local_e(incr) = e_neighbours(i)
+            incr = incr + 1
+    enddo
+    e1 = local_e(1)
+    e2 = local_e(2)
+
+    ! Retrieve v3, v4 as local_v(1), local_v(2)
+    local_v = 0
+    incr = 1
+    do i = 1,cnt_vn
+        if (v_neighbours(i) .eq. v2 ) cycle
+
+            local_v(incr) = v_neighbours(i)
+            incr = incr + 1
+    enddo
+    v3 = local_v(1)
+    v4 = local_v(2)
+
+    ! Retrieve f3
+    fL = face_of_edge(1,e)
+    fR = face_of_edge(2,e)
+    do i = 1,cnt_fn
+        if ( (f_neighbours(i) .eq. fL ) .or. (f_neighbours(i) .eq. fR ) ) cycle
+        f3 = f_neighbours(i)
+    enddo
+
+    ! Retrieve e3, e4, and e5
+    do i = 1,3
+        ! Face fL has {e,e2 or e1,e3}
+
+        ! Set e3
+        if ( ( edge_of_face(i,fL) .ne. e ) .and.  (edge_of_face(i,fL) .ne. e1) .and. (edge_of_face(i,fL) .ne. e2)   ) then
+            e3 = edge_of_face(i,fL)
+        endif
+
+        ! Set e4
+        if ( ( edge_of_face(i,fR) .ne. e ) .and.  (edge_of_face(i,fR) .ne. e1) .and. (edge_of_face(i,fR) .ne. e2)   ) then
+            e4 = edge_of_face(i,fR)
+        endif
+
+        ! Set e5
+        if (  (edge_of_face(i,f3) .ne. e1) .and. (edge_of_face(i,f3) .ne. e2)  )  then
+            e5 = edge_of_face(i,f3)
+        endif
+
+    enddo
+
+    ! face of edge: for edges {e3,e4,e5}, change {fR,f3} reference to fL
+    do i = 1,2
+        if  ( ( face_of_edge(i,e3) .eq. fR ) .or. ( face_of_edge(i,e3) .eq. f3 ) )  face_of_edge(i,e3) = fL
+        if  ( ( face_of_edge(i,e4) .eq. fR ) .or. ( face_of_edge(i,e4) .eq. f3 ) )  face_of_edge(i,e4) = fL
+        if  ( ( face_of_edge(i,e5) .eq. fR ) .or. ( face_of_edge(i,e5) .eq. f3 ) )  face_of_edge(i,e5) = fL
+    enddo
+
+    !vert of face: for fL: change to {v2,v3,v4}
+    incr = 1
+    do i = 1,3
+        if  ( ( vert_of_face(i,fL) .eq. v2 ) ) cycle
+        vert_of_face(i,fL) = local_v(incr)
+        incr = incr + 1
+    enddo
+
+    ! edge of face: for fL: change to {e3,e4,e5}
+    incr = 1
+    local_e(1) = e4
+    local_e(2) = e5
+    do i = 1,3
+        if  ( ( edge_of_face(i,fL) .eq. e3 ) ) cycle
+        edge_of_face(i,fL) = local_e(incr)
+        incr = incr + 1
+    enddo
+
+    ! Ghost the removed entities
+    isGhostVert(v1) = .true.
+
+    isGhostEdge(e) = .true.
+    isGhostEdge(e1) = .true.
+    isGhostEdge(e2) = .true.
+
+    isGhostFace(fR) = .true.
+    isGhostFace(f3) = .true.
+
+    re_face = fL ! retained face
+
+end subroutine update_connectivity_vert_deletion
 ! subroutine optimiseSkewness_1ring(flip_cnt,v,e,ne,nf,nv,vert_of_face,face_of_edge,edge_of_face,vert_of_edge,xyz)
 !     ! Do a sequence of edge flips around the 1-ring neighbourhood of vertex v
 !     use param, only: ismaster

@@ -441,6 +441,7 @@ subroutine get_vertNeighbours(numNeighbours,v_neighbours,buffersize,v,e,nv,ne,nf
 end subroutine get_vertNeighbours
 
 subroutine get_next_edge(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prevEdge,nextEdge)
+    use mpih
     ! Retrive the next edge that is not prevEdge joined to vertex v
     implicit none
     integer :: v, ne, nf,i
@@ -464,8 +465,11 @@ subroutine get_next_edge(v,nf,ne,edge_of_face,currentFace,vert_of_edge,prevEdge,
     enddo
 
     if (success .eqv. .false.) then
-        write(*,*) "Error finding next edge of vertex", v
-        stop
+        write(*,*) "Error in smoothing for finding next edge of vertex", v
+        !stop
+         call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+         call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+         call MPI_Finalize(ierr)
     endif
     end subroutine get_next_edge
 
