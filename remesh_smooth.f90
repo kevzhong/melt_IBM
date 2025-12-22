@@ -401,6 +401,7 @@ subroutine get_vertNeighbours(numNeighbours,v_neighbours,buffersize,v,e,nv,ne,nf
         if (numNeighbours .gt. buffersize ) then
             write(*,*) "Exceeded vertNeighbour buffer size"
             !exit
+            call MPI_BARRIER(MPI_COMM_WORLD,ierr)
             call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
             call MPI_Finalize(ierr)
         endif
@@ -421,6 +422,7 @@ subroutine get_vertNeighbours(numNeighbours,v_neighbours,buffersize,v,e,nv,ne,nf
 
     if (numNeighbours .lt. 3 ) then
         write(*,*) "Vertex v has less than 3 neighbours, exiting!"
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
         call MPI_Finalize(ierr)
     endif

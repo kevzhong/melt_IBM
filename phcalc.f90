@@ -53,8 +53,8 @@
       do j=jstart,jend
        do i=1,n1m
         do k=1,n3m
-          !buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j)+1.e-16)
-          buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j) )
+          buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j)+1.e-16)
+          !buft(k,i,j) = buft(k,i,j)/(-ak3(k)-ak1(i)-ak2(j) )
         end do
        end do
       end do

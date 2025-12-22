@@ -19,6 +19,8 @@ character(70) namfile
 integer :: seed_size, i
 integer, allocatable :: seed(:)
 integer :: clock
+character*50 :: dsetname,filename
+
   call mpi_workdistribution
   call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
@@ -236,6 +238,57 @@ integer :: clock
            if (specflag) call compute_1d_spectra
          endif
          
+!          !------------- FOR DEBUGGING ------------------------
+! !if (skipped_ecol) then 
+! if (ismaster) then
+!     filename = 'continuation/isGhostVert.h5'
+!     dsetname = trim('isGhostVert')
+!     call HdfWriteSerialInt2D(filename,dsetname,maxnv,1,isGhostVert(:,1))
+
+!     filename = 'continuation/isGhostEdge.h5'
+!     dsetname = trim('isGhostEdge')
+!     call HdfWriteSerialInt2D(filename,dsetname,maxne,1,isGhostEdge(:,1))
+
+!     filename = 'continuation/isGhostFace.h5'
+!     dsetname = trim('isGhostFace')
+!     call HdfWriteSerialInt2D(filename,dsetname,maxnf,1,isGhostFace(:,1))
+
+!     filename = 'continuation/anchorVert.h5'
+!     dsetname = trim('anchorVert')
+!     call HdfWriteSerialInt2D(filename,dsetname,maxnv,1,anchorVert(:,1))
+
+!     filename = 'continuation/flagged_edge.h5'
+!     dsetname = trim('flagged_edge')
+!     call HdfWriteSerialInt2D(filename,dsetname,maxne,1,flagged_edge(:,1))
+
+!     filename = 'continuation/vert_of_edge.h5'
+!     dsetname = trim('vert_of_edge')
+!     call HdfWriteSerialInt2D(filename,dsetname,2,maxne,vert_of_edge(:,:,1))
+
+!     filename = 'continuation/vert_of_face.h5'
+!     dsetname = trim('vert_of_face')
+!     call HdfWriteSerialInt2D(filename,dsetname,3,maxnf,vert_of_face(:,:,1))
+
+!     filename = 'continuation/edge_of_face.h5'
+!     dsetname = trim('edge_of_face')
+!     call HdfWriteSerialInt2D(filename,dsetname,3,maxnf,edge_of_face(:,:,1))
+
+!     filename = 'continuation/face_of_edge.h5'
+!     dsetname = trim('face_of_edge')
+!     call HdfWriteSerialInt2D(filename,dsetname,2,maxne,face_of_edge(:,:,1))
+
+!     filename = 'continuation/xyz.h5'
+!     dsetname = trim('xyz')
+!     call HdfWriteSerialReal2D(filename,dsetname,3,maxnv,xyzv(:,:,1))
+! endif
+
+! call write_tecplot_geom
+
+! call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+! call MPI_Finalize(ierr)
+
+
 
 
       time=time+dt

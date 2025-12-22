@@ -31,9 +31,12 @@ integer :: max_whileSweep, while_sweep
 ! Additional for neighbour-checking
 integer, dimension(30) :: v1_n, v2_n ! Safe buffer size for storing vertex neighbours
 integer :: v1val, v2val, cnt_en, cnt_f, vdel_cnt
+integer :: n_eligible
+
 
 ! For debugging help
 vdel_cnt = 0
+n_eligible = 0
 !integer :: valence, i
 
 ! Iteratively remesh a triangulated geometry using quadric-error-metrics-guided edge collapses
@@ -54,6 +57,7 @@ flip_cnt = 0
 
 while_sweep = 0
 max_whileSweep = 5 ! Max number of sweeps in the while loop
+
 
 !do while ( (rm_flag .eqv. .true.)  )
 do while ( (rm_flag .eqv. .true.) .and. (while_sweep .lt. max_whileSweep) )
@@ -197,14 +201,14 @@ enddo !while
 
 
 !---------------------------------------------------------------------------------------------
-! if (ismaster) then
-!    if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
-!     write(*,*) "ecol cnt, vdel_cnt:", ecol_cnt, vdel_cnt
-! endif
+if (ismaster) then
+   if (while_sweep .eq. max_whileSweep) write(*,*) "Max while sweep attained in remeshing"
+    write(*,*) "ecol cnt, vdel_cnt:", ecol_cnt, vdel_cnt
+endif
 
 
 ! !------------- FOR DEBUGGING ------------------------
-! if (skipped_ecol) then 
+! !if (skipped_ecol) then 
 ! if (ismaster) then
 !     filename = 'continuation/isGhostVert.h5'
 !     dsetname = trim('isGhostVert')
@@ -253,7 +257,7 @@ enddo !while
 ! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
 ! call MPI_Finalize(ierr)
 
-! endif !------ END DEBUGGING
+!endif !------ END DEBUGGING
 
 end subroutine remesh_coarsen
 !------------------------------------------------------
