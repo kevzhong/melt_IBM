@@ -3,7 +3,8 @@
       use mpi_param
       use param
       use local_arrays, only: vy,vz,pr,vx
-      use mls_param
+      use phasefield
+      !use mls_param
       implicit none
       character(len=4) :: dummy
       integer :: n,ns,nt,errorcode
@@ -34,15 +35,13 @@
         read(15,301) dummy
         read(15,*) xlen,ylen,zlen
         read(15,301) dummy
-        read(15,*) nread, pread 
+        read(15,*) nread 
         read(15,301) dummy
         read(15,*) ntst,nsst,tframe,tpin,ireset
         read(15,301) dummy
         read(15,*) idtv, dt, dtmax, cflfix
         read(15,301) dummy
         read(15,*) ren,prandtl,betagz
-        read(15,301) dummy
-        read(15,*) Tmelt , Tliq, Tsol, latHeat, cpliquid, temp_restart
         read(15,301) dummy
         read(15,*) forcing 
       close(15)
@@ -56,50 +55,42 @@
       read(15,*) C_HIT
     close(15)
 
-      open(unit=15,file='part.in',status='old')
+      open(unit=15,file='melt.in',status='old')
         read(15,301) dummy       
-        read(15,*) imlsfor, imlsstr, imelt
+        read(15,*) pfmode, meltmode
         read(15,301) dummy
-        read(15,*) dens_ratio
-        read(15,301) dummy       
-        read(15,*) gtsfx, rad_p, tagType
-        read(15,301) dummy       
-        read(15,*) iremesh, PERC_Ethresh, V_ON_VE_PERC
-        !read(15,*) iremesh, PERC_Athresh, skew_thresh, V_ON_VE_PERC
-
-
+        read(15,*) pf_A,Tmelt , Tliq, Tsol, latHeat, cpliquid, temp_restart
       close(15)
-
 301     format(a4)          
 
       ! KZ Verify correctness of bou.in,  part.in
 
-      ! Can only melt if MLS forcing is enabled
-      if (imelt.eq.1) then
-            if(imlsfor.ne.1) then
-            write(*,*) "Rank", myid, "Melting enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
-            endif
-      endif
+      ! ! Can only melt if MLS forcing is enabled
+      ! if (imelt.eq.1) then
+      !       if(imlsfor.ne.1) then
+      !       write(*,*) "Rank", myid, "Melting enabled but MLS forcing disabled, exiting"
+      !       call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
+      !       endif
+      ! endif
 
-      ! Can only do FSI if MLS forcing is enabled
-      if (imlsstr.eq.1) then
-            if(imlsfor.ne.1) then
-            write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
-            call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
-            endif
-      endif
+      ! ! Can only do FSI if MLS forcing is enabled
+      ! if (imlsstr.eq.1) then
+      !       if(imlsfor.ne.1) then
+      !       write(*,*) "Rank", myid, "FSI enabled but MLS forcing disabled, exiting"
+      !       call MPI_ABORT(MPI_COMM_WORLD,1,ierr)
+      !       endif
+      ! endif
 
-      ! Logical flag for solid
-      ! If object is stationary (true by default on on initialization), only need to tag cells once
-      is_stationarySolid = .true.
-      if (imlsfor .eq. 1) then
-            if ( (imlsstr .eq. 1) .or. (imelt .eq. 1) ) then ! non-stationary if melting or FSI enabled
-                  is_stationarySolid = .false.
-            endif
-      endif
+      ! ! Logical flag for solid
+      ! ! If object is stationary (true by default on on initialization), only need to tag cells once
+      ! is_stationarySolid = .true.
+      ! if (imlsfor .eq. 1) then
+      !       if ( (imlsstr .eq. 1) .or. (imelt .eq. 1) ) then ! non-stationary if melting or FSI enabled
+      !             is_stationarySolid = .false.
+      !       endif
+      ! endif
 
-      gtsfx = "gts/" // trim(gtsfx)
+      ! gtsfx = "gts/" // trim(gtsfx)
 
       starea = 0 ! KZ: fix to zero, not using stat.f90
 
@@ -164,10 +155,6 @@
       endif
       
 !m======================================================
-      
-#ifdef TIMED
-      timeflag = .true.
-#endif
 
 #ifdef SPEC
       specflag = .true.

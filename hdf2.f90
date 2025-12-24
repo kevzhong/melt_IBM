@@ -399,34 +399,3 @@ subroutine hdf_read_3dInt(var,d,dsetname)
   
   end if
   end subroutine
-
-
-subroutine init_quat_flowmov
-  use param
-  use mls_param
-  use hdf5
-  use mpih
-
-  implicit none
-
-  character(len=16), parameter :: filename   = "vtkfiles/vtk.h5"
-  integer :: hdferr
-
-  integer(hid_t) :: file_id
-
-  logical :: file_exists
-
-  if (myid.eq.0) then
-
-  inquire(file=filename, exist=file_exists)
-
-  if (file_exists .eqv. .false. .or. nread.eq.0) then
-
-  call h5fcreate_f(filename, h5f_acc_trunc_f, file_id, hdferr)
-  call h5fclose_f(file_id, hdferr)
-
-  endif
-
-  endif
-
-end subroutine

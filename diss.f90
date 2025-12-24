@@ -1,26 +1,19 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                         ! 
-!    FILE: CalcDissipation.F90                            !
-!    CONTAINS: subroutine CalcDissipation                 !
-!                                                         ! 
-!    PURPOSE: Calculates the instantaneous kinetic        !
-!     energy dissipation and writes it in dissip.out      !
-!                                                         !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Write instantaneous turbulence metrics at current time instant into a text file
 
-      subroutine CalcDissipation
+      subroutine CalcTurbulenceStats
       use mpih
       use param
       use local_arrays,only: vx,vy,vz,temp
       use local_aux,only: diss, tke,chi
       use stat_arrays
-      use mls_param
+      !use mls_param
       use mpi_param, only: kstart,kend
+      use phasefield
 
       implicit none
       integer :: ic,jc,kc
       integer :: im,ip,jm,jp,kp,km
-      real :: sumvof
+      real :: sumvof,vof
       real :: eta,re_lam
       real :: h11,h12,h13,h21,h22,h23,h31,h32,h33
       real :: diss_volAvg, nu, kmax_eta, Re_L,lambda_t, chi_volAvg
@@ -42,10 +35,10 @@
       call update_both_ghosts(n1,n2,vz,kstart,kend)
       call update_both_ghosts(n1,n2,temp,kstart,kend)
 
-      !-------------------- Re-tag cells --------------------------
-      if ( .not. is_stationarySolid ) then
-        call tagCells
-      endif
+      ! !-------------------- Re-tag cells --------------------------
+      ! if ( .not. is_stationarySolid ) then
+      !   call tagCells
+      ! endif
  !-------------------- End re-tag cells --------------------------
 
 !================================================================
@@ -138,14 +131,14 @@
       chi(ic,jc,kc) = chi(ic,jc,kc) / pec
 
       ! Only accumulate fluid-domain averages in fully fluid regions
-      if (VOFp(ic,jc,kc) .eq. 1.0) then
 
-            sumvof = sumvof + VOFp(ic,jc,kc)
+      vof = 1.0 - phi (ic,jc,kc) 
+      sumvof = sumvof + vof
             
-            kenerg = kenerg + tke(ic,jc,kc) !* VOFp(ic,jc,kc)
-            diss_volAvg = diss_volAvg + diss(ic,jc,kc) !* VOFp(ic,jc,kc)
-            chi_volAvg = chi_volAvg + chi(ic,jc,kc) !* VOFp(ic,jc,kc)
-      endif
+      kenerg = kenerg + vof * tke(ic,jc,kc) !* VOFp(ic,jc,kc)
+      diss_volAvg = diss_volAvg + vof * diss(ic,jc,kc) !* VOFp(ic,jc,kc)
+      chi_volAvg = chi_volAvg + vof * chi(ic,jc,kc) !* VOFp(ic,jc,kc)
+      !endif
             
 
        end do

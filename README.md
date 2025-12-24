@@ -1,9 +1,9 @@
 # melt_IBM
-This is a repository for a DNS code which simulates the Lagrangian melting of a solid object. The journal paper detailing this work is found at:
 
-* Zhong, K., Howland, C. J., Lohse, D., and Verzicco, R. (2025). A front-tracking immersed-boundary framework for simulating Lagrangian melting problems. J. Comput. Phys., page 113762.
+Phase-field branch of the melting in turbulence repository. Only Eulerian melting: no Lagrangian capabilities.
 
-There is also a WIP documentation for this repository found [here](https://kevzhong.github.io/melt_IBM/).
+Melting of the ice phase is handled via a phase field framework, a variant of the Beckermann et al. (1999, JCP) and Hester et al. (2021, Proc. Royal Soc.) formulation.
+
 
 # Dependencies
 - MPI Fortran compiler

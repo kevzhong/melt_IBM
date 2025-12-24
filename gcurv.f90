@@ -2,19 +2,20 @@ subroutine gcurv
 use mpih
 use mpi_param
 use param
+use phasefield
 use local_arrays
 use local_aux
-use mls_param
-use mls_local
+!use mls_param
+!use mls_local
 
 !use coll_mod ! KZ: no collision module for now
 implicit none
 real    :: ti(2), tin(3)
 real    :: dmax,tpc
 real :: tstart, tend
-integer :: inp
+!integer :: inp
 integer :: icut,jcut,kcut
-real,dimension(3,2)     :: bbox_inds
+!real,dimension(3,2)     :: bbox_inds
 character(70) namfile
 integer :: seed_size, i
 integer, allocatable :: seed(:)
@@ -22,7 +23,7 @@ integer :: clock
 character*50 :: dsetname,filename
 
   call mpi_workdistribution
-  call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
+  !call get_prow_pcol ! KZ: pencils for bounding box in ray-tagging
   call InitArrays
 
   if (specflag) call initSpectra
@@ -33,36 +34,19 @@ character*50 :: dsetname,filename
   !call InitStats
   call cordin 
   call phini
-  call tri_geo
+  !call tri_geo
 
-    !!!!!!!!!!!!!!!!!! Fix random seed for HIT force
-    !— find out how many seed integers the compiler wants —
-  call random_seed(size=seed_size)
-  allocate(seed(seed_size))
-
-  !— rank 0 picks a “random” seed from the wall‐clock (or you can
-  ! choose a fixed constant for a perfectly reproducible run) —
-  if (ismaster) then
-    call system_clock(count=clock)
-    do i = 1, seed_size
-      !seed(i) = mod(clock + i*12345, huge(1))
-      seed(i) = 123456 + i ! Fixed seed
-    end do
-  end if
-
-  !— now broadcast that identical seed array to every rank —
-  call MPI_Bcast(seed, seed_size, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-
-  !— set the Fortran RNG to that shared state —
-  call random_seed(put=seed)
+    if (pfmode .eq. 1) then
+      call init_phaseMemory
+      call init_phaseParams
+    endif
 
 
-
-  ! Initial cell-tagging operation at start of runtime if IBM is active
-  ! the most expensive full tagging of ALL cells
-  initial_tag = .true.
-  if (imlsfor .eq. 1) call tagCells
-  initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
+  ! ! Initial cell-tagging operation at start of runtime if IBM is active
+  ! ! the most expensive full tagging of ALL cells
+  ! initial_tag = .true.
+  ! if (imlsfor .eq. 1) call tagCells
+  ! initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
 
   time=0.d0
   vmax=0.0d0
@@ -91,9 +75,9 @@ character*50 :: dsetname,filename
        time=0.d0
        cflm=0.d0
          
-       !call inqpr_rotated
-       call inqpr
-       !call inqpr_taylorGreen
+       call ICOND_zeroVelocity
+       !call ICOND_TaylorGreen
+       if (pfmode .eq. 1) call ICOND_Phasefield
 
       else
 
@@ -110,6 +94,7 @@ character*50 :: dsetname,filename
        call update_both_ghosts(n1,n2,vy,kstart,kend)
        call update_both_ghosts(n1,n2,vz,kstart,kend)
        call update_both_ghosts(n1,n2,temp,kstart,kend)
+       if (pfmode .eq. 1) call update_both_ghosts(n1,n2,phi,kstart,kend)
 
        call cfl 
 
@@ -178,59 +163,54 @@ character*50 :: dsetname,filename
           write(6,*) "---------------"
           write(6,'(A,I10,A,E10.3)')"nt  ", ntime," time  ",time
           write(6,'(A,E10.3,A,E10.3)')"dt  ", dt,   " cfl   ",cflm*dt
-          write(6,*) "Ntri", count(isGhostFace(:,1) .eqv. .false.)
-          write(6,*) "V(t)/VE", Volume(1) / celvol
-          write(6,'(A,F10.6)') "min elength/dx:", minval( pack(eLengths(:,:) , .not. isGhostEdge(:,:)  ) )*dx1 
-          !write(6,'(A,F10.6,F10.6,F10.6)') "vel_CM:", vel_CM(:,1)
-          write(6,'(A,F10.6,F10.6,F10.6)') "pos_CM:", pos_CM(:,1)
-          write(6,'(A,F10.6,F10.6,F10.6)') "omega_CM:", omega_c(:,1)
           endif
         !endif
 
 
           !------ ASCII write -----------------
-          call writePartVol
-          call writeInertTens
-          call write_partrot
-          call write_partpos
-          call write_partvel
-          call writeStructLoads
+          !call writePartVol
+          !call writeInertTens
+          !call write_partrot
+          !call write_partpos
+          !call write_partvel
+          !call writeStructLoads
 
-          call writeTriMeshStats
-          call writeClock
+          !call writeTriMeshStats
+          !call writeClock
 
           !call CalcInjection
-          call CalcDissipation
+          call CalcTurbulenceStats
+          call calcPhaseStats
 
           ! KZ: relative Lagrangian motion tracking
-          call calcFluidVelAvgs
+          !call calcFluidVelAvgs
           !call calcRelShellVel
-          call calcLocalShellFlow
+          !call calcLocalShellFlow
           call vorticity
           !------ END ASCII -----------------
 
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
            
-            if (imlsstr .eq. 1) then
-              ! For Lagrangian: cuts follow centroid of object
-              icut = floor( pos_CM(1,1) * dx1 ) + 1
-              jcut = floor( pos_CM(2,1) * dx2 ) + 1
-              kcut = floor( pos_CM(3,1) * dx3 ) + 1
+            ! if (imlsstr .eq. 1) then
+            !   ! For Lagrangian: cuts follow centroid of object
+            !   icut = floor( pos_CM(1,1) * dx1 ) + 1
+            !   jcut = floor( pos_CM(2,1) * dx2 ) + 1
+            !   kcut = floor( pos_CM(3,1) * dx3 ) + 1
 
-              icut = modulo(icut-1,n1m)  + 1
-              jcut = modulo(jcut-1,n2m)  + 1
-              kcut = modulo(kcut-1,n3m)  + 1
-            else
+            !   icut = modulo(icut-1,n1m)  + 1
+            !   jcut = modulo(jcut-1,n2m)  + 1
+            !   kcut = modulo(kcut-1,n3m)  + 1
+            ! else
               icut = n1m / 2
               jcut = n2m / 2
               kcut = n3m / 2
-            endif
+            !endif
 
            call mkmov_hdf_xcut(icut)
            call mkmov_hdf_ycut(jcut)
            call mkmov_hdf_zcut(kcut)
-           call write_tecplot_geom
+           !call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel
            !call mpi_write_field
@@ -305,7 +285,7 @@ character*50 :: dsetname,filename
     !-------------------------------------------------------------------------------------------------
 
      ti(2) = MPI_WTIME()
-     wtime_total = ti(2) - ti(1)
+     !wtime_total = ti(2) - ti(1)
 
       enddo
 end

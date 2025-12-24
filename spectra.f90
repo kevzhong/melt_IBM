@@ -109,7 +109,7 @@ end subroutine dealloc_spec
 subroutine writeSpec(Exx_kx, size_kx)
     use param
     use mpih
-    use mls_param
+    !use mls_param
     use hdf5
    
     implicit none

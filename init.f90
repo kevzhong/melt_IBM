@@ -6,7 +6,7 @@
       use mpi_param, only: kstart,kend, buf_n1n2
       use mpih, only: lvlhalo
       use stat_arrays
-      use mls_local
+      !use mls_local
       use AuxiliaryRoutines
       implicit none
       integer :: j,k,kc,i
@@ -18,22 +18,22 @@
       call AllocateReal3DArray(temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(pr,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
-      ! Phase-indicator, internal-solid treatment
-      allocate(VOFx(n1,n2,kstart-1:kend+1))
-      allocate(VOFy(n1,n2,kstart-1:kend+1))
-      allocate(VOFz(n1,n2,kstart-1:kend+1))
-      allocate(VOFp(n1,n2,kstart-1:kend+1))
-      !call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
-      !call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
+     !  ! Phase-indicator, internal-solid treatment
+     !  allocate(VOFx(n1,n2,kstart-1:kend+1))
+     !  allocate(VOFy(n1,n2,kstart-1:kend+1))
+     !  allocate(VOFz(n1,n2,kstart-1:kend+1))
+     !  allocate(VOFp(n1,n2,kstart-1:kend+1))
+     !  !call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
+     !  !call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
 
-      ! Default values for single-phase
-      VOFx(:,:,:) = 1.
-      VOFy(:,:,:) = 1.
-      VOFz(:,:,:) = 1.
-      VOFp(:,:,:) = 1.
-      !solid_mask(:,:,:) = .false.
+     !  ! Default values for single-phase
+     !  VOFx(:,:,:) = 1.
+     !  VOFy(:,:,:) = 1.
+     !  VOFz(:,:,:) = 1.
+     !  VOFp(:,:,:) = 1.
+     !  !solid_mask(:,:,:) = .false.
 
-     allocate(sdf(n1,n2,kstart:kend))
+     !allocate(sdf(n1,n2,kstart:kend))
 
       ! Auxilary fractional-step pseudo-pressure
       call AllocateReal3DArray(dph,1,n1,1,n2+1, &
@@ -77,10 +77,11 @@
       call AllocateReal3DArray(vz_rms,1,n1,1,n2,kstart,kend)
       call AllocateReal3DArray(pr_rms,1,n1,1,n2,kstart,kend)
 
-      call AllocateReal3DArray(for_xc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
-      call AllocateReal3DArray(for_yc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
-      call AllocateReal3DArray(for_zc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
-      call AllocateReal3DArray(for_temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      ! IB forcing
+      !call AllocateReal3DArray(for_xc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      !call AllocateReal3DArray(for_yc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      !call AllocateReal3DArray(for_zc,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      !call AllocateReal3DArray(for_temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
       ! KZ: for add ghost routines: store memory in heap rather than stack for performance and large problems
       call AllocateReal2DArray(buf_n1n2,1,n1,1,n2)

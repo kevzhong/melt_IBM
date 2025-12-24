@@ -2,10 +2,12 @@
       use param
       use local_arrays, only: vx,vy,vz,dq,forcx
       use mpi_param, only: kstart,kend
-      use mls_param,only: dens_ratio
+      use phasefield
+      !use mls_param,only: dens_ratio
       implicit none
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
       real    :: h11,h12,h13,udx1,udx2,udx3
+      real :: phi_interp
 
  
       udx1=dx1*0.25
@@ -71,10 +73,40 @@
           !(1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
 
       ! No HIT inside solid domain
-      dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen
+
+      phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+
+      dq(ic,jc,kc)=-(h11+h12+h13) + (1.0 - phi_interp)*forcx(ic,jc,kc)/xlen
       enddo
       enddo
       enddo
+      
+
+      ! Phase-field volume penalty
+
+      if (pfmode .eq. 1) then
+
+      do kc=kstart,kend
+      km=kc-1
+      kp=kc+1
+      do jc=1,n2m
+      jm=jmv(jc)
+      jp=jpv(jc)
+      do ic=1,n1m
+      im=imv(ic)
+      ip=ipv(ic)
+
+            phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+
+            dq(ic,jc,kc) = dq(ic,jc,kc) - phi_interp**2 * vx(ic,jc,kc) / (al * dt)
+
+            
+      enddo
+      enddo
+      enddo
+
+      endif
+      
 
       return
       end

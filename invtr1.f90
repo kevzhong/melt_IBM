@@ -54,8 +54,13 @@
 !
             dpx11=(pr(ic,jc,kc)-pr(im,jc,kc))*udx1
 
+            
+
             rhs(ic,jc,kc)=(ga*dq(ic,jc,kc)+ro*ru1(ic,jc,kc) &
                           +alre*dcvx-dpx11)*dt
+
+            ! ! Uniform pressure gradient for Poiseiulle flow!
+            ! rhs(ic,jc,kc) = rhs(ic,jc,kc) + 1.0 * al * dt
 
             ru1(ic,jc,kc)=dq(ic,jc,kc)
          enddo

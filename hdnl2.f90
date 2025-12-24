@@ -1,11 +1,13 @@
       subroutine hdnl2 
       use param
+      use phasefield
       use local_arrays, only: vx,vy,vz,dph,forcy
       use mpi_param, only: kstart,kend
-      use mls_param,only: dens_ratio
+      !use mls_param,only: dens_ratio
       implicit none
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
       real    :: h22,h23,udx1,udx2,h21,udx3
+      real :: phi_interp
 
       udx1=dx1*0.25
       udx2=dx2*0.25
@@ -72,10 +74,38 @@
       !dph(ic,jc,kc)=-(h21+h22+h23) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
       !    (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
 
-      dph(ic,jc,kc)=-(h21+h22+h23) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen 
+      phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+
+      dph(ic,jc,kc)=-(h21+h22+h23) + (1.0-phi_interp)*forcy(ic,jc,kc)/ylen 
       enddo
       enddo
       enddo
+
+
+      ! Phase-field volume penalty
+      if (pfmode .eq. 1) then
+
+      do kc=kstart,kend
+      km=kc-1
+      kp=kc+1
+      do jc=1,n2m
+      jm=jmv(jc)
+      jp=jpv(jc)
+      do ic=1,n1m
+      im=imv(ic)
+      ip=ipv(ic)
+
+            phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+
+            dph(ic,jc,kc) = dph(ic,jc,kc) -  phi_interp**2 * vy(ic,jc,kc) / (al * dt)
+
+            
+      enddo
+      enddo
+      enddo
+
+      endif
+
       
       return
       end

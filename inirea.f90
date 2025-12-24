@@ -5,12 +5,13 @@
       use local_arrays, only: vx,vy,vz,temp,pr
       use param
       use AuxiliaryRoutines
+      use phasefield
       IMPLICIT NONE
       character*70 :: filcnw2
       integer :: ihist
       integer :: n1o,n2o,n3o,n3om
       integer :: j,i,kstarto,kendo
-      real, allocatable, dimension(:,:,:) :: vyold,vzold,vxold, tempold
+      real, allocatable, dimension(:,:,:) :: vyold,vzold,vxold, tempold,phiold
       integer, parameter :: ghosts = 50 ! min(ghosts) = 1
       integer  :: kstartog,kendog
       integer, allocatable, dimension(:) :: countko
@@ -127,6 +128,24 @@
 
       deallocate(tempold)
 
+
+      !KZ   phi
+      allocate(phiold(1:n1o,1:n2o,kstartog-1:kendog+1))
+      call mpi_read_continua(n1o,n2o,n3o,kstartog,kendog,6, &
+       phiold(1:n1o,1:n2o,kstartog-1:kendog+1))
+
+      if(myid.eq.numtasks-1) then
+      do j=1,n2o
+      do i=1,n1o
+      phiold(i,j,n3o) = 0.0
+      enddo
+      enddo
+      endif
+
+      call interp(phiold,phi(1:n1,1:n2,kstart:kend),n1o,n2o,n3o, &
+       3,kstartog,kendog)
+
+      deallocate(phiold)
       else
 
 !EP   One to one HDF read
@@ -135,6 +154,7 @@
       call mpi_read_continua(n1,n2,n3,kstart,kend,3,vz)
       call mpi_read_continua(n1,n2,n3,kstart,kend,4,pr) 
       call mpi_read_continua(n1,n2,n3,kstart,kend,5,temp)
+      call mpi_read_continua(n1,n2,n3,kstart,kend,6,phi)
 
       endif
 

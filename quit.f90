@@ -31,7 +31,7 @@
       call mpi_write_continua
       !call mpi_write_field
       call WriteRandForcCoef
-      call continua_particle
+      !call continua_particle
       if(ismaster) write(6,'(a)') 'Continuation files written'
       else
        call MpiAbort
@@ -49,9 +49,11 @@
       endif
  
       call mem_dealloc
-      call dealloc_trigeo
+      !call dealloc_trigeo
 
       if (specflag) call dealloc_spec
+
+      if (pfmode .eq. 1) call dealloc_phaseMem
       
       call FinalizeMPI
 

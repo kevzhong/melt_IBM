@@ -4,15 +4,16 @@
       use local_arrays, only: vx,vy,vz
       use local_aux, only: vorx, vory, vorz
       use mpi_param, only: kstart,kend
-      use mls_param
+      !use mls_param
       use stat_arrays
+      use phasefield
       implicit none
       real :: dvxx1,dvxx2,dvxx3
       real :: dvyx1,dvyx2,dvyx3
       real :: dvzx1,dvzx2,dvzx3
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
       real :: enstrophy_volAvg
-      real :: sumVOF
+      real :: sumVOF, vof
       character(70) namfile
 
 
@@ -76,11 +77,12 @@
 
           !enstrophy = enstrophy + vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2
 
-        if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
+        !if ( VOFp(ic,jc,kc) .eq. 1.0 ) then
           ! Fluid-domain averaged
-          enstrophy_volAvg = enstrophy_volAvg + (vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2 )
-          sumVOF = sumVOF + VOFp(ic,jc,kc)
-        endif
+          vof = 1.0 - phi(ic,jc,kc)
+          enstrophy_volAvg = enstrophy_volAvg + vof*(vorx(ic,jc,kc)**2 + vory(ic,jc,kc)**2 + vorz(ic,jc,kc)**2 )
+          sumVOF = sumVOF + vof
+        !endif
 
          !endif
 
