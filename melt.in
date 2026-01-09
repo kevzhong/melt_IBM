@@ -1,4 +1,4 @@
  PFmode     MeltMode
-   1            0
+   1            1
 PF_A    TMELT    TLIQUID   TSOLID   LATHEAT     CP_LIQUID    TEMP_RESTART
-100.0   0.0d0   1.0d0      0.0d0      1.0d0       1.0d0            0
+1000.0   0.0d0   1.0d0      0.0d0      1.0d0       1.0d0            0
