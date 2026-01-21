@@ -214,7 +214,7 @@ vel_CM = vel_CMm1 +  ga * dt * pre_fac * ( -int_prn_dA + int_tau_dA ) &
                    + al * dt * (1.0 - ( 1.0 / dens_ratio ) ) * e_z        ! Gravity term
 
 
-!vel_CM(1) = 0.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 0.0 ! Fixed translational motion
+!vel_CM(1) = 1.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 0.0 ! Fixed translational motion
 !vel_CM(1) = 0.0 ; vel_CM(2) = 0.0 ; vel_CM(3) = 1.0 ! Fixed translational motion
 
 
@@ -224,6 +224,10 @@ pos_CM = pos_CMm1 + 0.5 * al * dt * ( vel_CM + vel_CMm1 )
 ! ------------------------------------- 
 !               Rotation
 ! ------------------------------------- 
+
+
+! No rotation
+!omega_c = [0.0,0.0,0.0]
 
 ! Iterative scheme of Ardekani et al. (2016, IJMF)
 ! 1) Set intial guess of inertia tensor, I_ij, calculate its inverse
@@ -250,11 +254,9 @@ call invert_3x3_matrix(I_inv)
                    +  ga * dt * ( -int_r_x_prn_dA + int_r_x_tau_dA )  &
                    +  ro * dt * ( -int_r_x_prn_dA_m1 + int_r_x_tau_dA_m1 ) ) 
 
-! No rotation
-!omega_c = 0.0
 
 ! Fixed rotation
-!omega_c(1) = 0.0 ; omega_c(2) = 5.0 ; omega_c(3) = 0.0 ! Fixed translational motion
+!omega_c(1) = 0.0 ; omega_c(2) = 0.0 ; omega_c(3) = 4.0 ! Fixed rotation
 
 
 om_buffer = 0.5* (omega_c + omega_c_m1 )
