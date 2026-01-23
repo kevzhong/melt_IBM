@@ -170,6 +170,7 @@
       integer :: tagType
       logical :: is_stationarySolid = .true.
       logical :: initial_tag = .true.
+      real      :: Usolid ! Solid advection velocity prescribed
       !integer   :: VERTBUFFER !KZ Max no. of faces adjoining the vertices, should be precomputed in geom. pre-processing
       !=================================================
       !       end of input file

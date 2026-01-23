@@ -929,3 +929,14 @@ subroutine update_tri_velocity
 
 end subroutine update_tri_velocity
 
+
+subroutine set_solidVelocity
+  use param
+  use mls_param
+  use mpih
+  implicit none
+
+
+  vel_tri(:,:,:) = Usolid
+
+end subroutine set_solidVelocity

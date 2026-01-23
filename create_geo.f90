@@ -90,7 +90,7 @@ subroutine setup_particles
       !r_x_u_tot = 0.
 
       !KZ : for initialising stationary
-      vel_tri(:,:,inp) = 0.
+      vel_tri(:,:,inp) = Usolid
 
      do j=1,Nparticle
      if((j.ne.inp).and.ismaster)then

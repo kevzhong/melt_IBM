@@ -1,7 +1,7 @@
  IMLSFOR     IMLSSTR       IMELT
-    1           1            1
- rhop/rhof
-    1.0 
+    1           0           1
+ rhop/rhof     USOLID
+    1.0          1.0
   GTSFX                    RAD     TagType
  unitSphere_N4.gts         0.1        1
  IREMESH     PERCT_ETHRESH   V_ON_VE_THRESH

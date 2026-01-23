@@ -60,7 +60,7 @@
         read(15,301) dummy       
         read(15,*) imlsfor, imlsstr, imelt
         read(15,301) dummy
-        read(15,*) dens_ratio
+        read(15,*) dens_ratio,Usolid
         read(15,301) dummy       
         read(15,*) gtsfx, rad_p, tagType
         read(15,301) dummy       

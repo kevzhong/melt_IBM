@@ -34,6 +34,7 @@ character*50 :: dsetname,filename
   call cordin 
   call phini
   call tri_geo
+  call set_solidVelocity
 
     !!!!!!!!!!!!!!!!!! Fix random seed for HIT force
     !— find out how many seed integers the compiler wants —
