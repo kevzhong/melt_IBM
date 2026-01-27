@@ -261,6 +261,99 @@ subroutine CalcABC_HITForce
       return
 end
 
+subroutine add_linearHITForce
+        use param
+      use local_arrays, only: vx,vy,vz,dq,dph,qcap,forcx,forcy,forcz
+      use mpi_param, only: kstart,kend
+      use phasefield
+      use local_aux,only: tke
+      !use mls_param,only: dens_ratio
+      implicit none
+      integer :: kc,kp,jp,jm,jc,ic,im,ip,km
+      real :: kenerg, sumvof, phi_interp,vof
+
+
+      kenerg = 0.0d0
+      sumvof = 0.0
+
+      call update_both_ghosts(n1,n2,vx,kstart,kend)
+      call update_both_ghosts(n1,n2,vy,kstart,kend)
+      call update_both_ghosts(n1,n2,vz,kstart,kend)
+
+      ! First calculate the domain-averaged TKE
+      do kc=kstart,kend
+      km=kc-1
+      kp=kc+1
+      do jc=1,n2m
+      jm=jmv(jc)
+      jp=jpv(jc)
+      do ic=1,n1m
+      im=imv(ic)
+      ip=ipv(ic)
+
+        ! KZ: Fluid-domain average
+        tke(ic,jc,kc) =  (vx(ic,jc,kc)**2+vx(ip,jc,kc)**2+ &
+         &                   vy(ic,jc,kc)**2+vy(ic,jp,kc)**2 + &
+         &                   vz(ic,jc,kc)**2+vz(ic,jc,kp)**2)*0.5d0
+
+       tke(ic,jc,kc) = tke(ic,jc,kc) * 0.5
+
+      vof = 1.0 - phi (ic,jc,kc) 
+      sumvof = sumvof + vof
+            
+      kenerg = kenerg + vof * tke(ic,jc,kc) !* VOFp(ic,jc,kc)
+      enddo
+      enddo
+      enddo
+
+      call MpiAllSumRealScalar(kenerg)
+      call MpiAllSumRealScalar(sumVOF)
+
+      kenerg = kenerg / sumVOF
+
+
+      ! Add forcing term to RHS
+      do kc=kstart,kend
+      km=kc-1
+      kp=kc+1
+      do jc=1,n2m
+      jm=jmv(jc)
+      jp=jpv(jc)
+      do ic=1,n1m
+      im=imv(ic)
+      ip=ipv(ic)
+
+         ! x-forcing
+        !phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+        !forcx(ic,jc,kc) = (1.0-phi_interp) * a0 * k0 / (kenerg + 1.e-16) * vx(ic,jc,kc)
+        forcx(ic,jc,kc) =  a0 * k0 / (kenerg + 1.e-16) * vx(ic,jc,kc)
+
+        ! y-forcing
+        !phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+        !forcy(ic,jc,kc) = (1.0-phi_interp) * a0 * k0 / (kenerg + 1.e-16) * vy(ic,jc,kc)
+        forcy(ic,jc,kc) =  a0 * k0 / (kenerg + 1.e-16) * vy(ic,jc,kc)
+
+        ! z-forcing
+        !phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
+        !forcz(ic,jc,kc) = (1.0-phi_interp) * a0 * k0 / (kenerg + 1.e-16) * vz(ic,jc,kc)
+        forcz(ic,jc,kc) =  a0 * k0 / (kenerg + 1.e-16) * vz(ic,jc,kc)
+
+
+        ! ! Classical Lundren
+        ! ! x-forcing
+        ! forcx(ic,jc,kc) = a0  * vx(ic,jc,kc)
+        ! ! y-forcing
+        ! forcy(ic,jc,kc) = a0  * vy(ic,jc,kc)
+        ! ! z-forcing
+        ! forcz(ic,jc,kc) = a0 * vz(ic,jc,kc)
+
+      enddo
+      enddo
+      enddo
+
+      return
+end subroutine add_linearHITForce
+
 
   subroutine WriteRandForcCoef
     ! Write continuation file for the stochastic wavenumber forcing scheme: the complex bhat coefficients

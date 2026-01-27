@@ -62,24 +62,35 @@
           )*udx3
 
 
-      !dq(ic,jc,kc)=-(h11+h12+h13)+ax(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
-      !             (1.0-ax(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
+      ! phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+      ! dq(ic,jc,kc)=-(h11+h12+h13) + (1.0 - phi_interp)*forcx(ic,jc,kc)/xlen
+      dq(ic,jc,kc)=-(h11+h12+h13) 
 
-      ! KZ: volume-penalty for advection terms
-      ! dq(ic,jc,kc)=-(h11+h12+h13)*VOFx(ic,jc,kc)+VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
-      !              (1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
-          
-          !dq(ic,jc,kc)=-(h11+h12+h13) + VOFx(ic,jc,kc)*forcx(ic,jc,kc)/xlen+   &
-          !(1.0-VOFx(ic,jc,kc))*forcx(ic,jc,kc)*dens_ratio/(xlen)
-
-      ! No HIT inside solid domain
-
-      phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
-
-      dq(ic,jc,kc)=-(h11+h12+h13) + (1.0 - phi_interp)*forcx(ic,jc,kc)/xlen
       enddo
       enddo
       enddo
+
+      ! HIT forcing for stochastic scheme or ABC
+      if (forcing .eq. 1) then
+      if ( (which_hit .eq. 1) .or. (which_hit .eq. 2) ) then
+      do kc=kstart,kend
+      !km=kc-1
+      !kp=kc+1
+      do jc=1,n2m
+      !jm=jmv(jc)
+      !jp=jpv(jc)
+      do ic=1,n1m
+      im=imv(ic)
+      !ip=ipv(ic)
+            phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+            dq(ic,jc,kc) = dq(ic,jc,kc) + (1.0 - phi_interp)*forcx(ic,jc,kc)/xlen
+      enddo
+      enddo
+      enddo
+
+      endif
+      endif
+
       
 
       ! Phase-field volume penalty
@@ -97,7 +108,6 @@
       ip=ipv(ic)
 
             phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
-
             dq(ic,jc,kc) = dq(ic,jc,kc) - phi_interp**2 * vx(ic,jc,kc) / (al * dt)
 
             

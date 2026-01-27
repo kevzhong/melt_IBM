@@ -1,13 +1,15 @@
       subroutine invtr2 
       use param
-      use local_arrays, only: vy,pr,rhs,dph,ru2
+      use local_arrays, only: vy,pr,rhs,dph,ru2,forcy
       use mpi_param, only: kstart,kend
+      use phasefield
       implicit none
       integer :: jc,kc,km,kp,jp,jm,ic,im,ip
       real    :: udx2
       real    :: dcvy,dpx22
       real    :: d22vy,d33vy,d11vy
       real    :: alre,udx1q,udx2q,udx3q
+      real :: phi_interp
 
       alre=al/ren
       udx2=dx2*al
@@ -53,10 +55,34 @@
             rhs(ic,jc,kc)=(ga*dph(ic,jc,kc)+ro*ru2(ic,jc,kc) &
                           +alre*dcvy-dpx22)*dt
 
+            ! HIT forcing
+            rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcy(ic,jc,kc) * al * dt
+
             ru2(ic,jc,kc)=dph(ic,jc,kc)
          enddo
        enddo
       enddo
+
+      ! HIT forcing, linear forcing gets aldt coefficient
+      if (forcing .eq. 1) then
+      if (which_hit .eq. 3) then
+        do kc=kstart,kend
+        !km=kc-1
+        !kp=kc+1
+        do jc=1,n2m
+        jm=jmv(jc)
+        !jp=jpv(jc)
+        do ic=1,n1m
+        !im=imv(ic)
+        !ip=ipv(ic)
+              phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+              rhs(ic,jc,kc) = rhs(ic,jc,kc) + (1.0 - phi_interp) * forcy(ic,jc,kc) * al * dt
+        enddo
+        enddo
+        enddo
+      endif
+      endif
+
 
 
       call solxi(beta*al*dx1q)

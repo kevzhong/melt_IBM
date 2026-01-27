@@ -62,41 +62,52 @@
           -(vz(ic,jc,kc)+vz(ic,jm,kc))*(vy(ic,jc,kc)+vy(ic,jc,km)) &
           )*udx3
 
-!      dph(ic,jc,kc)=-(h21+h22+h23)
 
+      ! phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+      ! dph(ic,jc,kc)=-(h21+h22+h23) + (1.0-phi_interp)*forcy(ic,jc,kc)/ylen 
 
-      !dph(ic,jc,kc)=-(h21+h22+h23)+ay(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
-      !             (1.0-ay(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
+      dph(ic,jc,kc)=-(h21+h22+h23)
 
-      ! dph(ic,jc,kc)=-(h21+h22+h23)*VOFy(ic,jc,kc) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
-      ! (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
-          
-      !dph(ic,jc,kc)=-(h21+h22+h23) + VOFy(ic,jc,kc)*forcy(ic,jc,kc)/ylen+   &
-      !    (1.0-VOFy(ic,jc,kc))*forcy(ic,jc,kc)*dens_ratio/(ylen)
-
-      phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
-
-      dph(ic,jc,kc)=-(h21+h22+h23) + (1.0-phi_interp)*forcy(ic,jc,kc)/ylen 
       enddo
       enddo
       enddo
+
+      ! HIT forcing for stochastic scheme or ABC
+      if (forcing .eq. 1) then
+      if ( (which_hit .eq. 1) .or. (which_hit .eq. 2) ) then
+      do kc=kstart,kend
+      !km=kc-1
+      !kp=kc+1
+      do jc=1,n2m
+      jm=jmv(jc)
+      jp=jpv(jc)
+      do ic=1,n1m
+      !im=imv(ic)
+      !ip=ipv(ic)
+            phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+            dph(ic,jc,kc) = dph(ic,jc,kc) + (1.0 - phi_interp)*forcy(ic,jc,kc)/ylen
+      enddo
+      enddo
+      enddo
+
+      endif
+      endif
 
 
       ! Phase-field volume penalty
       if (pfmode .eq. 1) then
 
       do kc=kstart,kend
-      km=kc-1
-      kp=kc+1
+      !km=kc-1
+      !kp=kc+1
       do jc=1,n2m
       jm=jmv(jc)
-      jp=jpv(jc)
+      !jp=jpv(jc)
       do ic=1,n1m
-      im=imv(ic)
-      ip=ipv(ic)
+      !im=imv(ic)
+      !ip=ipv(ic)
 
             phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
-
             dph(ic,jc,kc) = dph(ic,jc,kc) -  phi_interp**2 * vy(ic,jc,kc) / (al * dt)
 
             

@@ -53,6 +53,8 @@
       read(15,*) tl, epsstar, kf_on_kmin
       read(15,301) dummy
       read(15,*) C_HIT
+      read(15,301) dummy
+      read(15,*) a0, k0
     close(15)
 
       open(unit=15,file='melt.in',status='old')

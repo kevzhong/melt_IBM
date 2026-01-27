@@ -13,7 +13,7 @@
         real      :: pra,dt,resid,cflmax,tsta
         integer   :: starea
         real      :: dtmax,cfllim,cflfix
-        real      :: tl,epsstar,kf_on_kmin, C_HIT
+        real      :: tl,epsstar,kf_on_kmin, C_HIT, a0, k0
         integer   :: nson,idtv,forcing, which_hit
 
         integer :: pfmode, meltmode

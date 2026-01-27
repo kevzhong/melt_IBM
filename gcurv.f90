@@ -36,10 +36,10 @@ character*50 :: dsetname,filename
   call phini
   !call tri_geo
 
-    if (pfmode .eq. 1) then
+    !if (pfmode .eq. 1) then
       call init_phaseMemory
       call init_phaseParams
-    endif
+    !endif
 
 
   ! ! Initial cell-tagging operation at start of runtime if IBM is active
@@ -75,10 +75,10 @@ character*50 :: dsetname,filename
        time=0.d0
        cflm=0.d0
          
-       call ICOND_zeroVelocity
-       !call ICOND_TaylorGreen
        if (pfmode .eq. 1) call ICOND_Phasefield
-
+        !call ICOND_zeroVelocity
+        call ICOND_TaylorGreen
+        !call ICOND_random
       else
 
        if(ismaster) write(6,*)' nread=1 ---> Read initial conditions'
@@ -179,6 +179,7 @@ character*50 :: dsetname,filename
           !call writeClock
 
           !call CalcInjection
+          call write_dt
           call CalcTurbulenceStats
           call calcPhaseStats
 

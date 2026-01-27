@@ -1,7 +1,8 @@
       subroutine invtr1 
       use param
-      use local_arrays, only: pr,rhs,ru1,vx,dq
+      use local_arrays, only: pr,rhs,ru1,vx,dq,forcx
       use mpi_param, only: kstart,kend
+      use phasefield
 
       implicit none
       integer :: jc,kc,km,kp,jp,jm,ic,im,ip
@@ -9,6 +10,7 @@
       real    :: dcvx,dpx11
       real    :: d22vx,d33vx,d11vx
       real    :: alre,udx1q,udx2q,udx3q
+      real    :: phi_interp
 
       alre=al/ren
 
@@ -59,14 +61,40 @@
             rhs(ic,jc,kc)=(ga*dq(ic,jc,kc)+ro*ru1(ic,jc,kc) &
                           +alre*dcvx-dpx11)*dt
 
+                
+
             ! ! Uniform pressure gradient for Poiseiulle flow!
             ! rhs(ic,jc,kc) = rhs(ic,jc,kc) + 1.0 * al * dt
+
+            ! HIT forcing
+            rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcx(ic,jc,kc) * al * dt
+
 
             ru1(ic,jc,kc)=dq(ic,jc,kc)
          enddo
        enddo
 
       enddo
+
+      ! HIT forcing, linear forcing gets aldt coefficient
+      if (forcing .eq. 1) then
+      if (which_hit .eq. 3) then
+        do kc=kstart,kend
+        !km=kc-1
+        !kp=kc+1
+        do jc=1,n2m
+        !jm=jmv(jc)
+        !jp=jpv(jc)
+        do ic=1,n1m
+        im=imv(ic)
+        !ip=ipv(ic)
+              phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
+              rhs(ic,jc,kc) = rhs(ic,jc,kc) + (1.0 - phi_interp) * forcx(ic,jc,kc) * al * dt
+        enddo
+        enddo
+        enddo
+      endif
+      endif
 
       call solxi(beta*al*dx1q )
       call solxj(beta*al*dx2q )

@@ -1,12 +1,14 @@
       subroutine invtr3 
       use param
-      use local_arrays, only: vz,qcap, pr,ru3,rhs
+      use local_arrays, only: vz,qcap, pr,ru3,rhs,forcz
       use mpi_param, only: kstart,kend
+      use phasefield
       implicit none
       integer :: jc,kc,km,kp,jp,jm,ic,ip,im
       real    :: udx3
       real    :: dvz2,dvz3,dcvz,dpx33,dvz1
       real    :: alre,udx1q,udx2q,udx3q
+      real :: phi_interp
 
       alre=al/ren
       udx1q=dx1q
@@ -50,12 +52,35 @@
             rhs(ic,jc,kc)=(ga*qcap(ic,jc,kc)+ro*ru3(ic,jc,kc) &
                           +alre*dcvz-dpx33)*dt 
 
+            ! HIT forcing
+            rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcz(ic,jc,kc) * al * dt
+
 !  updating of the explicit terms
 
             ru3(ic,jc,kc)=qcap(ic,jc,kc)
          enddo
        enddo
       enddo
+
+      ! HIT forcing, linear forcing gets aldt coefficient
+      if (forcing .eq. 1) then
+      if (which_hit .eq. 3) then
+        do kc=kstart,kend
+        km=kc-1
+        kp=kc+1
+        do jc=1,n2m
+        !jm=jmv(jc)
+        !jp=jpv(jc)
+        do ic=1,n1m
+        !im=imv(ic)
+        !ip=ipv(ic)
+              phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
+              rhs(ic,jc,kc) = rhs(ic,jc,kc) + (1.0 - phi_interp) * forcz(ic,jc,kc) * al * dt
+        enddo
+        enddo
+        enddo
+      endif
+      endif
 
       call solxi(beta*al*dx1q)
       call solxj(beta*al*dx2q)

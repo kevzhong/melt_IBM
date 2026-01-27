@@ -53,7 +53,8 @@
 
       if (specflag) call dealloc_spec
 
-      if (pfmode .eq. 1) call dealloc_phaseMem
+      !if (pfmode .eq. 1) 
+      call dealloc_phaseMem
       
       call FinalizeMPI
 

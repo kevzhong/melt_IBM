@@ -215,3 +215,37 @@ subroutine ICOND_Phasefield
       !write(*,*) " sumphi,pf_eps", sumphi, pf_eps
       return                                                            
 end
+
+subroutine ICOND_random
+      use local_arrays, only: vy,vz,vx,temp
+      use param, only: xm, ym, zm, xc,yc,zc,n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1, pi
+      use mpi_param
+      !use mls_param, only: rad_p, pos_CM
+      implicit none
+      integer :: ic,jc,kc
+      real :: rn1, rn2, rn3,maxU
+
+      temp= Tsol
+      
+      !For temperature: temp = Tsol in solid interior, otherwise Tliq in liquid exterior
+
+
+      maxU = 5.0
+
+      do kc = kstart, kend
+            do ic = 1, n1m
+                  do jc = 1, n2m
+
+                        call random_number(rn1)
+                        call random_number(rn2)
+                        call random_number(rn3)
+
+                        vx(ic,jc,kc) = (rn1 - 0.5) * 2.0 * maxU
+                        vy(ic,jc,kc) = (rn2 - 0.5) * 2.0 * maxU
+                        vz(ic,jc,kc) = (rn3 - 0.5) * 2.0 * maxU
+
+                  enddo !end j
+            enddo !end i
+      enddo !end k
+      return                                                            
+end

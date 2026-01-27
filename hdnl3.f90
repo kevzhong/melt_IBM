@@ -69,27 +69,42 @@
       fbz = betagz * ( T_interp - Tliq ) ! Relative to ambient liquid
  
 
-      !qcap(ic,jc,kc)=-(h31+h32+h33) + fbz + &
-      !                  az(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
-      !                (1.0-az(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
 
-      ! qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz ) * VOFz(ic,jc,kc) + &
-      !                   VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
-      !                   (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+
+      ! phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
 
       ! qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz )  + &
-      ! VOFz(ic,jc,kc)*forcz(ic,jc,kc)/zlen+   &
-      ! (1.0-VOFz(ic,jc,kc))*forcz(ic,jc,kc)*dens_ratio/(zlen)
+      !             (1.0-phi_interp)*forcz(ic,jc,kc)/zlen 
 
-      phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
 
-      qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz )  + &
-                  (1.0-phi_interp)*forcz(ic,jc,kc)/zlen 
+
+      qcap(ic,jc,kc)=( -(h31+h32+h33) + fbz ) 
 
 
       enddo
       enddo
       enddo
+
+      ! HIT forcing for stochastic scheme or ABC
+      if (forcing .eq. 1) then
+      if ( (which_hit .eq. 1) .or. (which_hit .eq. 2) ) then
+      do kc=kstart,kend
+      km=kc-1
+      !kp=kc+1
+      do jc=1,n2m
+      !jm=jmv(jc)
+      !jp=jpv(jc)
+      do ic=1,n1m
+      !im=imv(ic)
+      !ip=ipv(ic)
+            phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
+            qcap(ic,jc,kc) = qcap(ic,jc,kc) + (1.0 - phi_interp)*forcz(ic,jc,kc)/zlen
+      enddo
+      enddo
+      enddo
+
+      endif
+      endif
 
 
       ! Phase-field volume penalty

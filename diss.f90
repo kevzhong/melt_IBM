@@ -192,3 +192,23 @@
    
       return
       end
+
+
+subroutine write_dt
+  use param
+  use mpih
+
+  IMPLICIT none
+  character(70) namfile
+
+  if (myid.eq.0) then
+
+  namfile='stringdata/dt.txt'
+
+  open(unit=43,file=namfile,Access = 'append', Status='unknown')
+  write(43,'(100E15.7)')time,dt 
+
+  close(43)
+  end if
+
+end subroutine write_dt

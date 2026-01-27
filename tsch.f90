@@ -21,8 +21,6 @@
         ro=rom(ns)
         
 
-
-
         if (meltmode .eq. 1) then
           call hdnl_phase
           call invtr_phase
@@ -32,6 +30,8 @@
         call hdnl1
         call hdnl2
         call hdnl3
+
+        if (which_hit .eq. 3) call add_linearHITForce
 
         if (meltmode .eq. 1) then
           ! Temperature only updated if melting: otherwise, field kept frozen
@@ -43,6 +43,8 @@
         call invtr1 
         call invtr2
         call invtr3
+
+
 
         ! For single-phase
         call update_both_ghosts(n1,n2,vx,kstart,kend)
