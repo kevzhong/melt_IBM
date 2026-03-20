@@ -75,9 +75,15 @@ character*50 :: dsetname,filename
        time=0.d0
        cflm=0.d0
          
-       if (pfmode .eq. 1) call ICOND_Phasefield
-        !call ICOND_zeroVelocity
-        call ICOND_TaylorGreen
+       if (pfmode .eq. 1) then 
+          if (melt_icond .eq. 1) then
+            call ICOND_SPHERE
+          elseif (melt_icond .eq. 2) then
+            call ICOND_GROOVE
+          endif
+        endif
+        call ICOND_zeroVelocity
+        !call ICOND_TaylorGreen
         !call ICOND_random
       else
 
@@ -182,7 +188,7 @@ character*50 :: dsetname,filename
           call write_dt
           call CalcTurbulenceStats
           call calcPhaseStats
-
+          call minmax_scalars
           ! KZ: relative Lagrangian motion tracking
           !call calcFluidVelAvgs
           !call calcRelShellVel
@@ -207,6 +213,14 @@ character*50 :: dsetname,filename
               jcut = n2m / 2
               kcut = n3m / 2
             !endif
+
+            ! ! Compute surface metrics (OPTIONAL)
+            ! if (pfmode .eq. 1) then
+            !   call compute_psi_from_phi
+            !   call compute_normals
+            !   call compute_curvature
+            ! endif
+
 
            call mkmov_hdf_xcut(icut)
            call mkmov_hdf_ycut(jcut)

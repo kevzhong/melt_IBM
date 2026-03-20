@@ -16,8 +16,9 @@
         real      :: tl,epsstar,kf_on_kmin, C_HIT, a0, k0
         integer   :: nson,idtv,forcing, which_hit
 
-        integer :: pfmode, meltmode
-        real      :: Tmelt, Tliq, Tsol, latHeat, cpliquid
+        integer :: pfmode, meltmode, melt_icond
+        real      :: Usolid, Tmelt, Tliq, Tsol, latHeat, cpliquid
+        real      :: rad_sph, halfthick, grv_depth, grv_width
 !=================================================
 !       end of input file
 !=================================================
@@ -65,6 +66,7 @@
         integer :: ntime
         real, dimension(1:3) :: vmax
         real, dimension(1:3) :: gam,rom,alm
+        real :: tempmin, tempmax, phimin, phimax
 
         integer :: nmodes
         integer, allocatable :: waveN(:)
@@ -93,6 +95,10 @@
         real,allocatable,dimension(:,:,:) :: ru1,ru2,ru3,rut
         real,allocatable,dimension(:,:,:) :: qcap, htemp
         real,allocatable,dimension(:,:,:) :: dph,dq
+
+        ! QUICK
+        real,allocatable,dimension(:,:,:) :: temp2, xflux_imh, yflux_jmh, zflux_kmh
+        
       end module local_arrays
 
 !===============================================================
@@ -145,7 +151,7 @@
 module phasefield
         implicit none
         real,allocatable,dimension(:,:,:) :: phi
-        real,allocatable,dimension(:,:,:) :: nhat_x,nhat_y,nhat_z
+        real,allocatable,dimension(:,:,:) :: nhat_x,nhat_y,nhat_z,psi,curv,vmelt
         real,allocatable,dimension(:,:,:) :: hphi, ruphi
 
         real :: pf_eps, pf_A, D_pf

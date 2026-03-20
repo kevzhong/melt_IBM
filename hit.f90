@@ -341,11 +341,11 @@ subroutine add_linearHITForce
 
         ! ! Classical Lundren
         ! ! x-forcing
-        ! forcx(ic,jc,kc) = a0  * vx(ic,jc,kc)
+         !forcx(ic,jc,kc) = a0  * vx(ic,jc,kc)
         ! ! y-forcing
-        ! forcy(ic,jc,kc) = a0  * vy(ic,jc,kc)
+         !forcy(ic,jc,kc) = a0  * vy(ic,jc,kc)
         ! ! z-forcing
-        ! forcz(ic,jc,kc) = a0 * vz(ic,jc,kc)
+         !forcz(ic,jc,kc) = a0 * vz(ic,jc,kc)
 
       enddo
       enddo

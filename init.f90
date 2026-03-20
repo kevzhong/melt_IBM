@@ -18,13 +18,11 @@
       call AllocateReal3DArray(temp,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
       call AllocateReal3DArray(pr,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
-     !  ! Phase-indicator, internal-solid treatment
-     !  allocate(VOFx(n1,n2,kstart-1:kend+1))
-     !  allocate(VOFy(n1,n2,kstart-1:kend+1))
-     !  allocate(VOFz(n1,n2,kstart-1:kend+1))
-     !  allocate(VOFp(n1,n2,kstart-1:kend+1))
-     !  !call AllocateReal3DArray(d_UsolidT_dxj,1,n1,1,n2,kstart,kend)
-     !  !call AllocateLogical3DArray(solid_mask,1,n1,1,n2,kstart,kend)
+      ! QUICK ARRAYS
+      call AllocateReal3DArray(temp2,1,n1,1,n2,kstart-2,kend+2) ! Additional layer of HALO cells
+      call AllocateReal3DArray(xflux_imh,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      call AllocateReal3DArray(yflux_jmh,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
+      call AllocateReal3DArray(zflux_kmh,1,n1,1,n2,kstart-lvlhalo,kend+lvlhalo)
 
      !  ! Default values for single-phase
      !  VOFx(:,:,:) = 1.

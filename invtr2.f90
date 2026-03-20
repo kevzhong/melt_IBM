@@ -56,7 +56,7 @@
                           +alre*dcvy-dpx22)*dt
 
             ! HIT forcing
-            rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcy(ic,jc,kc) * al * dt
+            !rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcy(ic,jc,kc) * al * dt
 
             ru2(ic,jc,kc)=dph(ic,jc,kc)
          enddo
@@ -67,16 +67,12 @@
       if (forcing .eq. 1) then
       if (which_hit .eq. 3) then
         do kc=kstart,kend
-        !km=kc-1
-        !kp=kc+1
         do jc=1,n2m
-        jm=jmv(jc)
-        !jp=jpv(jc)
+        !jm=jmv(jc)
         do ic=1,n1m
-        !im=imv(ic)
-        !ip=ipv(ic)
-              phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
-              rhs(ic,jc,kc) = rhs(ic,jc,kc) + (1.0 - phi_interp) * forcy(ic,jc,kc) * al * dt
+              !phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
+              !rhs(ic,jc,kc) = rhs(ic,jc,kc) + (1.0 - phi_interp) * forcy(ic,jc,kc) * al * dt
+              rhs(ic,jc,kc) = rhs(ic,jc,kc) + forcy(ic,jc,kc) * al * dt
         enddo
         enddo
         enddo

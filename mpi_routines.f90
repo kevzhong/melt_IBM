@@ -135,7 +135,43 @@
       ! end subroutine update_both_ghosts
 
 
-!===============================================
+!===============================================      ! !===============================================
+      subroutine update_both_ghosts2(n1,n2,q,ks,ke)
+      use mpih
+      implicit none
+      integer, intent(in) :: ks,ke
+      real,intent(inout) :: q(n1,n2,ks-2:ke+2)
+      integer,intent(in) :: n1,n2
+      integer :: mydata
+      integer :: my_down, my_up,tag, i, j,nc
+
+      mydata= n1*n2*2
+
+
+      my_down=myid-1
+      
+      my_up=myid+1
+
+      if(myid .eq. 0) my_down=numtasks-1
+      if(myid .eq. numtasks-1) my_up=0
+
+      tag=1
+      call MPI_ISEND(q(1,1,ke-2+1), mydata, MDP, &
+       my_up,tag,MPI_COMM_WORLD,req(1),ierr)
+      
+      call MPI_ISEND(q(1,1,ks), mydata,  MDP, &
+       my_down,tag,MPI_COMM_WORLD,req(2), ierr)
+     
+      call MPI_IRECV(q(1,1,ks-2), mydata,  MDP,  &
+       my_down,tag,MPI_COMM_WORLD,req(3),ierr)
+     
+      call MPI_IRECV(q(1,1,ke+1), mydata,  MDP, &
+       my_up, tag,MPI_COMM_WORLD,req(4),ierr)
+     
+      call MPI_Waitall(4,req,status,ierr)
+
+      end subroutine update_both_ghosts2
+
       subroutine update_both_ghosts(n1,n2,q,ks,ke)
       use mpih
       implicit none
@@ -419,6 +455,11 @@ end subroutine mpi_globalsum_double_var
       if(allocated(vy)) deallocate(vy)
       if(allocated(vz)) deallocate(vz)
       if(allocated(temp)) deallocate(temp)
+
+      if(allocated(temp2)) deallocate(temp2)
+      if(allocated(xflux_imh)) deallocate(xflux_imh)
+      if(allocated(yflux_jmh)) deallocate(yflux_jmh)
+      if(allocated(zflux_kmh)) deallocate(zflux_kmh)
 
       if(allocated(qcap)) deallocate(qcap)
       

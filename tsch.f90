@@ -25,7 +25,16 @@
           call hdnl_phase
           call invtr_phase
           call update_both_ghosts(n1,n2,phi,kstart,kend)
+
+          call compute_local_vmelt
         endif
+
+        ! ! Compute surface metrics (OPTIONAL)
+        ! if (pfmode .eq. 1) then
+        !   call compute_psi_from_phi
+        !   call compute_normals
+        !   call compute_curvature
+        ! endif
 
         call hdnl1
         call hdnl2
@@ -36,6 +45,7 @@
         if (meltmode .eq. 1) then
           ! Temperature only updated if melting: otherwise, field kept frozen
           call hdnlte
+          !call hdnlte_QUICK
           call invtrte
           call update_both_ghosts(n1,n2,temp,kstart,kend)
         endif

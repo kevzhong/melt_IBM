@@ -403,7 +403,7 @@
       integer ic,jc,kc
       integer ip,jp,kp
       integer inp
-      real, allocatable, dimension(:,:) :: prx,v1,v2,v3,tempx, phix
+      real, allocatable, dimension(:,:) :: prx,v1,v2,v3,tempx, phix,vmeltx
       real, allocatable, dimension(:,:) :: vor1,vor2,vor3, dissx, tkex,chix
       integer hdf_error
       integer(HID_T) :: file_id
@@ -423,6 +423,7 @@
       integer(HID_T) :: dset_diss
       integer(HID_T) :: dset_chi
       integer(HID_T) :: dset_phi
+      integer(HID_T) :: dset_vmelt
 
       integer(HSIZE_T) :: dims(2)
 
@@ -447,6 +448,7 @@
       allocate(vor1(n1m,kstart:kend),vor2(n1m,kstart:kend),vor3(n1m,kstart:kend))
       allocate(tkex(n1m,kstart:kend),dissx(n1m,kstart:kend) , chix(n1m,kstart:kend))
       allocate(phix(n1m,kstart:kend))
+      allocate(vmeltx(n1m,kstart:kend))
 
       ndims=2
 !      if((imlsfor.eq.1).and.(Nparticle.eq.1))then
@@ -483,6 +485,12 @@
         chix(ic,kc) = chi(ic,jc,kc)
 
         phix(ic,kc) = phi(ic,jc,kc)
+
+        if ( (phix(ic,kc) .le. 0.95) .and. (phix(ic,kc) .ge. 0.05) ) then
+            vmeltx(ic,kc) = vmelt(ic,jc,kc)
+        else
+            vmeltx(ic,kc) = 0.0
+        endif
 
         end do
       end do
@@ -541,6 +549,8 @@
       call h5dcreate_f(file_id, 'chi', H5T_NATIVE_DOUBLE, filespace, dset_chi, hdf_error)
 
       call h5dcreate_f(file_id, 'phi', H5T_NATIVE_DOUBLE, filespace, dset_phi, hdf_error)
+
+      call h5dcreate_f(file_id, 'vmelt', H5T_NATIVE_DOUBLE, filespace, dset_vmelt, hdf_error)
 
 !RO   Set offsets and element counts
 
@@ -680,16 +690,18 @@
          hdf_error, file_space_id = filespace, mem_space_id = memspace, &
          xfer_prp = plist_id) 
 
+    
+      call h5dget_space_f(dset_vmelt, filespace, hdf_error)
+      call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
+      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
 
-      ! call h5dget_space_f(dset_hel, filespace, hdf_error)
-      ! call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
-      ! call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error)
-      ! call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+       call h5dwrite_f(dset_vmelt, H5T_NATIVE_DOUBLE, &
+         vmeltx(1:n1m,kstart:kend), dims, &
+         hdf_error, file_space_id = filespace, mem_space_id = memspace, &
+         xfer_prp = plist_id) 
+         
 
-      !  call h5dwrite_f(dset_hel, H5T_NATIVE_DOUBLE, &
-      !    hel(1:n1m,kstart:kend), dims, &
-      !    hdf_error, file_space_id = filespace, mem_space_id = memspace, &
-      !    xfer_prp = plist_id)
 !RO   Close properties and file
 
       call h5dclose_f(dset_q1v, hdf_error)
@@ -704,6 +716,7 @@
       call h5dclose_f(dset_diss, hdf_error)
       call h5dclose_f(dset_chi, hdf_error)
       call h5dclose_f(dset_phi, hdf_error)
+      call h5dclose_f(dset_vmelt, hdf_error)
 
       !call h5dclose_f(dset_hel, hdf_error)
 
@@ -801,6 +814,12 @@
       write(45,'("<Attribute Name=""phi"" AttributeType=""Scalar"" Center=""Node"">")')
       write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n1m
       write(45,'("frame_y_",i5.5,".h5:/phi")') itime
+      write(45,'("</DataItem>")')
+      write(45,'("</Attribute>")')
+
+      write(45,'("<Attribute Name=""vmelt"" AttributeType=""Scalar"" Center=""Node"">")')
+      write(45,'("<DataItem Dimensions=""",i4," ",i4,""" NumberType=""Float"" Precision=""4"" Format=""HDF"">")')n3m,n1m
+      write(45,'("frame_y_",i5.5,".h5:/vmelt")') itime
       write(45,'("</DataItem>")')
       write(45,'("</Attribute>")')
       !write(45,'("<Attribute Name=""hel"" AttributeType=""Scalar"" Center=""Node"">")')

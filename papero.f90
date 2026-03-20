@@ -59,10 +59,16 @@
 
       open(unit=15,file='melt.in',status='old')
         read(15,301) dummy       
-        read(15,*) pfmode, meltmode
+        read(15,*) pfmode, meltmode,melt_icond
+        read(15,301) dummy
+        read(15,*) Usolid
         read(15,301) dummy
         read(15,*) pf_A,Tmelt , Tliq, Tsol, latHeat, cpliquid, temp_restart
-      close(15)
+        read(15,301) dummy
+        read(15,*) rad_sph
+        read(15,301) dummy
+        read(15,*) halfthick, grv_depth, grv_width
+        close(15)
 301     format(a4)          
 
       ! KZ Verify correctness of bou.in,  part.in

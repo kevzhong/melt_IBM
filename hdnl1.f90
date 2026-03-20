@@ -84,6 +84,8 @@
       !ip=ipv(ic)
             phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
             dq(ic,jc,kc) = dq(ic,jc,kc) + (1.0 - phi_interp)*forcx(ic,jc,kc)/xlen
+            !dq(ic,jc,kc) = dq(ic,jc,kc) + (1.0 - phi_interp)*forcx(ic,jc,kc) 
+
       enddo
       enddo
       enddo
@@ -108,7 +110,7 @@
       ip=ipv(ic)
 
             phi_interp = 0.5 * ( phi(im,jc,kc) + phi(ic,jc,kc) )
-            dq(ic,jc,kc) = dq(ic,jc,kc) - phi_interp**2 * vx(ic,jc,kc) / (al * dt)
+            dq(ic,jc,kc) = dq(ic,jc,kc) - phi_interp**2 * ( vx(ic,jc,kc) + Usolid) / (al * dt)
 
             
       enddo

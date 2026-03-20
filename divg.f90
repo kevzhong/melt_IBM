@@ -80,7 +80,6 @@ call MpiAllMaxRealScalar(vmax(2))
 call MpiAllMaxRealScalar(vmax(3))
 end
 
-
 subroutine divgloc 
 use param
 use local_arrays, only: vy,vz,vx
