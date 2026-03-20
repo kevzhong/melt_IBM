@@ -6,7 +6,6 @@ subroutine CalcHITRandomForce
       use mpih
       use mpi_param, only: kstart, kend
       use local_arrays, only: forcx, forcy, forcz
-
       implicit none
       integer :: l, m, nn,ndir
       integer :: i, j, k
@@ -14,23 +13,26 @@ subroutine CalcHITRandomForce
       real :: u1, u2
       real :: kvec(3)
       complex :: rand_complex
-      complex :: Fhat(3,nmodes,nmodes,nmodes)
+      !complex :: Fhat(3,nmodesX,nmodesY,nmodesZ)
+      complex, allocatable :: Fhat(:,:,:,:)
       complex :: buff1
   
       real :: tstart, tend
           ! il, jm, knn
   
-      kf = kf_on_kmin * 2.0 * pi / xlen
+      ! kf = kf_on_kmin * 2.0 * pi / xlen
+      kf = kf_on_kmin * 2.0 * pi / 1.0
 
+      allocate( Fhat(3, nmodesX, nmodesY, nmodesZ) )
       Fhat = 0.0
   
       if (ismaster) then ! Only for 1 process to sync random numbers
-          do l = 1,nmodes ! x wavenumber
-              kl = float(waveN(l))*2.0*pi / xlen
-              do m = 1,nmodes ! y wavenumber
-                  km = float(waveN(m))*2.0*pi / ylen
-                  do nn = 1,nmodes ! z wavenumber
-                      kn = float(waveN(nn))*2.0*pi / zlen
+          do l = 1,nmodesX ! x wavenumber
+              kl = float(waveNx(l))*2.0*pi / xlen
+              do m = 1,nmodesY ! y wavenumber
+                  km = float(waveNy(m))*2.0*pi / ylen
+                  do nn = 1,nmodesZ ! z wavenumber
+                      kn = float(waveNz(nn))*2.0*pi / zlen
                       kmag = sqrt(kl**2 + km**2 + kn**2)
   
                       if  ( (kmag .gt. 0.0 ) .and. (kmag .lt. kf) ) then
@@ -63,18 +65,17 @@ subroutine CalcHITRandomForce
       endif
   
       ! Hard-set the zero mode to have no contribution
-      !Fhat(1:3,(nmodes-1)/2+1,(nmodes-1)/2+1,(nmodes-1)/2+1 ) = 0.0 !/
-      call MPI_BCAST(Fhat, 3*nmodes**3, MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, ierr)
-  
+      call MPI_BCAST(Fhat, 3*nmodesX*nmodesY*nmodesZ, MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, ierr)
+
       ! Begin accmulation of HIT forcing
       forcx = 0.0
       forcy = 0.0
       forcz = 0.0
   
       ! x forcing
-      do nn = 1,nmodes
-          do m = 1,nmodes
-              do l = 1,nmodes
+      do nn = 1,nmodesZ
+          do m = 1,nmodesY
+              do l = 1,nmodesX
                   do k = kstart,kend
                       do j = 1,n2m
                           buff1 = exp_I_km_yj(j,m) * exp_I_kn_zk(k,nn)
@@ -90,9 +91,9 @@ subroutine CalcHITRandomForce
   
   
       ! y forcing
-      do nn = 1,nmodes
-          do m = 1,nmodes
-              do l = 1,nmodes
+      do nn = 1,nmodesZ
+          do m = 1,nmodesY
+              do l = 1,nmodesX
                   do k = kstart,kend
                       do j = 1,n2m
                           buff1 = exp_I_km_ysj(j,m) * exp_I_kn_zk(k,nn)
@@ -107,9 +108,9 @@ subroutine CalcHITRandomForce
       enddo
   
       ! z forcing
-      do nn = 1,nmodes
-          do m = 1,nmodes
-              do l = 1,nmodes
+      do nn = 1,nmodesZ
+          do m = 1,nmodesY
+              do l = 1,nmodesX
                   do k = kstart,kend
                       do j = 1,n2m
                           buff1 = exp_I_km_yj(j,m) * exp_I_kn_zsk(k,nn)
@@ -123,6 +124,9 @@ subroutine CalcHITRandomForce
           enddo
       enddo
   
+    deallocate(Fhat)
+
+
   end subroutine CalcHITRandomForce
 
 subroutine InitRandomForce
@@ -131,7 +135,8 @@ subroutine InitRandomForce
     use mpih
     use mpi_param, only: kstart, kend
     implicit none
-    integer :: Nbuffer, i,j,k,nn, count
+    integer :: NbufferX, NbufferY, NbufferZ
+    integer :: i,j,k,nn, count
     real :: kx, ky, kz
     integer :: l,m
     complex :: im=(0.,1.)
@@ -141,46 +146,73 @@ subroutine InitRandomForce
     ! First count the number of modes 
         
     ! {0, k1, k2, ........,  k_nmodes}    where k_nmodes < kf
+
+    ! Assume that kmin has been for the unity-side domain length
+    kf = kf_on_kmin * 2.0 * pi / 1.0
         
-    !Nbuffer counts the no. of positive wavenumbers + the zero mode
-    Nbuffer = floor(kf_on_kmin) + 1
-            
-    !nmodes counts all -ve and +ve wavenumbers in 1 direciton, including the zero mode
-    nmodes = (Nbuffer-1)*2 + 1
+    ! Number of positive wavenumbers (including zero) per direction
+    ! Each direction uses its own k_min = 2*pi/Len
+    NbufferX = floor( kf / (2.0*pi/xlen) ) + 1
+    NbufferY = floor( kf / (2.0*pi/ylen) ) + 1
+    NbufferZ = floor( kf / (2.0*pi/zlen) ) + 1
+
+    ! Total modes per direction (negative + zero + positive)
+    nmodesX = (NbufferX - 1)*2 + 1
+    nmodesY = (NbufferY - 1)*2 + 1
+    nmodesZ = (NbufferZ - 1)*2 + 1
         
-    allocate( waveN(nmodes) )
-        
+    allocate( waveNx(nmodesX) )
+    allocate( waveNy(nmodesY) )
+    allocate( waveNz(nmodesZ) )
+
     ! Coefficient in forcing for later
-    allocate( bhat(3,nmodes,nmodes,nmodes) )
+    allocate( bhat(3,nmodesX,nmodesY,nmodesZ) )
     bhat = 0.0
-        
-        
-    ! Allocate zero wavneumbers
-    do i = 1,Nbuffer-1
-        waven(i) = -( Nbuffer - i)
-    enddo
-        
+            
     ! Allocate zero and positive wavenumbers
-    do i = 0,Nbuffer-1
-        waveN(Nbuffer+i) = i
+
+    ! Fill waveNx: negative, zero, positive integer wavenumber indices
+    do i = 1, NbufferX-1
+        waveNx(i) = -(NbufferX - i)
     enddo
+    do i = 0, NbufferX-1
+        waveNx(NbufferX + i) = i
+    enddo
+
+    ! Fill waveNy
+    do i = 1, NbufferY-1
+        waveNy(i) = -(NbufferY - i)
+    enddo
+    do i = 0, NbufferY-1
+        waveNy(NbufferY + i) = i
+    enddo
+
+    ! Fill waveNz
+    do i = 1, NbufferZ-1
+        waveNz(i) = -(NbufferZ - i)
+    enddo
+    do i = 0, NbufferZ-1
+        waveNz(NbufferZ + i) = i
+    enddo
+
+
         
     ! Exponential pre-factor terms in Fourier expansion
-    allocate( exp_I_kl_xi(n1m, nmodes) ) ! Nx x k_l
-    allocate( exp_I_km_yj(n2m, nmodes) ) ! Ny x k_m
-    allocate( exp_I_kn_zk(kstart:kend, nmodes) ) ! Nz x k_n
+    allocate( exp_I_kl_xi(n1m, nmodesX) ) ! Nx x k_l
+    allocate( exp_I_km_yj(n2m, nmodesY) ) ! Ny x k_m
+    allocate( exp_I_kn_zk(kstart:kend, nmodesZ) ) ! Nz x k_n
 
     ! Staggered array copies
-    allocate( exp_I_kl_xsi(n1m, nmodes) ) ! Nx x k_l
-    allocate( exp_I_km_ysj(n2m, nmodes) ) ! Ny x k_m
-    allocate( exp_I_kn_zsk(kstart:kend, nmodes) ) ! Nz x k_n
+    allocate( exp_I_kl_xsi(n1m, nmodesX) ) ! Nx x k_l
+    allocate( exp_I_km_ysj(n2m, nmodesY) ) ! Ny x k_m
+    allocate( exp_I_kn_zsk(kstart:kend, nmodesZ) ) ! Nz x k_n
         
         
     ! Duplicates needed for staggered grid
     ! x-modes
     do i = 1,n1m
-        do nn=1,nmodes
-            kappa = float(waveN(nn))*2.0*pi / xlen
+        do nn=1,nmodesX
+            kappa = float(waveNx(nn)) * 2.0 * pi / xlen
             exp_I_kl_xi(i,nn) = exp( im * kappa * xm(i) )
             exp_I_kl_xsi(i,nn) = exp( im * kappa * xc(i) ) 
 
@@ -189,8 +221,8 @@ subroutine InitRandomForce
         
     ! y-modes
     do j = 1,n2m
-        do nn=1,nmodes
-            kappa = float(waveN(nn))*2.0*pi / ylen
+        do nn=1,nmodesY
+            kappa = float(waveNy(nn)) * 2.0 * pi / ylen
             exp_I_km_yj(j,nn) = exp( im * kappa * ym(j) )
             exp_I_km_ysj(j,nn) = exp( im * kappa * yc(j) )
 
@@ -200,8 +232,8 @@ subroutine InitRandomForce
         
     ! z-modes
     do k = kstart,kend
-        do nn=1,nmodes
-            kappa = float(waveN(nn))*2.0*pi / zlen
+        do nn=1,nmodesZ
+            kappa = float(waveNz(nn)) * 2.0 * pi / zlen
             exp_I_kn_zk(k,nn) = exp( im * kappa * zm(k) )
             exp_I_kn_zsk(k,nn) = exp( im * kappa * zc(k) )
         enddo
@@ -210,15 +242,13 @@ subroutine InitRandomForce
         
     ! Count the number of modes
     count = 0
-        
-    kf = kf_on_kmin * 2.0*pi/xlen
-        
-    do l = 1,nmodes
-        kx = float( waveN(l) )*2.0*pi/xlen
-        do m=1,nmodes
-            ky = float( waveN(m) )*2.0*pi/ylen
-            do nn = 1,nmodes
-                kz = float( waveN(nn) )*2.0*pi/zlen
+                
+    do l = 1,nmodesX
+        kx = float( waveNx(l) )*2.0*pi/xlen
+        do m=1,nmodesY
+            ky = float( waveNy(m) )*2.0*pi/ylen
+            do nn = 1,nmodesZ
+                kz = float( waveNz(nn) )*2.0*pi/zlen
                 magK = sqrt( kx**2 + ky**2 + kz**2)
                 if ( (magK .le. kf) .and. (magK .ne. 0)) then
                     count = count + 1
@@ -377,9 +407,9 @@ end subroutine add_linearHITForce
     
         ndims=4
         dims_coef(1)=3
-        dims_coef(2)=nmodes
-        dims_coef(3)=nmodes
-        dims_coef(4)=nmodes
+        dims_coef(2)=nmodesX
+        dims_coef(3)=nmodesY
+        dims_coef(4)=nmodesZ
 
         filnambc = 'continuation/continua_bhat.h5'
         call h5fcreate_f(filnambc, H5F_ACC_TRUNC_F, file_id, hdf_error)
@@ -413,15 +443,15 @@ subroutine hdf_read_bhat
     integer(HID_T) :: dset
     integer :: hdf_error
     integer(HSIZE_T) :: dims(4)
-    real :: re_buffer(3,nmodes,nmodes,nmodes)
-    real :: im_buffer(3,nmodes,nmodes,nmodes)
+    real :: re_buffer(3,nmodesX,nmodesY,nmodesZ)
+    real :: im_buffer(3,nmodesX,nmodesY,nmodesZ)
 
     
     if (myid.eq.0) then
         dims(1) = 3
-        dims(2) = nmodes
-        dims(3) = nmodes
-        dims(4) = nmodes
+        dims(2) = nmodesX
+        dims(3) = nmodesY
+        dims(4) = nmodesZ
 
     !write(*,*) "Attempting to read bhat_re!"
 

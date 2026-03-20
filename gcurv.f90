@@ -82,8 +82,8 @@ character*50 :: dsetname,filename
             call ICOND_GROOVE
           endif
         endif
-        call ICOND_zeroVelocity
-        !call ICOND_TaylorGreen
+        !call ICOND_zeroVelocity
+        call ICOND_TaylorGreen
         !call ICOND_random
       else
 
@@ -210,7 +210,6 @@ character*50 :: dsetname,filename
             !   kcut = modulo(kcut-1,n3m)  + 1
             ! else
               icut = n1m / 2
-              jcut = n2m / 2
               kcut = n3m / 2
             !endif
 
@@ -223,8 +222,16 @@ character*50 :: dsetname,filename
 
 
            call mkmov_hdf_xcut(icut)
+
+           ! Make sure this is an integer!
+           jcut = n2m / 4
            call mkmov_hdf_ycut(jcut)
-           call mkmov_hdf_zcut(kcut)
+           jcut = n2m / 2
+           call mkmov_hdf_ycut(jcut)
+           jcut = 3 * n2m / 4
+           call mkmov_hdf_ycut(jcut)
+           
+           !call mkmov_hdf_zcut(kcut)
            !call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel

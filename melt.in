@@ -1,5 +1,5 @@
  PFmode     MeltMode   ICOND: 1=SPHERE, 2=GROOVE (GRV)
-   0            0       2
+   1            0       2
 U_SOLID
    0.0
 PF_A    TMELT    TLIQUID   TSOLID   LATHEAT     CP_LIQUID    TEMP_RESTART

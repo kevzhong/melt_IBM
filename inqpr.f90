@@ -136,14 +136,13 @@ subroutine ICOND_GROOVE
       integer :: ic,jc,kc
       real :: rr,rrp
       real :: phip,phic,phic2
-      real :: rad,x01,x02,z0
+      real :: rad,z01,z02,x0
       real :: Fx, Fz, F, gradF, sdf,a,b
 
 
-
-      x01 = 0.5*xlen - halfthick
-      x02 = 0.5*xlen + halfthick
-      z0 = 0.5*zlen
+      z01 = 0.5*zlen - halfthick
+      z02 = 0.5*zlen + halfthick
+      x0 = 0.5*xlen
 
       ! Ellipse semi-axes for convenience
       a = grv_depth
@@ -154,20 +153,20 @@ subroutine ICOND_GROOVE
                   do jc = 1, n2m
 
                         ! Plane slab
-                        rrp = abs( xm(ic) - 0.5*xlen )
+                        rrp = abs( zm(kc) - 0.5*zlen )
                         phip = 0.5 * ( 1.0 - tanh(0.5*(rrp - halfthick) / pf_eps) )
 
                         ! LHS ellipse, computed based on tanh(sdf)
-                        Fx = xm(ic) - x01
-                        Fz = zm(kc) - 0.5*zlen
+                        Fz = zm(kc) - z01
+                        Fx = xm(ic) - 0.5*xlen
                         F = (Fx/a)**2 + (Fz/b)**2 - 1.0
                         gradF = 2.0*sqrt( (Fx**2)/(a**4) + (Fz**2)/(b**4) )
                         sdf = F / (gradF + 1e-15)
                         phic = 0.5 * (1.0 + tanh(0.5 * sdf / pf_eps) )
 
                         ! RHS ellipse, computed based on tanh(sdf)
-                        Fx = xm(ic) - x02
-                        Fz = zm(kc) - 0.5*zlen
+                        Fz = zm(kc) - z02
+                        Fx = xm(ic) - 0.5*xlen
                         F = (Fx/a)**2 + (Fz/b)**2 - 1.0
                         gradF = 2.0*sqrt( (Fx**2)/(a**4) + (Fz**2)/(b**4) )
                         sdf = F / (gradF + 1e-15)
@@ -186,6 +185,66 @@ subroutine ICOND_GROOVE
       !write(*,*) " sumphi,pf_eps", sumphi, pf_eps
       return                                                            
 end
+
+! subroutine ICOND_GROOVE
+!       use param
+!       use mpi_param
+!       use local_arrays, only: temp
+!       use phasefield
+!       !use mls_param, only: rad_p, pos_CM
+!       implicit none
+!       integer :: ic,jc,kc
+!       real :: rr,rrp
+!       real :: phip,phic,phic2
+!       real :: rad,x01,x02,z0
+!       real :: Fx, Fz, F, gradF, sdf,a,b
+
+
+!       x01 = 0.5*xlen - halfthick
+!       x02 = 0.5*xlen + halfthick
+!       z0 = 0.5*zlen
+
+!       ! Ellipse semi-axes for convenience
+!       a = grv_depth
+!       b = 0.5 * grv_width
+
+!             do kc = kstart, kend
+!             do ic = 1, n1m
+!                   do jc = 1, n2m
+
+!                         ! Plane slab
+!                         rrp = abs( xm(ic) - 0.5*xlen )
+!                         phip = 0.5 * ( 1.0 - tanh(0.5*(rrp - halfthick) / pf_eps) )
+
+!                         ! LHS ellipse, computed based on tanh(sdf)
+!                         Fx = xm(ic) - x01
+!                         Fz = zm(kc) - 0.5*zlen
+!                         F = (Fx/a)**2 + (Fz/b)**2 - 1.0
+!                         gradF = 2.0*sqrt( (Fx**2)/(a**4) + (Fz**2)/(b**4) )
+!                         sdf = F / (gradF + 1e-15)
+!                         phic = 0.5 * (1.0 + tanh(0.5 * sdf / pf_eps) )
+
+!                         ! RHS ellipse, computed based on tanh(sdf)
+!                         Fx = xm(ic) - x02
+!                         Fz = zm(kc) - 0.5*zlen
+!                         F = (Fx/a)**2 + (Fz/b)**2 - 1.0
+!                         gradF = 2.0*sqrt( (Fx**2)/(a**4) + (Fz**2)/(b**4) )
+!                         sdf = F / (gradF + 1e-15)
+!                         phic2 = 0.5 * (1.0 + tanh(0.5 * sdf / pf_eps) )
+
+!                         phi(ic,jc,kc) = phip * phic * phic2
+
+!                         ! Map to temperature
+!                         temp(ic,jc,kc) = (1.0 - phi(ic,jc,kc) ) * Tliq + phi(ic,jc,kc) * Tsol
+                  
+!                   enddo !end j
+!             enddo !end i
+!       enddo !end k
+
+
+!       !write(*,*) " sumphi,pf_eps", sumphi, pf_eps
+!       return                                                            
+! end
 
 subroutine ICOND_random
       use local_arrays, only: vy,vz,vx,temp

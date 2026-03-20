@@ -504,7 +504,10 @@ end subroutine mpi_globalsum_double_var
 
       !------------------------------------------
         ! KZ HIT stuff
-      deallocate( waveN )
+      !deallocate( waveN )
+      deallocate( waveNx )
+      deallocate( waveNy )
+      deallocate( waveNz )
       deallocate( bhat )
       deallocate( exp_I_kl_xi, exp_I_km_yj, exp_I_kn_zk)
       deallocate( exp_I_kl_xsi, exp_I_km_ysj, exp_I_kn_zsk)

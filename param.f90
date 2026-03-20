@@ -68,8 +68,13 @@
         real, dimension(1:3) :: gam,rom,alm
         real :: tempmin, tempmax, phimin, phimax
 
-        integer :: nmodes
-        integer, allocatable :: waveN(:)
+        !integer :: nmodes
+        !integer, allocatable :: waveN(:)
+
+        ! Variable nmodes in each direction
+        integer :: nmodesX, nmodesY, nmodesZ
+        integer, allocatable :: waveNx(:), waveNy(:), waveNz(:)
+
         complex(kind=kind(0d0)), allocatable :: exp_I_kl_xi(:,:), exp_I_km_yj(:,:), exp_I_kn_zk(:,:)
         complex(kind=kind(0d0)), allocatable :: exp_I_kl_xsi(:,:), exp_I_km_ysj(:,:), exp_I_kn_zsk(:,:)
         complex(kind=kind(0d0)), allocatable :: bhat(:,:,:,:)
