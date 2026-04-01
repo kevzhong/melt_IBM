@@ -7,7 +7,7 @@
       implicit none
       integer :: kc,kp,jp,jm,jc,ic,im,ip,km
       real    :: h22,h23,udx1,udx2,h21,udx3
-      real :: phi_interp
+      real :: phi_interp,fmean
 
       udx1=dx1*0.25
       udx2=dx2*0.25
@@ -80,7 +80,7 @@
       !kp=kc+1
       do jc=1,n2m
       jm=jmv(jc)
-      jp=jpv(jc)
+      !jp=jpv(jc)
       do ic=1,n1m
       !im=imv(ic)
       !ip=ipv(ic)
@@ -95,7 +95,9 @@
 
 
       ! Phase-field volume penalty
-      if (pfmode .eq. 1) then
+      if ( (pfmode .eq. 1) .and. (ibtype .eq. 1) ) then
+
+      !fmean = 0.0
 
       do kc=kstart,kend
       !km=kc-1
@@ -108,12 +110,30 @@
       !ip=ipv(ic)
 
             phi_interp = 0.5 * ( phi(ic,jm,kc) + phi(ic,jc,kc) )
-            dph(ic,jc,kc) = dph(ic,jc,kc) -  phi_interp**2 * vy(ic,jc,kc) / (al * dt)
+            !dph(ic,jc,kc) = dph(ic,jc,kc) -  phi_interp**2 * vy(ic,jc,kc) / (al * dt)
+            !dph(ic,jc,kc) = dph(ic,jc,kc) -  phi_interp * vy(ic,jc,kc) / ( al * dt)
 
-            
+            !fmean = fmean - phi_interp * vy(ic,jc,kc) 
+
+            fmean = 4.0 * phi_interp * (1.0 - phi_interp)
+            dph(ic,jc,kc) = dph(ic,jc,kc) -  fmean * vy(ic,jc,kc) / ( al * dt)
+
+
       enddo
       enddo
       enddo
+
+      !call MpiAllSumRealScalar(fmean)
+      !fmean = fmean / (al * dt * n1m * n2m * n3m)
+
+      ! ! subtract mean forcing
+      ! do kc=kstart,kend
+      ! do jc=1,n2m
+      ! do ic=1,n1m
+      !       dph(ic,jc,kc) = dph(ic,jc,kc) - fmean
+      ! enddo
+      ! enddo
+      ! enddo
 
       endif
 

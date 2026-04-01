@@ -80,14 +80,19 @@
       endif
 
 
-
-      call solxi(beta*al*dx1q)
-      call solxj(beta*al*dx2q)
-      call solxk(vy(1:n1,1:n2,kstart:kend),beta*al*dx3q)
+      if ( (pfmode .eq. 1) .and. (ibtype .eq. 2) ) then
+        call solxi_ib(beta*al*dx1q, 0.0, vy(1:n1,1:n2,kstart:kend) )
+        call solxj_ib(beta*al*dx2q, 0.0, vy(1:n1,1:n2,kstart:kend) )
+        call solxk_ib(vy(1:n1,1:n2,kstart:kend),beta*al*dx3q, 0.0)
+      else
+        call solxi(beta*al*dx1q)
+        call solxj(beta*al*dx2q)
+        call solxk(vy(1:n1,1:n2,kstart:kend),beta*al*dx3q)
+      endif
 
 
       
-      !vy(:,n2,:) = vy(:,1,:)
+      vy(:,n2,:) = vy(:,1,:)
      
       return
       end

@@ -5,6 +5,7 @@
       real, dimension(m1) :: q,s,fei
       real    :: fn,p
       integer :: ia,ii,i,l
+      real :: small = 1.e-16
 !                                                                       
 !     vectorized for right hand side and coefficients                   
 !                                                                                                                
@@ -44,9 +45,14 @@
         fei(i) = rrr(i) + q(i)*fei(i+1)                     
       end do
               
+      ! rrr(n1f)=(fn-api(i)*fei(n1i) -  &
+      !       ami(i)*fei(n1f-1))/(api(i)*s(n1i) + &
+      !       ami(i)*s(n1f-1)+aci(i))   
+      
       rrr(n1f)=(fn-api(i)*fei(n1i) -  &
-            ami(i)*fei(n1f-1))/(api(i)*s(n1i) + &
-            ami(i)*s(n1f-1)+aci(i))                  
+      ami(i)*fei(n1f-1))/(api(i)*s(n1i) + &
+      ami(i)*s(n1f-1)+aci(i) + small)     
+
 
 !                                                                       
 !     backward elimination pass                                         

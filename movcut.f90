@@ -169,6 +169,7 @@
       call h5dcreate_f(file_id, 'phi', H5T_NATIVE_DOUBLE, filespace, dset_phi, hdf_error)
       call h5dcreate_f(file_id, 'vmelt', H5T_NATIVE_DOUBLE, filespace, dset_vmelt, hdf_error)
 
+
 !RO   Set offsets and element counts
 
       data_count(1)=n2m
@@ -312,6 +313,17 @@
 
       call h5dwrite_f(dset_phi, H5T_NATIVE_DOUBLE, & 
          phix(1:n2m,kstart:kend), mem_dims, & 
+         hdf_error, file_space_id = filespace, mem_space_id = memspace, & 
+         xfer_prp = plist_id)
+
+
+      call h5dget_space_f(dset_vmelt, filespace, hdf_error)
+      call h5sselect_hyperslab_f (filespace, H5S_SELECT_SET_F, data_offset, data_count, hdf_error)
+      call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, hdf_error) 
+      call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, hdf_error)
+
+      call h5dwrite_f(dset_vmelt, H5T_NATIVE_DOUBLE, & 
+         vmeltx(1:n2m,kstart:kend), mem_dims, & 
          hdf_error, file_space_id = filespace, mem_space_id = memspace, & 
          xfer_prp = plist_id)
 
@@ -1070,8 +1082,10 @@
       ! close(45)
 
       end if
+
+
       deallocate(prx,v1,v2,v3,tempx)
-      deallocate(vor1,vor2,vor3,tkex,dissx,chix,phix)
+      deallocate(vor1,vor2,vor3,tkex,dissx,chix,phix,vmeltx)
 
       return
       end

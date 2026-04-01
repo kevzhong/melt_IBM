@@ -80,9 +80,44 @@ subroutine ICOND_TaylorGreen
                   do jc = 1, n2m
                         vx(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * ym(jc) / ylen ) &
                                      * cos(2.0 * pi * zm(kc) / zlen )
-                        vy(ic,jc,kc) = -cos(2.0 * pi * xc(ic) / xlen ) * sin(2.0 * pi * yc(jc) / ylen ) &
+                        vy(ic,jc,kc) = -cos(2.0 * pi * xm(ic) / xlen ) * sin(2.0 * pi * yc(jc) / ylen ) &
                                      * cos(2.0 * pi * zm(kc) / zlen )
                         vz(ic,jc,kc) = 0.0
+                        !endif
+                  enddo !end j
+            enddo !end i
+      enddo !end k
+      return                                                            
+end
+
+subroutine ICOND_TaylorGreen2D
+      use local_arrays, only: vy,vz,vx,temp
+      use param, only: xm, ym, zm, xc,yc,zc,n1m, n2m, xlen, ylen, zlen, Tsol, Tliq,dx1, pi
+      use mpi_param
+      !use mls_param, only: rad_p, pos_CM
+      implicit none
+      integer :: ic,jc,kc
+      real :: rr
+      
+      do kc = kstart, kend
+            do ic = 1, n1m
+                  do jc = 1, n2m
+
+                        ! xy plane
+                        vx(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * ym(jc) / ylen ) 
+                        vy(ic,jc,kc) = -cos(2.0 * pi * xm(ic) / xlen ) * sin(2.0 * pi * yc(jc) / ylen )
+                        vz(ic,jc,kc) = 0.0
+
+                        ! ! xz plane
+                        ! vx(ic,jc,kc) = sin(2.0 * pi * xc(ic) / xlen ) * cos(2.0 * pi * zm(kc) / zlen ) 
+                        ! vy(ic,jc,kc) = 0.0
+                        ! vz(ic,jc,kc) = -cos(2.0 * pi * xm(ic) / xlen ) * sin(2.0 * pi * zc(kc) / zlen )
+
+                        ! yz plane
+                        !vx(ic,jc,kc) = 0.0
+                        !vy(ic,jc,kc) = sin(2.0 * pi * yc(jc) / ylen ) * cos(2.0 * pi * zm(kc) / zlen ) 
+                        !vz(ic,jc,kc) = -cos(2.0 * pi * ym(jc) / ylen ) * sin(2.0 * pi * zc(kc) / zlen )
+
                         !endif
                   enddo !end j
             enddo !end i
@@ -106,11 +141,60 @@ subroutine ICOND_SPHERE
 
 
             do kc = kstart, kend
+            do jc = 1, n2m
+                  do ic = 1, n1m
+                        ! Sphere
+                        rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - [0.5*xlen, 0.5*ylen, 0.5*zlen]  )
+
+                        phi(ic,jc,kc) = 0.5* (1.0d0 - tanh( 0.5 * (rr - rad_sph) / pf_eps  )  )
+
+                        !if (phi(ic,jc,kc) .ge. 0.99 ) then !clamp
+                        !      phi(ic,jc,kc) = 1.0
+                        !endif
+
+                        ! Map to temperature
+                        temp(ic,jc,kc) = (1.0 - phi(ic,jc,kc) ) * Tliq + phi(ic,jc,kc) * Tsol
+                  
+                  enddo !end j
+            enddo !end i
+      enddo !end k
+
+
+      !write(*,*) " sumphi,pf_eps", sumphi, pf_eps
+      return                                                            
+end
+
+subroutine ICOND_SPHERE_SHARP
+      ! Step-function-like initialization
+      use param
+      use mpi_param
+      use local_arrays, only: temp
+      use phasefield
+      !use mls_param, only: rad_p, pos_CM
+      implicit none
+      integer :: ic,jc,kc
+      real :: rr,rrp
+      real :: phip,phic,phic2
+      real :: rad,x01,x02,y0
+
+
+
+            do kc = kstart, kend
             do ic = 1, n1m
                   do jc = 1, n2m
                         ! Sphere
                         rr = norm2 (  [ xm(ic),ym(jc), zm(kc) ]  - [0.5*xlen, 0.5*ylen, 0.5*zlen]  )
-                        phi(ic,jc,kc) = 0.5* (1.0d0 - tanh( 0.5 * (rr - rad_sph) * dx1  )  )
+
+                        if (rr .ge. rad_sph) then
+                              phi(ic,jc,kc) = 0.0
+                        else
+                              phi(ic,jc,kc) = 1.0
+                        endif
+                        !phi(ic,jc,kc) = 0.5* (1.0d0 - tanh( 0.5 * (rr - rad_sph) * dx1  )  )
+
+                        !if (phi(ic,jc,kc) .ge. 0.99 ) then !clamp
+                        !      phi(ic,jc,kc) = 1.0
+                        !endif
 
                         ! Map to temperature
                         temp(ic,jc,kc) = (1.0 - phi(ic,jc,kc) ) * Tliq + phi(ic,jc,kc) * Tsol

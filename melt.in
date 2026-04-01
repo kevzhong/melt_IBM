@@ -1,10 +1,10 @@
  PFmode     MeltMode   ICOND: 1=SPHERE, 2=GROOVE (GRV)
-   1            0       2
-U_SOLID
-   0.0
+   1            0       1
+U_SOLID     IB_TYPE (1=DARCY-BRINKMAN, 2=IMPLICIT)
+   0.0         1
 PF_A    TMELT    TLIQUID   TSOLID   LATHEAT     CP_LIQUID    TEMP_RESTART
 1000.0   0.0d0   1.0d0      0.0d0     1.0d0       1.0d0            0
 SPHERE_RADIUS
-     0.1
+0.1
 GRV:HALF_THICK     DEPTH   WIDTH
 0.5                 0.1     0.2

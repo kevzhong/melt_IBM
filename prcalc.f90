@@ -6,6 +6,7 @@
       use param
       use local_arrays, only: pr,dph
       use mpi_param, only: kstart,kend
+      use phasefield
       implicit none
       integer :: kp,km,jm,jp,jc,kc,ic,ip,im
       real    :: be
@@ -28,6 +29,11 @@
               (dph(ip,jc,kc)-2.0*dph(ic,jc,kc)+dph(im,jc,kc))*dx1q+ &
               (dph(ic,jp,kc)-2.0*dph(ic,jc,kc)+dph(ic,jm,kc))*dx2q+ &
               (dph(ic,jc,kp)-2.0*dph(ic,jc,kc)+dph(ic,jc,km))*dx3q)
+
+              ! pr(ic,jc,kc)=pr(ic,jc,kc)+(1.0 - phi(ic,jc,kc)) * ( dph(ic,jc,kc)-be*( &
+              ! (dph(ip,jc,kc)-2.0*dph(ic,jc,kc)+dph(im,jc,kc))*dx1q+ &
+              ! (dph(ic,jp,kc)-2.0*dph(ic,jc,kc)+dph(ic,jm,kc))*dx2q+ &
+              ! (dph(ic,jc,kp)-2.0*dph(ic,jc,kc)+dph(ic,jc,km))*dx3q) )
       enddo
       enddo
       enddo

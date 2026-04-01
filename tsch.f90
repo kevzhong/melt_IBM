@@ -5,11 +5,7 @@
       use phasefield
       use mpi_param, only: kstart,kend
       use local_aux
-      !use stat_arrays, only: vxvyvz_rms_vol
       implicit none
-      !real,dimension(3,3)     :: AA, AAT
-      !integer,dimension(3,2)     :: bbox_inds
-      !real,dimension(3,Nparticle) :: vel_m1,pos_m1,pos_k,om_m1
       integer :: ns, inp, ntr, nsub
       integer :: i,j,k
 
@@ -53,8 +49,6 @@
         call invtr1 
         call invtr2
         call invtr3
-
-
 
         ! For single-phase
         call update_both_ghosts(n1,n2,vx,kstart,kend)

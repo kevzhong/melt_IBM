@@ -9,7 +9,7 @@
       integer :: km,kp,jmm,jpp,ic,im,ip
       real    :: h32,h33,h31
       real    :: udx1,udx2,udx3, fbz, T_interp
-      real :: phi_interp
+      real :: phi_interp,fmean
 
       udx1=dx1*0.25
       udx2=dx2*0.25
@@ -108,20 +108,41 @@
 
 
       ! Phase-field volume penalty
-      if (pfmode .eq. 1) then
+      if ( (pfmode .eq. 1) .and. (ibtype .eq. 1) ) then
+
+      !fmean = 0.0
 
       do kc=kstart,kend
       km=kc-1
-      kp=kc+1
+      !kp=kc+1
       do jc=1,n2m
       do ic=1,n1m
             phi_interp = 0.5 * ( phi(ic,jc,km) + phi(ic,jc,kc) )
 
-            qcap(ic,jc,kc) = qcap(ic,jc,kc)  - phi_interp**2 * vz(ic,jc,kc) / (al * dt)
+            !qcap(ic,jc,kc) = qcap(ic,jc,kc)  - phi_interp**2 * vz(ic,jc,kc) / (al * dt)
+            !qcap(ic,jc,kc) = qcap(ic,jc,kc)  - phi_interp * vz(ic,jc,kc) / ( al * dt)
+
+            !fmean = fmean - phi_interp * vz(ic,jc,kc)
+            
+            fmean = 4.0 * phi_interp * (1.0 - phi_interp)
+            qcap(ic,jc,kc) = qcap(ic,jc,kc) -  fmean * vz(ic,jc,kc) / ( al * dt)
+
 
       enddo
       enddo
       enddo
+
+      !call MpiAllSumRealScalar(fmean)
+      !fmean = fmean / (al * dt * n1m * n2m * n3m)
+
+      ! ! subtract mean forcing
+      ! do kc=kstart,kend
+      ! do jc=1,n2m
+      ! do ic=1,n1m
+      !       qcap(ic,jc,kc) = qcap(ic,jc,kc) - fmean
+      ! enddo
+      ! enddo
+      ! enddo
 
       endif
 

@@ -31,22 +31,12 @@ character*50 :: dsetname,filename
   tin(1) = MPI_WTIME()
 
   call HdfStart
-  !call InitStats
   call cordin 
   call phini
-  !call tri_geo
 
-    !if (pfmode .eq. 1) then
       call init_phaseMemory
       call init_phaseParams
-    !endif
 
-
-  ! ! Initial cell-tagging operation at start of runtime if IBM is active
-  ! ! the most expensive full tagging of ALL cells
-  ! initial_tag = .true.
-  ! if (imlsfor .eq. 1) call tagCells
-  ! initial_tag = .false. ! Subsequent time-steps: only tag along a narrow band
 
   time=0.d0
   vmax=0.0d0
@@ -78,12 +68,14 @@ character*50 :: dsetname,filename
        if (pfmode .eq. 1) then 
           if (melt_icond .eq. 1) then
             call ICOND_SPHERE
+            !call ICOND_SPHERE_SHARP
           elseif (melt_icond .eq. 2) then
             call ICOND_GROOVE
           endif
         endif
         !call ICOND_zeroVelocity
         call ICOND_TaylorGreen
+        !call ICOND_TaylorGreen2D
         !call ICOND_random
       else
 
@@ -100,7 +92,7 @@ character*50 :: dsetname,filename
        call update_both_ghosts(n1,n2,vy,kstart,kend)
        call update_both_ghosts(n1,n2,vz,kstart,kend)
        call update_both_ghosts(n1,n2,temp,kstart,kend)
-       if (pfmode .eq. 1) call update_both_ghosts(n1,n2,phi,kstart,kend)
+       call update_both_ghosts(n1,n2,phi,kstart,kend)
 
        call cfl 
 
@@ -174,45 +166,15 @@ character*50 :: dsetname,filename
 
 
           !------ ASCII write -----------------
-          !call writePartVol
-          !call writeInertTens
-          !call write_partrot
-          !call write_partpos
-          !call write_partvel
-          !call writeStructLoads
-
-          !call writeTriMeshStats
-          !call writeClock
-
-          !call CalcInjection
           call write_dt
           call CalcTurbulenceStats
           call calcPhaseStats
           call minmax_scalars
-          ! KZ: relative Lagrangian motion tracking
-          !call calcFluidVelAvgs
-          !call calcRelShellVel
-          !call calcLocalShellFlow
           call vorticity
           !------ END ASCII -----------------
 
 
           if(mod(time,tframe).lt.dt) then !KZ: comment to dump cuts at every timestep
-           
-            ! if (imlsstr .eq. 1) then
-            !   ! For Lagrangian: cuts follow centroid of object
-            !   icut = floor( pos_CM(1,1) * dx1 ) + 1
-            !   jcut = floor( pos_CM(2,1) * dx2 ) + 1
-            !   kcut = floor( pos_CM(3,1) * dx3 ) + 1
-
-            !   icut = modulo(icut-1,n1m)  + 1
-            !   jcut = modulo(jcut-1,n2m)  + 1
-            !   kcut = modulo(kcut-1,n3m)  + 1
-            ! else
-              icut = n1m / 2
-              kcut = n3m / 2
-            !endif
-
             ! ! Compute surface metrics (OPTIONAL)
             ! if (pfmode .eq. 1) then
             !   call compute_psi_from_phi
@@ -220,19 +182,12 @@ character*50 :: dsetname,filename
             !   call compute_curvature
             ! endif
 
+           call mkmov_hdf_xcut(n1m / 2)
+           call mkmov_hdf_ycut(n2m / 4)
+           call mkmov_hdf_ycut(n2m / 2)
+           call mkmov_hdf_ycut(3 * n2m / 4)
+           !call mkmov_hdf_zcut(n3m / 2)
 
-           call mkmov_hdf_xcut(icut)
-
-           ! Make sure this is an integer!
-           jcut = n2m / 4
-           call mkmov_hdf_ycut(jcut)
-           jcut = n2m / 2
-           call mkmov_hdf_ycut(jcut)
-           jcut = 3 * n2m / 4
-           call mkmov_hdf_ycut(jcut)
-           
-           !call mkmov_hdf_zcut(kcut)
-           !call write_tecplot_geom
            !call mpi_write_tempField
            !call mpi_write_vel
            !call mpi_write_field
@@ -240,59 +195,6 @@ character*50 :: dsetname,filename
            if (specflag) call compute_1d_spectra
          endif
          
-!          !------------- FOR DEBUGGING ------------------------
-! !if (skipped_ecol) then 
-! if (ismaster) then
-!     filename = 'continuation/isGhostVert.h5'
-!     dsetname = trim('isGhostVert')
-!     call HdfWriteSerialInt2D(filename,dsetname,maxnv,1,isGhostVert(:,1))
-
-!     filename = 'continuation/isGhostEdge.h5'
-!     dsetname = trim('isGhostEdge')
-!     call HdfWriteSerialInt2D(filename,dsetname,maxne,1,isGhostEdge(:,1))
-
-!     filename = 'continuation/isGhostFace.h5'
-!     dsetname = trim('isGhostFace')
-!     call HdfWriteSerialInt2D(filename,dsetname,maxnf,1,isGhostFace(:,1))
-
-!     filename = 'continuation/anchorVert.h5'
-!     dsetname = trim('anchorVert')
-!     call HdfWriteSerialInt2D(filename,dsetname,maxnv,1,anchorVert(:,1))
-
-!     filename = 'continuation/flagged_edge.h5'
-!     dsetname = trim('flagged_edge')
-!     call HdfWriteSerialInt2D(filename,dsetname,maxne,1,flagged_edge(:,1))
-
-!     filename = 'continuation/vert_of_edge.h5'
-!     dsetname = trim('vert_of_edge')
-!     call HdfWriteSerialInt2D(filename,dsetname,2,maxne,vert_of_edge(:,:,1))
-
-!     filename = 'continuation/vert_of_face.h5'
-!     dsetname = trim('vert_of_face')
-!     call HdfWriteSerialInt2D(filename,dsetname,3,maxnf,vert_of_face(:,:,1))
-
-!     filename = 'continuation/edge_of_face.h5'
-!     dsetname = trim('edge_of_face')
-!     call HdfWriteSerialInt2D(filename,dsetname,3,maxnf,edge_of_face(:,:,1))
-
-!     filename = 'continuation/face_of_edge.h5'
-!     dsetname = trim('face_of_edge')
-!     call HdfWriteSerialInt2D(filename,dsetname,2,maxne,face_of_edge(:,:,1))
-
-!     filename = 'continuation/xyz.h5'
-!     dsetname = trim('xyz')
-!     call HdfWriteSerialReal2D(filename,dsetname,3,maxnv,xyzv(:,:,1))
-! endif
-
-! call write_tecplot_geom
-
-! call MPI_BARRIER(MPI_COMM_WORLD,ierr)
-! call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
-! call MPI_Finalize(ierr)
-
-
-
-
       time=time+dt
 
       ! KZ: These are executed at the end by QuitRoutine() instead

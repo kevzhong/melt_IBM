@@ -16,7 +16,7 @@
         real      :: tl,epsstar,kf_on_kmin, C_HIT, a0, k0
         integer   :: nson,idtv,forcing, which_hit
 
-        integer :: pfmode, meltmode, melt_icond
+        integer :: pfmode, meltmode, melt_icond, ibtype
         real      :: Usolid, Tmelt, Tliq, Tsol, latHeat, cpliquid
         real      :: rad_sph, halfthick, grv_depth, grv_width
 !=================================================

@@ -34,7 +34,8 @@ FFILES  = auxroutines.f90 cfl.f90 cordin.f90 divg.f90 gcurv.f90  hdf.f90       \
           mpi_routines.f90 mpiauxroutines.f90 papero.f90 phcalc.f90 phini.f90  \
           prcalc.f90 quit.f90 solxi.f90 solxj.f90 solxk.f90     \
           tridiag_periodic.f90 tsch.f90 updvp.f90 inicut.f90 movcut.f90 hdf2.f90    \
-          diss.f90 vorticity.f90 spectra.f90 phasefield.f90
+          diss.f90 vorticity.f90 spectra.f90 phasefield.f90 \
+		  solxi_ib.f90 solxj_ib.f90 solxk_ib.f90
 
 MFILES = param.f90 #KZ: no collisions
 OBJDIR = obj

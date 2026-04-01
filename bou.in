@@ -1,14 +1,14 @@
  N1M          N2M         N3M 
- 128          128         384         
+ 128            128       128  
 XLEN         YLEN         ZLEN
- 1.0          1.0          3.0
+ 1.0         1.0          1.0
  NREAD
   0 
 NTST   NSST    TFRAME    TPIN      IRESET
- 2000     3      1e-2    5e-3       0
+ 4000     3      1e-2    5e-3       0
 IDTV    DT    DTMAX  WANT_CFL 
-  1    1e-3    1e-2    1.0  
+  1    1e-3    1e-2    0.7
  REN     PRANDTL  BETA_GZ     
  650.0     1.0      0.0    
  IHIT
-   1
+   0

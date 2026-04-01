@@ -92,15 +92,21 @@
       endif
       endif
 
-      call solxi(beta*al*dx1q )
-      call solxj(beta*al*dx2q )
-      call solxk(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q )
+      if ( (pfmode .eq. 1) .and. (ibtype .eq. 2) ) then
+        call solxi_ib(beta*al*dx1q, Usolid, vx(1:n1,1:n2,kstart:kend) )
+        call solxj_ib(beta*al*dx2q, Usolid, vx(1:n1,1:n2,kstart:kend) )
+        call solxk_ib(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q, Usolid )
+      else
+        call solxi(beta*al*dx1q )
+        call solxj(beta*al*dx2q )
+        call solxk(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q )
+      endif
 
       ! call solxi_FSI(beta*al*dx1q, usolid_x(1:n2,1:n2,kstart:kend ) )
       ! call solxj_FSI(beta*al*dx2q, usolid_x(1:n2,1:n2,kstart:kend ) )
       ! call solxk_FSI(vx(1:n1,1:n2,kstart:kend),beta*al*dx3q, usolid_x(1:n2,1:n2,kstart:kend ) )
 
-      !vx(n1,:,:) = vx(1,:,:)
+      vx(n1,:,:) = vx(1,:,:)
      
       return
       end

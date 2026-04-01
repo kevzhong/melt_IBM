@@ -61,7 +61,7 @@
         read(15,301) dummy       
         read(15,*) pfmode, meltmode,melt_icond
         read(15,301) dummy
-        read(15,*) Usolid
+        read(15,*) Usolid, ibtype
         read(15,301) dummy
         read(15,*) pf_A,Tmelt , Tliq, Tsol, latHeat, cpliquid, temp_restart
         read(15,301) dummy

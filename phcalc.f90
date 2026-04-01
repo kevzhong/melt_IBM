@@ -21,6 +21,9 @@
       complex,allocatable,dimension(:,:,:) :: buf
       complex,allocatable,dimension(:,:,:) :: buft
 
+
+     ! write(*,*) "starting poisson solve"
+
       call AllocateReal2DArray(xr,1,n2m,1,n1m)
       call AllocateCplx1DArray(xb,1,n3m)
       call AllocateCplx2DArray(xa,1,n2mh,1,n1m)
@@ -93,5 +96,7 @@
       call DestroyCplx3DArray(buf)
       call DestroyCplx3DArray(buft)
  
+      !write(*,*) "finishied poisson"
+
       return
       end
